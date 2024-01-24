@@ -1,0 +1,6 @@
+{
+  "parent": "item/bow",
+  "textures": {
+    "layer0": "antmod:item/summoning_staff_texture"
+  }
+}

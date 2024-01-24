@@ -1,0 +1,27 @@
+{
+"item.antmod.fungus": "White Fungus",
+
+  "item.antmod.antfood": "Ant Food",
+
+  "item.antmod.worker_ant_spawn_egg": "Worker Ant Spawn Egg",
+
+  "itemGroup.antmodctab": "Ant Mod Items",
+
+  "block.antmod.ant_stone": "Soft Stone",
+
+  "block.antmod.fungal_container_block": "Fungal Container",
+
+  "item.antmod.ant_colony_spawn_egg": "Spawn Ant Colony",
+
+  "block.antmod.ant_debris": "Plant Debris",
+
+  "block.antmod.luminous_ant_debris": "Glowing Plant Debris",
+
+  "block.antmod.fungus_block": "White Fungus Block",
+
+  "block.antmod.ant_container": "Ant Container",
+
+  "block.antmod.leafy_mixture": "Leafy Mixture",
+
+  "entity.antmod.worker_ant": "Worker Leafcutter"
+}
