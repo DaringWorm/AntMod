@@ -101,7 +101,7 @@ public class FungalFarmingGoal<T extends LivingEntity> extends Goal implements A
         lastContainerCheck++;
         lastAdjPCheck++;
         aiTimer = aiTimer + random;
-        BlockPos homePos = ant.getHomeColonyPos();
+        BlockPos homePos = ant.getHomePos();
         BlockPos antPos = ant.blockPosition();
         ItemStack heldItem = ant.getMainHandItem();
         double dist2home = AntUtils.getDist(antPos,homePos);

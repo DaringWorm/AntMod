@@ -1,7 +1,9 @@
-package com.daringworm.antmod.colony.misc;
+package com.daringworm.antmod.colony;
 
 import com.daringworm.antmod.colony.AntColony;
+import com.daringworm.antmod.colony.misc.PosSpherePair;
 import net.minecraft.server.level.ServerLevel;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -9,7 +11,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
 
-public class LevelColonies<T extends AntColony> {
+public final class LevelColonies<T extends AntColony> {
 
     private final Set<T> colonies;
     public ServerLevel sLevel;
@@ -42,7 +44,7 @@ public class LevelColonies<T extends AntColony> {
         int id = toUpdateWith.colonyID;
         List<T> toRemove = this.getColonies().filter(c -> c.colonyID == id).toList();
         toRemove.forEach(colonies::remove);
-        colonies.add((T) toUpdateWith);
+        colonies.add((T)toUpdateWith);
     }
 
     public boolean isEmpty() {
@@ -50,10 +52,5 @@ public class LevelColonies<T extends AntColony> {
     }
 
     public int size(){return this.colonies.size();}
-
-    public ArrayList<PosSpherePair> getNextExcavationList(int id){
-        AntColony pColony = getColonyForID(id);
-        return null;//pColony.getNextExcavationSteps();
-    }
 
 }

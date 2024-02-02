@@ -3,9 +3,10 @@ package com.daringworm.antmod.entity;
 
 import com.daringworm.antmod.block.ModBlocks;
 import com.daringworm.antmod.entity.brains.memories.LeafCutterMemory;
-import com.daringworm.antmod.colony.misc.CheckableBlockPosPath;
+import com.daringworm.antmod.colony.misc.PosPair;
 import com.daringworm.antmod.goals.AntUtils;
 import com.daringworm.antmod.item.ModItems;
+import com.daringworm.antmod.mixin.tomixin.ServerLevelUtil;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.particles.ParticleTypes;
@@ -39,8 +40,9 @@ import static com.daringworm.antmod.goals.AntUtils.getDist;
 
 public abstract class Ant extends AgeableMob {
 
+    public LeafCutterMemory memory;
 
-    private static final EntityDataAccessor<BlockPos> HOME_COLONY_POS = SynchedEntityData.defineId(Ant.class, EntityDataSerializers.BLOCK_POS);
+    private static final EntityDataAccessor<BlockPos> HOME_POS = SynchedEntityData.defineId(Ant.class, EntityDataSerializers.BLOCK_POS);
     private static final EntityDataAccessor<BlockPos> FIRST_SURFACE_POS = SynchedEntityData.defineId(Ant.class, EntityDataSerializers.BLOCK_POS);
     private static final EntityDataAccessor<BlockPos> FOOD_LOCATION = SynchedEntityData.defineId(Ant.class, EntityDataSerializers.BLOCK_POS);
     private static final EntityDataAccessor<Boolean> IS_ABOVEGROUND = SynchedEntityData.defineId(Ant.class, EntityDataSerializers.BOOLEAN);
@@ -58,12 +60,18 @@ public abstract class Ant extends AgeableMob {
 
 
     public void setInterestBlock(BlockPos pPos){memory.interestPos = pPos;}
-    public void setHomeColonyPos(BlockPos pPosition) {
-        this.entityData.set(HOME_COLONY_POS, pPosition);
-        //this.memory.homePos = pPosition;
+
+
+    public BlockPos getColonyPos(){
+        if(((ServerLevelUtil) this.getLevel()).getColonyWithID(this.getColonyID()) != null){
+            return ((ServerLevelUtil) this.getLevel()).getColonyWithID(this.getColonyID()).getEntranceBottom();
+        }
+        else return BlockPos.ZERO;
     }
-    public BlockPos getHomeColonyPos() {
-        return this.entityData.get(HOME_COLONY_POS);
+
+    public void setHomePos(BlockPos pPosition) {this.entityData.set(HOME_POS, pPosition);}
+    public BlockPos getHomePos() {
+        return this.entityData.get(HOME_POS);
     }
     public void setFirstSurfacePos(BlockPos pPosition) {
         this.entityData.set(FIRST_SURFACE_POS, pPosition);
@@ -182,7 +190,7 @@ public abstract class Ant extends AgeableMob {
 
     protected void defineSynchedData() {
         super.defineSynchedData();
-        this.entityData.define(HOME_COLONY_POS, this.blockPosition());
+        this.entityData.define(HOME_POS, this.blockPosition());
         this.entityData.define(FIRST_SURFACE_POS, BlockPos.ZERO);
         this.entityData.define(FOOD_LOCATION, BlockPos.ZERO);
         this.entityData.define(IS_ABOVEGROUND, false);
@@ -197,9 +205,9 @@ public abstract class Ant extends AgeableMob {
 
     public void addAdditionalSaveData(@NotNull CompoundTag pCompound) {
         super.addAdditionalSaveData(pCompound);
-        pCompound.putInt("HomePosX", this.getHomeColonyPos().getX());
-        pCompound.putInt("HomePosY", this.getHomeColonyPos().getY());
-        pCompound.putInt("HomePosZ", this.getHomeColonyPos().getZ());
+        pCompound.putInt("HomePosX", this.getHomePos().getX());
+        pCompound.putInt("HomePosY", this.getHomePos().getY());
+        pCompound.putInt("HomePosZ", this.getHomePos().getZ());
         pCompound.putBoolean("IsAboveground", this.getIsAboveground());
         pCompound.putBoolean("IsInTransition", this.getIsInTransition());
         pCompound.putBoolean("IsInTransition2", this.getIsSnippingAnimation());
@@ -224,7 +232,7 @@ public abstract class Ant extends AgeableMob {
         int i = pCompound.getInt("HomePosX");
         int j = pCompound.getInt("HomePosY");
         int k = pCompound.getInt("HomePosZ");
-        this.setHomeColonyPos(new BlockPos(i, j, k));
+        this.setHomePos(new BlockPos(i, j, k));
         super.readAdditionalSaveData(pCompound);
         this.setIsAboveground(pCompound.getBoolean("IsAboveground"));
         this.setIsInTransition(pCompound.getBoolean("IsInTransition"));
@@ -410,7 +418,6 @@ public abstract class Ant extends AgeableMob {
     }
 
 
-    public LeafCutterMemory memory;
 
     public boolean canReach(BlockPos targetPos) {
         Ant pAnt = this;
@@ -426,7 +433,7 @@ public abstract class Ant extends AgeableMob {
             }
         }
         else{
-            return new CheckableBlockPosPath(this.blockPosition(), targetPos, this.level).canConnectWithFloor(150);
+            return new PosPair(this.blockPosition(), targetPos, this.level).canConnectWithFloor(150);
         }
         return false;
     }

@@ -9,11 +9,15 @@ public class Braincell extends BrainFork{
     private AntPredicate middlePredicate;
     private Action middleAction;
     private Action endAction;
-    public String KEY;
 
 
 
     public boolean requiresProgressWait(){return this.requiresProgress;}
+
+    public Braincell addShouldChoosePredicate(AntPredicate predicate){
+        this.shouldChoose =predicate;
+        return this;
+    }
 
     public Braincell(Action startAction, String key){
         super(1);

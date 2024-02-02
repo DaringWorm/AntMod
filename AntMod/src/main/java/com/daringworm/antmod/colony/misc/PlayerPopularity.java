@@ -1,4 +1,4 @@
-package com.daringworm.antmod.colony;
+package com.daringworm.antmod.colony.misc;
 
 import java.util.UUID;
 
@@ -6,7 +6,7 @@ public class PlayerPopularity {
     public int popularity;
     public String pID;
 
-    PlayerPopularity(String id, int pPopularity){
+    public PlayerPopularity(String id, int pPopularity){
         this.pID = id;
         if(pPopularity>200){this.popularity = 200;} else if(pPopularity < -200){this.popularity = -200;} else if(pPopularity > -200 && pPopularity < 200){this.popularity = pPopularity;}
     }

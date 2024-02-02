@@ -26,7 +26,7 @@ public class QueenAntRenderer extends GeoEntityRenderer<QueenAnt> {
             (QueenAnt animatable, float partialTicks, PoseStack stack,
              MultiBufferSource renderTypeBuffer, VertexConsumer vertexBuilder, int packedLightIn, ResourceLocation textureLocation) {
 
-        stack.scale(0.8f, 0.8f, 0.8f);
+        stack.scale(0.6f, 0.6f, 0.6f);
         return super.getRenderType(animatable, partialTicks, stack, renderTypeBuffer, vertexBuilder, packedLightIn, textureLocation);
 
     }

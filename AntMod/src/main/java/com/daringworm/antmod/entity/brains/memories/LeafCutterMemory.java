@@ -1,6 +1,7 @@
 package com.daringworm.antmod.entity.brains.memories;
 
 import com.daringworm.antmod.entity.Ant;
+import com.daringworm.antmod.entity.brains.parts.Braincell;
 import com.daringworm.antmod.entity.brains.parts.WorkingStages;
 import com.daringworm.antmod.entity.custom.AntScentCloud;
 import com.daringworm.antmod.entity.custom.QueenAnt;
@@ -27,12 +28,14 @@ public class LeafCutterMemory {
     private int excavationStepAt;
     public int hungerLevel;
     public BlockPos homePos;
-    public BlockPos colonyPos;
     public BlockPos surfacePos;
 
     private ServerLevel pSLevel;
 
     public int braincellStage = 1;
+    public Braincell cellToRun;
+    public String errorAlertString;
+
     public BlockPos interestPos = BlockPos.ZERO;
     public BlockPos containerPos = BlockPos.ZERO;
     public BlockPos foodPos = BlockPos.ZERO;
@@ -57,7 +60,7 @@ public class LeafCutterMemory {
     public LeafCutterMemory(Ant pAnt){
         this.cID = pAnt.getColonyID();
         this.hungerLevel = pAnt.getHunger();
-        this.homePos = pAnt.getHomeColonyPos();
+        this.homePos = pAnt.getHomePos();
         this.pSLevel = (ServerLevel)pAnt.getLevel();
         pAnt.setWorkingStage(WorkingStages.SCOUTING);
         this.workingStage = pAnt.getWorkingStage();
@@ -74,8 +77,8 @@ public class LeafCutterMemory {
         this.hungerLevel = pAnt.getHunger();
         this.foundItemList = ((ArrayList<ItemEntity>) pAnt.getLevel().getEntitiesOfClass(ItemEntity.class,pAnt.getBoundingBox().inflate(6)));
 
-        if(pAnt.getHomeColonyPos() == BlockPos.ZERO){pAnt.setHomeColonyPos(pAnt.blockPosition());}
-        this.homePos = pAnt.getHomeColonyPos();
+        if(pAnt.getHomePos() == BlockPos.ZERO){pAnt.setHomePos(pAnt.blockPosition());}
+        this.homePos = pAnt.getHomePos();
 
         if(pAnt instanceof QueenAnt && ((ServerLevelUtil) pSLevel).getColonyWithID(pAnt.getColonyID()) == null){
             ((ServerLevelUtil) (pSLevel)).addColonyToList(new AntColony(pSLevel, this.cID, this.homePos));
@@ -113,9 +116,6 @@ public class LeafCutterMemory {
             this.interestPos = BlockPos.ZERO;
         }
 
-        if((this.colonyPos == null || this.colonyPos == BlockPos.ZERO) && ((ServerLevelUtil) pAnt.getLevel()).getColonyWithID(pAnt.getColonyID()) != null){
-            this.colonyPos = ((ServerLevelUtil) pAnt.getLevel()).getColonyWithID(pAnt.getColonyID()).getEntranceBottom();
-        }
     }
 
 

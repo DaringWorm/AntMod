@@ -1,20 +1,14 @@
 package com.daringworm.antmod.colony;
 
+import com.daringworm.antmod.colony.misc.*;
 import com.daringworm.antmod.entity.custom.QueenAnt;
-import com.daringworm.antmod.colony.misc.CheckableBlockPosPath;
-import com.daringworm.antmod.colony.misc.PosSpherePair;
 import com.daringworm.antmod.goals.AntUtils;
-import com.daringworm.antmod.goals.CarveGoal;
 import com.daringworm.antmod.mixin.tomixin.ServerLevelUtil;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParseException;
+import com.google.gson.*;
 import com.mojang.logging.LogUtils;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.network.chat.TextComponent;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 import org.apache.commons.io.FileUtils;
@@ -22,10 +16,7 @@ import org.slf4j.Logger;
 
 import javax.json.Json;
 import javax.json.JsonReader;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Random;
@@ -33,34 +24,28 @@ import java.util.Set;
 import java.util.stream.Stream;
 
 public class AntColony implements AutoCloseable{
-    public int colonyID;
-    public BlockPos startPos;
-    public BlockPos entranceBottom;
-    private BlockPos crixia;
-    public BlockPos queenRoomPos;
-    //for queenRoomPos
-    private BlockPos chosenMiddleRoom;
 
+    public int colonyID;
+    public ColonyBranch tunnels;
+    public BlockPos startPos;
     
     public Random random;
-    public Set<CheckableBlockPosPath> entranceSet = new HashSet<>();
+    public Set<PosPair> entranceSet = new HashSet<>();
     public Set<PlayerPopularity> playerPopularities = new HashSet<>();
     public Level level;
     private static final Logger LOGGER = LogUtils.getLogger();
     public File saveFolder;
     private double passageWidth = 2.1d;
-    public int excavationStage = 0;
-    public ArrayList<BlockPos> roomPosList = new ArrayList<>();
     private ArrayList<PosSpherePair> excavationSpheres = new ArrayList<>();
     private final int UNDERGOUND_PASSAGE_LENGTH = 20;
     private final int UNDERGOUND_ROOM_SIZE = 24;
 
     public AntColony(Level pLevel, int pColonyID, BlockPos pStartPos){
         this.level = pLevel;
-        this.startPos = pStartPos;
         this.colonyID = pColonyID;
         this.saveFolder = getSaveFile((ServerLevel) pLevel);
         this.random = new Random(Math.abs(pStartPos.getX()*pStartPos.getY()*pStartPos.getZ()));
+        this.startPos = pStartPos;
         this.generateNewColonyBlueprint();
     }
 
@@ -68,75 +53,50 @@ public class AntColony implements AutoCloseable{
         this.level = pLevel;
         this.saveFolder = colonyStorageFolder.getAbsoluteFile();
         File colonyFile = new File(saveFolder,fileName);
+        JsonObject j = new JsonObject();
 
         try {
             InputStream is = new FileInputStream(colonyFile);
             JsonReader jsonreader = Json.createReader(is);
-            javax.json.JsonObject jsonObj = jsonreader.readObject();
+            javax.json.JsonObject temp = jsonreader.readObject();
             jsonreader.close();
 
-            label51: {
+            j = JsonParser.parseString(temp.toString()).deepCopy().getAsJsonObject();
+
                 try {
-
-                    if (!jsonObj.isEmpty()) {
-
-                        this.colonyID = jsonObj.getInt("ColonyID");
-                        this.excavationStage = jsonObj.getInt("ExcavationStep");
-                        javax.json.JsonObject startObj = jsonObj.getJsonObject("Center");
-                        this.startPos = new BlockPos(startObj.getInt("X"), startObj.getInt("Y"), startObj.getInt("Z"));
-                        javax.json.JsonObject queenObj = jsonObj.getJsonObject("queenRoomPos");
-                        this.queenRoomPos = new BlockPos(queenObj.getInt("X"), queenObj.getInt("Y"), queenObj.getInt("Z"));
+                    this.startPos = BlockPosStringifier.posFromString(j.getAsJsonObject("start_pos"));
+                    this.colonyID = j.get("colony_ID").getAsInt();
 
 
-                        javax.json.JsonArray entrances = jsonObj.getJsonArray("Tunnels");
-                        for(int i = entrances.size(); i > 0; i--){
-                            javax.json.JsonObject obj = entrances.getJsonObject(i-1);
-                            javax.json.JsonObject top = obj.getJsonObject("top");
-                            javax.json.JsonObject bottom = obj.getJsonObject("bottom");
-                            this.entranceSet.add(new CheckableBlockPosPath(new BlockPos(top.getInt("X"),
-                                    top.getInt("Y"),top.getInt("Z")), new BlockPos(bottom.getInt("X"),
-                                    bottom.getInt("Y"),bottom.getInt("Z")), this.level));
+                    this.tunnels = new ColonyBranch(j.get("tunnels").getAsJsonObject());
+
+                    JsonArray popularities = j.get("player_popularities").getAsJsonArray();
+                    if(!popularities.isEmpty()) {
+                        for (int i = popularities.size(); i > 0; i--) {
+                            JsonObject obj = popularities.get(i - 1).getAsJsonObject();
+                            String playerID = obj.get("ID").getAsString();
+                            int pplrty = obj.get("popularity").getAsInt();
+                            this.playerPopularities.add(new PlayerPopularity(playerID, pplrty));
                         }
-
-                        javax.json.JsonArray rooms = jsonObj.getJsonArray("Rooms");
-                        for(int i = rooms.size(); i > 0; i--){
-                            javax.json.JsonObject obj = rooms.getJsonObject(i-1);
-                            this.roomPosList.add(new BlockPos(obj.getInt("X"), obj.getInt("Y"),obj.getInt("Z")));
-                        }
-
-                        javax.json.JsonArray popularities = jsonObj.getJsonArray("PlayerPopularities");
-                        for(int i = popularities.size(); i > 0; i--){
-                            javax.json.JsonObject obj = popularities.getJsonObject(i-1);
-                            String playerID = obj.getString("ID");
-                            int pplrty = obj.getInt("popularity");
-                            this.playerPopularities.add(new PlayerPopularity(playerID,pplrty));
-                        }
-
-
                     }
+
 
                 } catch (Throwable throwable1) {
                     try {
-                        jsonreader.close();
                     } catch (Throwable throwable) {
                         throwable1.addSuppressed(throwable);
                     }
-
                     throw throwable1;
                 }
 
                 jsonreader.close();
             }
-        } catch (JsonParseException ignored) {
-        } catch (IOException e) {
-            throw new RuntimeException(e);
+        catch (JsonParseException | FileNotFoundException ignored){
         }
     }
 
     public BlockPos getEntranceBottom(){
-        if(this.entranceBottom != null){return this.entranceBottom;}
-        this.generateNewColonyBlueprint();
-        return this.entranceBottom;
+        return this.tunnels.getSubBranch("0").getOriginPos();
     }
 
     public ArrayList<PosSpherePair> getColonyBlueprint(){
@@ -168,35 +128,6 @@ public class AntColony implements AutoCloseable{
     }
 
     protected String toJson() {
-        JsonObject startPosJ = new JsonObject();
-        for(Direction.Axis axis : Direction.Axis.values()) {startPosJ.addProperty(axis.name(), startPos.get(axis));}
-
-        JsonObject queenRoomPosJ = new JsonObject();
-        for(Direction.Axis axis : Direction.Axis.values()) {queenRoomPosJ.addProperty(axis.name(), queenRoomPos.get(axis));}
-
-
-        JsonArray entrancesJ = new JsonArray();
-
-        for(CheckableBlockPosPath path : entranceSet) {
-
-            JsonObject topJ = new JsonObject();
-            for(Direction.Axis axis : Direction.Axis.values()) {topJ.addProperty(axis.name(), path.top.get(axis));}
-            JsonObject bottomJ = new JsonObject();
-            for(Direction.Axis axis : Direction.Axis.values()) {bottomJ.addProperty(axis.name(), path.bottom.get(axis));}
-
-            JsonObject pathObject = new JsonObject();
-            pathObject.add("top",topJ);
-            pathObject.add("bottom",bottomJ);
-            entrancesJ.add(pathObject);
-        }
-
-        JsonArray roomsJ = new JsonArray();
-
-        for(BlockPos tempPos : roomPosList) {
-            JsonObject posJ = new JsonObject();
-            for(Direction.Axis axis : Direction.Axis.values()) {posJ.addProperty(axis.name(), tempPos.get(axis));}
-            roomsJ.add(posJ);
-        }
 
         JsonArray playerPopularityJ = new JsonArray();
 
@@ -207,14 +138,13 @@ public class AntColony implements AutoCloseable{
             playerPopularityJ.add(playerJ);
         }
 
+        JsonObject tunnelsJ = this.tunnels.toJson();
+
         JsonObject jsonobject1 = new JsonObject();
-        jsonobject1.addProperty("ExcavationStep", excavationStage);
-        jsonobject1.add("Center", startPosJ);
-        jsonobject1.addProperty("ColonyID",colonyID);
-        jsonobject1.add("Tunnels", entrancesJ);
-        jsonobject1.add("PlayerPopularities", playerPopularityJ);
-        jsonobject1.add("Rooms", roomsJ);
-        jsonobject1.add("queenRoomPos", queenRoomPosJ);
+        jsonobject1.addProperty("colony_ID",colonyID);
+        jsonobject1.add("player_popularities", playerPopularityJ);
+        jsonobject1.add("start_pos", BlockPosStringifier.jsonFromPos(this.startPos));
+        jsonobject1.add("tunnels", tunnelsJ);
 
         return jsonobject1.toString();
     }
@@ -232,7 +162,7 @@ public class AntColony implements AutoCloseable{
         return ret;
     }
 
-    private ArrayList<PosSpherePair> generatePassageBlueprint(CheckableBlockPosPath pPath, double width){
+    private ArrayList<PosSpherePair> generatePassageBlueprint(PosPair pPath, double width){
         ArrayList<PosSpherePair> returnList = new ArrayList<>();
         BlockPos start = pPath.top;
         BlockPos end = pPath.bottom;
@@ -269,7 +199,7 @@ public class AntColony implements AutoCloseable{
 
             howLongX = eX-lastPos.getX();
             howLongZ = eZ-lastPos.getZ();
-            xOrZ = CarveGoal.nextBool(Math.abs(howLongX),Math.abs(howLongZ),this.random);
+            xOrZ = ColonyGenerator.nextBool(Math.abs(howLongX),Math.abs(howLongZ),this.random);
             if((xOrZ && howLongX != 0) || howLongZ == 0){xOff = (howLongX > 0) ? 1 : -1;}
             else{zOff = (howLongZ > 0) ? 1: -1;}
 
@@ -319,71 +249,39 @@ public class AntColony implements AutoCloseable{
         return returnList;
     }
 
+
+
     public ArrayList<PosSpherePair> generateNewColonyBlueprint(){
+        this.tunnels = new ColonyBranch(startPos,Direction.getRandom(this.random),new ArrayList<>());
         ArrayList<PosSpherePair> returnList = new ArrayList<>();
         random = new Random((long) startPos.getX()*startPos.getY()*startPos.getZ());
 
-        
-        //finds and sets the bottom pos
-        int yOffset = 15;
-        Direction baseDir = Direction.fromYRot(random.nextInt(360));
-        HashSet<Direction> dirList = new HashSet<>();
-        dirList.add(baseDir);
-
-
         //makes the entrance
         returnList.add(new PosSpherePair(startPos.above(4),7));
-        entranceBottom = (entranceBottom == null || entranceBottom == BlockPos.ZERO)? findPosForDir(startPos, 30, baseDir, random).below(yOffset) : entranceBottom;
-        returnList.addAll(generatePassageBlueprint(new CheckableBlockPosPath(startPos,entranceBottom,level),passageWidth));
-        crixia = (crixia == null || crixia == BlockPos.ZERO)? findPosForDir(entranceBottom,20,baseDir,random) : crixia;
-        returnList.addAll(generatePassageBlueprint(new CheckableBlockPosPath(entranceBottom,crixia,level),passageWidth));
 
+        this.tunnels.generateNextBranch(25,-15,false);
+        this.tunnels.branches.get(0).generateNextBranches(3,8,-3,22,true);
+        String str = "";
+        for(int i = 0; i<=10; i++){
+            ColonyBranch tempBranch = tunnels.getSubBranch(str);
+            str = str + "0";
 
-        //makes the rooms and underground passages
-        if(roomPosList.isEmpty()) {
-            dirList.add(Direction.NORTH);
-            dirList.add(Direction.SOUTH);
-            dirList.add(Direction.EAST);
-            dirList.add(Direction.WEST);
-            dirList.remove(baseDir.getOpposite());
-            for (Direction dir : dirList) {
-                BlockPos tempPos = findPosForDir(crixia, UNDERGOUND_PASSAGE_LENGTH, dir, random);
-                if (AntUtils.getDist(tempPos, entranceBottom) > UNDERGOUND_ROOM_SIZE / 2) {
-                    roomPosList.add(tempPos);
-                }
+            AntUtils.broadcastString(level, "Branch starts at " + BlockPosStringifier.jsonFromPos(tempBranch.getOriginPos()).toString());
+
+            for(ColonyBranch tempBranch1: tempBranch.branches) {
+                returnList.addAll(generatePassageBlueprint(
+                        new PosPair(tempBranch.getOriginPos(), tempBranch1.getOriginPos(), this.level), this.passageWidth));
             }
-        }
-        for(BlockPos tempPos : roomPosList){
-            returnList.addAll(generatePassageBlueprint(new CheckableBlockPosPath(crixia,tempPos,this.level),passageWidth));
-            returnList.addAll(generateRoomBlueprint(3d,24,tempPos,random));
-            if(((int)AntUtils.getDist(entranceBottom, tempPos)) <= UNDERGOUND_PASSAGE_LENGTH){
-                returnList.addAll(generatePassageBlueprint(new CheckableBlockPosPath(entranceBottom,tempPos,this.level),passageWidth));
-            }
-        }
-        returnList.addAll(generateRoomBlueprint(2.1d,24,crixia,random));
 
-
-        //makes the queen's room
-        chosenMiddleRoom = roomPosList.get(random.nextInt(roomPosList.size()));
-        ArrayList<PosSpherePair> tempList = generatePassageBlueprint(new CheckableBlockPosPath(chosenMiddleRoom,queenRoomPos, this.level), 1);
-        BlockPos queenRoomPos1 = (queenRoomPos == null || queenRoomPos == BlockPos.ZERO)? findPosForDir(chosenMiddleRoom,30,baseDir,random).below(10) : tempList.get(tempList.size()/2).blockPos;
-        queenRoomPos = (queenRoomPos == null || queenRoomPos == BlockPos.ZERO)? findPosForDir(queenRoomPos1,25,baseDir,random) : queenRoomPos;
-        returnList.addAll(generatePassageBlueprint(new CheckableBlockPosPath(chosenMiddleRoom,queenRoomPos1,level),passageWidth));
-        returnList.addAll(generatePassageBlueprint(new CheckableBlockPosPath(queenRoomPos1,queenRoomPos,level),passageWidth));
-        returnList.addAll(generateRoomBlueprint(5,24,queenRoomPos.above(2),random));
-
-        for(ServerPlayer player : level.getServer().getPlayerList().getPlayers()){
-            String thingToSay = "Created colony Blueprint, containing " + returnList.size() + " total spheres." +
-                    " The Queen's room is located at " + queenRoomPos.getX() + ',' + queenRoomPos.getY() + ',' + queenRoomPos.getZ() + "." +
-                    " The crixia is located at " + crixia.getX() + ',' + crixia.getY() + ',' + crixia.getZ() + ".";
-            player.sendMessage(new TextComponent(thingToSay), player.getUUID());
+            returnList.addAll(generateRoomBlueprint(this.passageWidth+1,this.UNDERGOUND_ROOM_SIZE,tempBranch.getOriginPos(),this.random));
         }
 
         ((ServerLevelUtil) (level)).refreshColonyForID(this);
-        this.entranceBottom = entranceBottom;
         this.excavationSpheres = returnList;
         return returnList;
     }
+
+
 
     public ArrayList<PosSpherePair> getNextExcavationSteps(int stepAt){
 
@@ -393,27 +291,17 @@ public class AntColony implements AutoCloseable{
         if(excavationSpheres.isEmpty()){excavationSpheres = generateNewColonyBlueprint();}
 
         if(!excavationSpheres.isEmpty()){
-            excavationStage = stepAt;
+            /*excavationStage = stepAt;
             int numberOfSpheres = Math.min(excavationSpheres.size() - excavationStage-1, 10);
             if(numberOfSpheres > 0) {
                 for (int i = stepAt; i < stepAt + numberOfSpheres; i++) {
                     returnList.add(excavationSpheres.get(i));
                 }
-            }
+            }*/
         }
 
         ((ServerLevelUtil) (level)).refreshColonyForID(this);
         return returnList;
 
     }
-
-
-    /**
-     * New colony generation below this line!
-     * **/
-
-    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-
-
 }

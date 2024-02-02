@@ -1,5 +1,8 @@
 package com.daringworm.antmod.entity.brains.parts;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+
 public final class WorkerBrainCells {
 
 
@@ -13,25 +16,21 @@ public final class WorkerBrainCells {
     public static Braincell PLACE_ITEM_IN_CONTAINER = new Braincell(Actions.SET_CONTAINER_POS_TO_INTEREST,Actions.WALK_TO_BLOCK, AntPredicates.IN_RANGE_OF_INTEREST_BLOCK,Actions.PLACE_ITEM_IN_CONTAINER, "Place an Item in a Container");
     public static Braincell EXCAVATE_COLONY = new Braincell(Actions.SET_EXCAVATION_POS_TO_INTEREST, Actions.WALK_TO_BLOCK, AntPredicates.NAV_DONE, Actions.EXCAVATE_INTEREST_POS, "Excavate colony");
     public static Braincell LATCH_ON = new Braincell(Actions.LATCH_ON, "Latch on to target");
-    public static Braincell SCOUT = new Braincell(Actions.SCOUT, "Scouting for foliage");
+    public static Braincell SCOUT = new Braincell(Actions.SCOUT, "Scouting for foliage").addShouldChoosePredicate(AntPredicates.IS_SCOUTING);
     public static Braincell GO_UNDERGROUND = new Braincell(Actions.GO_UNDERGROUND, "Go underground");
     public static Braincell GO_ABOVEGROUND = new Braincell(Actions.GO_ABOVEGROUND, "Go aboveground");
 
 
-    public static BrainFork TARGET_MANAGER_FORK = new BrainFork(1, ATTACK_TARGET, SET_TARGET, AntPredicates.HAS_SELECTED_TARGET);
-    public static BrainFork PLACE_ITEMS_IN_CONTAINER_FORK = new BrainFork(1,PLACE_ITEM_IN_CONTAINER,GO_UNDERGROUND,AntPredicates.FOUND_CONTAINER);
-    public static BrainFork MINE_INTEREST_BLOCK_FORK = new BrainFork(1, GO_PICKUP_ITEM, BREAK_INTEREST_BLOCK, AntPredicates.SEES_ITEMS);
-    public static BrainFork FORAGING_FORK = new BrainFork(1,PLACE_ITEMS_IN_CONTAINER_FORK,MINE_INTEREST_BLOCK_FORK,AntPredicates.HAS_ITEM);
+    public static BrainFork TARGET_MANAGER_FORK = new BrainFork(AntPredicates.HAS_SELECTED_TARGET).add(ATTACK_TARGET).add(SET_TARGET);
+    public static BrainFork PLACE_ITEMS_IN_CONTAINER_FORK = new BrainFork(AntPredicates.FOUND_CONTAINER).add(PLACE_ITEM_IN_CONTAINER).add(GO_UNDERGROUND);
+    public static BrainFork MINE_INTEREST_BLOCK_FORK = new BrainFork(AntPredicates.SEES_ITEMS).add(GO_PICKUP_ITEM).add(BREAK_INTEREST_BLOCK);
+    public static BrainFork FORAGING_FORK = new BrainFork(AntPredicates.HAS_ITEM, AntPredicates.IS_FORAGING).add(PLACE_ITEMS_IN_CONTAINER_FORK).add(MINE_INTEREST_BLOCK_FORK);
+    public static BrainFork FUNGUS_FORK = new BrainFork(AntPredicates.TRUE, AntPredicates.FALSE);
+    public static BrainFork NURSING_FORK = new BrainFork(AntPredicates.TRUE, AntPredicates.FALSE);
+    public static BrainFork TIDYING_FORK = new BrainFork(AntPredicates.TRUE, AntPredicates.FALSE);
+    public static BrainFork AGGRO_MANAGER_FORK = new BrainFork(AntPredicates.CAN_REACH_TARGET, AntPredicates.TARGET_EXISTS).add(LATCH_ON).add(TARGET_MANAGER_FORK);
 
 
-
-    public static BrainFork AGGRO_MANAGER_FORK = new BrainFork(1, LATCH_ON, TARGET_MANAGER_FORK, AntPredicates.CAN_REACH_TARGET);
-    public static BrainFork MASTER_EXCAVATING_FORK = new BrainFork(0, EXCAVATE_COLONY, AGGRO_MANAGER_FORK, AntPredicates.IS_EXCAVATING);
-    public static BrainFork MASTER_TIDYING_FORK = new BrainFork(0, ERROR_ALERT, MASTER_EXCAVATING_FORK, AntPredicates.IS_TIDYING);
-    public static BrainFork MASTER_NURSING_FORK = new BrainFork(0, ERROR_ALERT, MASTER_TIDYING_FORK, AntPredicates.IS_NURSING);
-    public static BrainFork MASTER_FUNGUS_FARMING_FORK = new BrainFork(0, ERROR_ALERT, MASTER_NURSING_FORK, AntPredicates.IS_FARMING);
-    public static BrainFork MASTER_FORAGE_FORK = new BrainFork(0, FORAGING_FORK, MASTER_FUNGUS_FARMING_FORK, AntPredicates.IS_FORAGING);
-    public static BrainFork MASTER_PASSIVE_FORK = new BrainFork(0, SCOUT, MASTER_FORAGE_FORK, AntPredicates.IS_SCOUTING);
-
-
+    private static final ArrayList<BrainFork> mA = new ArrayList<>(Arrays.asList(AGGRO_MANAGER_FORK,SCOUT,FORAGING_FORK,FUNGUS_FORK,NURSING_FORK,TIDYING_FORK));
+    public static BrainFork MASTER_FORK = new BrainFork(AntPredicates.TRUE).addAll(mA).addKey("Master Fork");
 }

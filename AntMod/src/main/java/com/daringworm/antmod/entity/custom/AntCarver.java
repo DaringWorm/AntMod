@@ -1,7 +1,7 @@
 package com.daringworm.antmod.entity.custom;
 
 import com.daringworm.antmod.entity.Ant;
-import com.daringworm.antmod.goals.CarveGoal;
+import com.daringworm.antmod.colony.ColonyGenerator;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
@@ -269,8 +269,10 @@ public class AntCarver extends Ant implements IAnimatable {
 
     public void aiStep() {
         if(!this.level.isClientSide) {
-            CarveGoal goal = new CarveGoal(this);
-            goal.tick();
+            if(Math.abs(this.getY()-this.getLevel().getSeaLevel())<10) {
+                ColonyGenerator goal = new ColonyGenerator(this.getLevel());
+                goal.generate(this.blockPosition());
+            }
             this.remove(RemovalReason.DISCARDED);
         }
     }

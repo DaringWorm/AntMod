@@ -80,7 +80,7 @@ public class QueenAnt extends Ant implements IAnimatable {
     public static AttributeSupplier setAttributes(){
         return Ant.createMobAttributes()
                 .add(Attributes.MAX_HEALTH, 120)
-                .add(Attributes.MOVEMENT_SPEED, 0.5)
+                .add(Attributes.MOVEMENT_SPEED, 0.25)
                 .add(Attributes.ATTACK_DAMAGE, 15)
                 .add(Attributes.ATTACK_SPEED, 2)
                 .add(Attributes.ARMOR, 12)
@@ -93,7 +93,6 @@ public class QueenAnt extends Ant implements IAnimatable {
         this.goalSelector.addGoal(1, new FloatGoal(this));
         this.goalSelector.addGoal(3,new RandomLookAroundGoal(this));
         this.goalSelector.addGoal(4,new LayEggGoal(this));
-        this.goalSelector.addGoal(6,new FungalFarmingGoal<>(this));
         this.goalSelector.addGoal(6,new RandomStrollGoal(this, 1));
     }
 
@@ -137,6 +136,7 @@ public class QueenAnt extends Ant implements IAnimatable {
 
     @Override
     public void registerControllers(AnimationData data) {
+        this.animationSpeed = 0.5f;
         data.addAnimationController(new AnimationController(this, "walk_or_rest_controller", 5, this::walkPredicate));
         data.addAnimationController(new AnimationController(this, "snipcontroller", 5, this::snipPredicate));
 

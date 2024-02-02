@@ -2,11 +2,10 @@ package com.daringworm.antmod.entity.custom;
 
 import com.daringworm.antmod.entity.ModEntityTypes;
 import com.daringworm.antmod.entity.brains.LeafCutterWorkerBrain;
-import com.daringworm.antmod.entity.brains.memories.LeafCutterMemory;
-import com.daringworm.antmod.entity.brains.parts.Action;
 import com.daringworm.antmod.entity.Ant;
 
 import com.daringworm.antmod.entity.brains.parts.Actions;
+import com.daringworm.antmod.entity.brains.parts.WorkingStages;
 import com.daringworm.antmod.item.ModItems;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
@@ -49,9 +48,6 @@ import java.util.function.Predicate;
 
 
 public class WorkerAnt extends Ant implements IAnimatable {
-
-    public LeafCutterWorkerBrain brain;
-
 
     // entity data managing worker ants latching onto other entities
     private static final EntityDataAccessor<Integer> LATCH_DIRECTION = SynchedEntityData.defineId(WorkerAnt.class, EntityDataSerializers.INT);
@@ -101,8 +97,6 @@ public class WorkerAnt extends Ant implements IAnimatable {
 
     public WorkerAnt(EntityType<? extends Ant> entityType, Level level) {
         super(entityType, level);
-
-        if(!level.isClientSide()){this.brain = new LeafCutterWorkerBrain(this);}
     }
 
 
@@ -138,7 +132,7 @@ public class WorkerAnt extends Ant implements IAnimatable {
 
     @Nullable
     public SpawnGroupData finalizeSpawn(ServerLevelAccessor pLevel, DifficultyInstance pDifficulty, MobSpawnType pReason, @Nullable SpawnGroupData pSpawnData, @Nullable CompoundTag pDataTag) {
-        this.setHomeColonyPos(this.blockPosition());
+        this.setHomePos(this.blockPosition());
         this.setFoodLocation(BlockPos.ZERO);
         this.setLatchDirection(findDigit((int)this.level.getGameTime(),1));
         this.setSubClass(findDigit((int)this.level.getGameTime(),1));
@@ -244,15 +238,16 @@ public class WorkerAnt extends Ant implements IAnimatable {
     public void aiStep() {
         super.aiStep();
         if(!this.level.isClientSide) {
-
-            this.brain.run(this);
+            LeafCutterWorkerBrain.run(this);
             if(this.memory.braincellStage == 3){this.memory.braincellStage = 1;}
+        }
+        else{
 
         }
         if(this.brain == null || this.memory == null){
             Actions.ERROR_MSG_ACTION.run(this);
         }
-        if(this.getWorkingStage() == 5){
+        if(this.getWorkingStage() == WorkingStages.LATCHING){
             if (this.getTarget() != null && this.level.isClientSide){
                 this.lookAt(this.getTarget(),360,360);
                 Actions.LATCH_ON.run(this);

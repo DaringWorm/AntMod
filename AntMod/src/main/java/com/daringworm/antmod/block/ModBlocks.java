@@ -65,9 +65,6 @@ public class ModBlocks {
             () -> new LeafyMixture(BlockBehaviour.Properties.of(Material.LEAVES).strength(0.2f).
                     strength(0.8f).requiresCorrectToolForDrops().noOcclusion()), ModCreativeModeTab.ANT_MOD_CTAB);
 
-    public static final RegistryObject<Block> PEACH_WOOD = registerBlock("peach_wood",
-            () -> new ModFlammableRotatedPillarBlock(BlockBehaviour.Properties.copy(Blocks.OAK_WOOD)),
-            ModCreativeModeTab.ANT_MOD_CTAB);
     public static final RegistryObject<Block> PEACH_LEAVES = registerBlock("peach_leaves",
             () -> new Block(BlockBehaviour.Properties.of(Material.LEAVES).strength(1f)
                     .requiresCorrectToolForDrops()), ModCreativeModeTab.ANT_MOD_CTAB);

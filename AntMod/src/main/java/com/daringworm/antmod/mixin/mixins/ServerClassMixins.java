@@ -1,7 +1,7 @@
 package com.daringworm.antmod.mixin.mixins;
 
 import com.daringworm.antmod.colony.AntColony;
-import com.daringworm.antmod.colony.misc.LevelColonies;
+import com.daringworm.antmod.colony.LevelColonies;
 import com.daringworm.antmod.mixin.tomixin.ServerLevelUtil;
 import com.google.common.collect.Lists;
 import net.minecraft.network.chat.Component;

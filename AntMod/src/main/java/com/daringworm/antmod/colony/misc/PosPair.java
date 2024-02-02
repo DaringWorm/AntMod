@@ -14,13 +14,13 @@ import net.minecraft.world.phys.shapes.VoxelShape;
 
 import java.util.Set;
 
-public class CheckableBlockPosPath implements AntUtils {
+public class PosPair implements AntUtils {
     public BlockPos top;
     public BlockPos bottom;
     static final double maxDistanceAllowed = 300d;
     public Level level;
 
-     public CheckableBlockPosPath(BlockPos top, BlockPos bottom, Level pLevel){
+     public PosPair(BlockPos top, BlockPos bottom, Level pLevel){
         this.top = top;
         this.bottom = bottom;
         this.level = pLevel;

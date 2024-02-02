@@ -11,6 +11,11 @@ import net.minecraft.client.gui.screens.MenuScreens;
 import net.minecraft.client.renderer.ItemBlockRenderTypes;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.entity.EntityRenderers;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.SpawnPlacements;
+import net.minecraft.world.entity.animal.Animal;
+import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.fml.common.Mod;
@@ -71,5 +76,7 @@ public class AntMod
         MenuScreens.register(ModMenuTypes.FUNGAL_CULTIVAR_MENU.get(), FungalContainerScreen::new);
     }
 
-    private void setup(final FMLCommonSetupEvent event){}
+    private void setup(final FMLCommonSetupEvent event){
+        SpawnPlacements.register(ModEntityTypes.ANTCARVER.get(), SpawnPlacements.Type.ON_GROUND, Heightmap.Types.WORLD_SURFACE, Animal::checkMobSpawnRules);
+    }
 }

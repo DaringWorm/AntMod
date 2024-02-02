@@ -4,7 +4,7 @@ import com.daringworm.antmod.block.ModBlocks;
 import com.daringworm.antmod.block.entity.custom.FungalContainerBlockEntity;
 import com.daringworm.antmod.entity.Ant;
 import com.daringworm.antmod.entity.custom.WorkerAnt;
-import com.daringworm.antmod.colony.misc.CheckableBlockPosPath;
+import com.daringworm.antmod.colony.misc.PosPair;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.TextComponent;
@@ -542,7 +542,7 @@ public interface AntUtils {
             }
         }
         else{
-            return new CheckableBlockPosPath(pAnt.blockPosition(), targetPos, pAnt.level).canConnectWithFloor(25);
+            return new PosPair(pAnt.blockPosition(), targetPos, pAnt.level).canConnectWithFloor(25);
         }
         return false;
     }

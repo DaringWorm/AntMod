@@ -1,45 +1,32 @@
-package com.daringworm.antmod.goals;
+package com.daringworm.antmod.colony;
 
 import com.daringworm.antmod.block.ModBlocks;
-import com.daringworm.antmod.entity.ModEntityTypes;
-import com.daringworm.antmod.entity.brains.parts.WorkingStages;
-import com.daringworm.antmod.entity.custom.AntCarver;
-import com.daringworm.antmod.entity.custom.QueenAnt;
-import com.daringworm.antmod.entity.custom.WorkerAnt;
-import com.daringworm.antmod.colony.AntColony;
-import com.daringworm.antmod.colony.misc.CheckableBlockPosPath;
+import com.daringworm.antmod.colony.misc.PosPair;
 import com.daringworm.antmod.colony.misc.PosSpherePair;
+import com.daringworm.antmod.goals.AntUtils;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.network.chat.TextComponent;
-import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.ai.goal.Goal;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.level.block.RenderShape;
-import net.minecraft.world.level.block.SupportType;
+import net.minecraft.world.level.block.*;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.level.material.FluidState;
-import net.minecraft.world.phys.Vec3;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Random;
 
-public class CarveGoal extends Goal implements AntUtils {
+public class ColonyGenerator implements AntUtils {
 
     private boolean isAcceptableWall (Block pBlock, boolean accepAir){
         return pBlock == Blocks.STONE || pBlock == Blocks.GRANITE || pBlock == Blocks.ANDESITE || pBlock == Blocks.DIORITE ||
                 pBlock == Blocks.COAL_ORE || pBlock == Blocks.IRON_ORE || pBlock == Blocks.COPPER_ORE ||
-                pBlock == Blocks.DRIPSTONE_BLOCK || pBlock == Blocks.GOLD_ORE || pBlock == Blocks.DIRT || pBlock == Blocks.GRASS_BLOCK ||
-                pBlock == Blocks.COARSE_DIRT || pBlock == Blocks.CLAY || pBlock == Blocks.MOSS_BLOCK || pBlock == Blocks.BONE_BLOCK ||
+                pBlock == Blocks.DRIPSTONE_BLOCK || pBlock == Blocks.GOLD_ORE || pBlock == Blocks.MOSS_BLOCK || pBlock == Blocks.BONE_BLOCK ||
                 pBlock == ModBlocks.ANT_AIR.get() || pBlock == Blocks.GLASS || pBlock == ModBlocks.FUNGUS_BLOCK.get() ||
                 (accepAir && pBlock == Blocks.AIR);
     }
 
-    private void placeSphere(BlockPos middlePos, double radius, Block block, Block block2, boolean randomSplotches, boolean acceptAir){
+    private void placeSphere(BlockPos middlePos, double radius, Block airBlock, Block wallBlock, boolean randomSplotches, boolean acceptAir){
         int mx = middlePos.getX();
         int my = middlePos.getY();
         int mz = middlePos.getZ();
@@ -49,17 +36,17 @@ public class CarveGoal extends Goal implements AntUtils {
                     BlockPos tempPos = new BlockPos (mx+rx, my+ry,mz+rz);
                     double dist = AntUtils.getDist(tempPos,middlePos);
 
-                    if (dist <= radius-1){
-                        carver.level.setBlock(tempPos, block.defaultBlockState(), 2);
+                    if (dist <= radius-1.5d){
+                        level.setBlock(tempPos, airBlock.defaultBlockState(), 2);
                     }
                     else if (dist > radius-1 && dist < radius+0.9){
-                        if (carver.level.getBlockState(tempPos) != block.defaultBlockState()){
+                        if (level.getBlockState(tempPos) != airBlock.defaultBlockState()){
                             boolean bool1 = Math.abs(tempPos.getX()%10 - tempPos.getZ()%10) < 5;
                             if(bool1 && randomSplotches) {
-                                carver.level.setBlock(tempPos, block2.defaultBlockState(), 2);
+                                level.setBlock(tempPos, wallBlock.defaultBlockState(), 2);
                             }
-                            else if(!isAcceptableWall(carver.level.getBlockState(tempPos).getBlock(), acceptAir)){
-                                carver.level.setBlock(tempPos, block2.defaultBlockState(), 2);
+                            else if(!isAcceptableWall(level.getBlockState(tempPos).getBlock(), acceptAir)){
+                                level.setBlock(tempPos, wallBlock.defaultBlockState(), 2);
                             }
                         }
                     }
@@ -68,7 +55,7 @@ public class CarveGoal extends Goal implements AntUtils {
         }
     }
 
-    private void generateRandomPassage(CheckableBlockPosPath pPath, Random rand, double width, Block block, Block block2){
+    private void generateRandomPassage(PosPair pPath, Random rand, double width, Block block, Block block2){
         BlockPos start = pPath.top;
         BlockPos end = pPath.bottom;
         int sX = start.getX();
@@ -105,7 +92,7 @@ public class CarveGoal extends Goal implements AntUtils {
         }
     }
 
-    private void connectWithPassage(CheckableBlockPosPath pPath, double width, Block block, Block block2, boolean replaceAir){
+    private void connectWithPassage(PosPair pPath, double width, Block block, Block block2, boolean replaceAir){
         BlockPos startPos = pPath.top;
         BlockPos endPos = pPath.bottom;
         BlockPos currentPos = startPos;
@@ -157,7 +144,7 @@ public class CarveGoal extends Goal implements AntUtils {
         }
     }
 
-    public static boolean nextBool(int yes, int no, Random rand){
+    static boolean nextBool(int yes, int no, Random rand){
         int total = yes+no;
         int chosen = (total>0)? rand.nextInt(total) : 0;
         return chosen <= yes;
@@ -241,7 +228,7 @@ public class CarveGoal extends Goal implements AntUtils {
     private BlockPos findExitPoint(BlockPos startPos, double maxIncline, Direction direction, Random rand){
 
             assert maxIncline != 0;
-            int depth = findSurfacePos(startPos, carver.level).getY() - startPos.getY();
+            int depth = findSurfacePos(startPos, level).getY() - startPos.getY();
             double distanceFromCenter = Math.abs(depth / maxIncline);
             int randomIntDistBound = rand.nextInt((int)(distanceFromCenter-distanceFromCenter/3)+1);
             int bigNumber = (randomIntDistBound >= (int)distanceFromCenter/2) ? randomIntDistBound : 0;
@@ -255,15 +242,15 @@ public class CarveGoal extends Goal implements AntUtils {
             int zVar = (direction == Direction.SOUTH || direction == Direction.NORTH) ?
                 ((direction == Direction.SOUTH) ? bigNumber : -bigNumber) : smallNumber;
 
-            BlockPos returnPos = findSurfacePos(startPos.offset(xVar, 0, zVar), carver.level);
+            BlockPos returnPos = findSurfacePos(startPos.offset(xVar, 0, zVar), level);
             for (int i = 1000; i > 0; i--) {
                 assert distanceFromCenter != 0;
                 if (((depth / distanceFromCenter) <= maxIncline)) {
                     return returnPos;
                 } else {
-                    returnPos = findSurfacePos(returnPos.offset(xVar / Math.abs(xVar), 0, zVar / Math.abs(zVar)), carver.level);
+                    returnPos = findSurfacePos(returnPos.offset(xVar / Math.abs(xVar), 0, zVar / Math.abs(zVar)), level);
                     distanceFromCenter = distanceFromCenter + 1.2;
-                    depth = findSurfacePos(returnPos, carver.level).getY() - startPos.getY();
+                    depth = findSurfacePos(returnPos, level).getY() - startPos.getY();
                 }
             }
 
@@ -297,34 +284,16 @@ public class CarveGoal extends Goal implements AntUtils {
     Block BLOCK2 = ModBlocks.LUMINOUSDEBRIS.get();
     Block BLOCK3 = ModBlocks.ANTDEBRIS.get();
 
-    private final AntCarver carver;
     private AntColony colony;
+    private Level level;
     boolean hasSpawnedStuff = false;
 
 
-    public CarveGoal(AntCarver carver) {
-        this.carver = carver;
+    public ColonyGenerator(Level pLevel) {
+        this.level = pLevel;
     }
 
-    public boolean canUse() {
-        return carver.isAlive();
-    }
-
-    public void start() {
-        super.start();
-    }
-
-
-    public void stop() {
-        super.stop();
-    }
-
-    public boolean requiresUpdateEveryTick() {
-        return true;
-    }
-
-
-    public void tick() {
+    public void generate(BlockPos pPos) {
         ArrayList<BlockState> fungusStateList = new ArrayList<>();
         for(int i = 5; i >= 0; i--){
             fungusStateList.add(ModBlocks.FUNGUS_BLOCK.get().defaultBlockState().setValue(BlockStateProperties.AGE_5, i));
@@ -332,19 +301,21 @@ public class CarveGoal extends Goal implements AntUtils {
 
 
         int numberOfBlocks = 0;
-        AntColony colony = new AntColony(carver.level,carver.getColonyID(),carver.blockPosition());
+        AntColony colony = new AntColony(level,level.getRandom().nextInt(),pPos);
         ArrayList<PosSpherePair> sphereArray = colony.getColonyBlueprint();
         for(PosSpherePair tempSphere : sphereArray){
             ArrayList<BlockPos> posList = tempSphere.getBlockPoses();
             for(BlockPos tempPos : posList){
-                if(carver.level.getBlockState(tempPos).getBlock() != ModBlocks.ANT_AIR.get()){
-                    carver.level.setBlock(tempPos,ModBlocks.ANT_AIR.get().defaultBlockState(), 2);
+                if(level.getBlockState(tempPos).getBlock() != ModBlocks.ANT_AIR.get()){
+                    level.setBlock(tempPos,ModBlocks.ANT_AIR.get().defaultBlockState(), 2);
 
                     for(Direction dir : Direction.values()){
                         BlockPos tempPos1 = tempPos.relative(dir,1);
-                        BlockState tempState = carver.getLevel().getBlockState(tempPos1);
-                        if(!carver.getLevel().getFluidState(tempPos1).isEmpty() || (!carver.getLevel().canSeeSky(tempPos1) && tempState.getBlock() == Blocks.AIR)){
-                            carver.getLevel().setBlock(tempPos1, ModBlocks.LUMINOUSDEBRIS.get().defaultBlockState(),2);
+                        BlockState tempState = level.getBlockState(tempPos1);
+                        if(!level.getFluidState(tempPos1).isEmpty()
+                                || (!level.canSeeSky(tempPos1) && tempState.getBlock() == Blocks.AIR)
+                                || (tempState.getBlock() instanceof FallingBlock)){
+                            level.setBlock(tempPos1, ModBlocks.LUMINOUSDEBRIS.get().defaultBlockState(),2);
                         }
                     }
                     numberOfBlocks++;
@@ -353,7 +324,7 @@ public class CarveGoal extends Goal implements AntUtils {
         }
 
         //Adds the ants and decoration and functionality blocks
-        {
+        /*{
             for (BlockPos roomPos : colony.roomPosList) {
                 sprinkleArea(roomPos, 8, 4, 10, ModBlocks.LEAFY_CONTAINER_BLOCK.get(), colony.random,carver.getLevel());
                 carpetArea(roomPos, 8, 4, fungusStateList, colony.random, carver.getLevel());
@@ -362,7 +333,7 @@ public class CarveGoal extends Goal implements AntUtils {
                 pAnt.moveTo(Vec3.atCenterOf(roomPos));
                 pAnt.setColonyID(carver.getColonyID());
                 pAnt.setWorkingStage(WorkingStages.SCOUTING);
-                pAnt.setHomeColonyPos(roomPos);
+                pAnt.setHomePos(roomPos);
                 pAnt.memory.workingStage = WorkingStages.SCOUTING;
                 carver.getLevel().addFreshEntity(pAnt);
                 pAnt.memory.surfacePos = carver.blockPosition();
@@ -376,17 +347,13 @@ public class CarveGoal extends Goal implements AntUtils {
             pQueen.moveTo(Vec3.atCenterOf(colony.queenRoomPos));
             pQueen.setColonyID(carver.getColonyID());
             pQueen.setWorkingStage(WorkingStages.FARMING);
-            pQueen.setHomeColonyPos(colony.queenRoomPos);
+            pQueen.setHomePos(colony.queenRoomPos);
             carver.getLevel().addFreshEntity(pQueen);
             pQueen.memory.surfacePos = carver.blockPosition();
             pQueen.setFirstSurfacePos(carver.blockPosition());
         }
+*/
 
-
-        for(ServerPlayer player : carver.level.getServer().getPlayerList().getPlayers()){
-            String thingToSay = "Successfully generated colony. Carver placed " + numberOfBlocks + " blocks.";
-            player.sendMessage(new TextComponent(thingToSay), player.getUUID());
-        }
-        carver.remove(Entity.RemovalReason.DISCARDED);
+        AntUtils.broadcastString(level,"Successfully generated colony. Carver placed " + numberOfBlocks + " blocks.");
     }
 }

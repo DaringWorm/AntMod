@@ -96,7 +96,7 @@ private static final int minAllowedHunger = 33000;
 
 
         if ((ant.getTarget() == null || !ant.getTarget().isAlive()) && ant.level.getNearestPlayer(ant,120) != null && aiTimer>10 && ant.getWorkingStage() == 2) {
-            BlockPos homePos = ant.getHomeColonyPos();
+            BlockPos homePos = ant.getHomePos();
             double dist2Home = ant.distanceToSqr(homePos.getX(), homePos.getY(), homePos.getZ());
             BlockPos foodPos = ant.getFoodLocation();
             double dist2food = ant.distanceToSqr(foodPos.getX(), foodPos.getY(), foodPos.getZ());
@@ -210,7 +210,7 @@ private static final int minAllowedHunger = 33000;
                     if (AntUtils.getDist(ant.blockPosition(), containerPos) < interactionDist) {
                         antAddItem((WorkerAnt) ant, ant.level.getBlockEntity(containerPos), ant.getMainHandItem());
                         ant.setHasCheckedHome(0);
-                        ant.setHomeColonyPos(containerPos);
+                        ant.setHomePos(containerPos);
                     }
                 }
             }
@@ -311,7 +311,7 @@ private static final int minAllowedHunger = 33000;
             }
             else{ant.setLastHurtByMob(null);}
         }
-        if(ant.getHunger() < minAllowedHunger && AntUtils.getDist(ant.blockPosition(),ant.getHomeColonyPos())<15){
+        if(ant.getHunger() < minAllowedHunger && AntUtils.getDist(ant.blockPosition(),ant.getHomePos())<15){
             ant.setWorkingStage(0);
             super.stop();
         }

@@ -21,7 +21,6 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
-import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.alchemy.PotionUtils;
@@ -141,9 +140,9 @@ public class FungalContainerBlockEntity extends BlockEntity implements MenuProvi
     }
 
 
-    public void takeInHandItem(Ant pEntity){
-        if(this.canAcceptHandItem(pEntity)){
-            ItemStack inStack = pEntity.getItemInHand(InteractionHand.MAIN_HAND);
+    public void takeInHandItem(Ant pAnt){
+        if(this.canAcceptHandItem(pAnt)){
+            ItemStack inStack = pAnt.getItemInHand(InteractionHand.MAIN_HAND);
             int itemsLeft = inStack.getCount();
             if(!inStack.isEmpty()) {
                 for (int i = 0; i < itemHandler.getSlots(); i++) {
@@ -152,7 +151,7 @@ public class FungalContainerBlockEntity extends BlockEntity implements MenuProvi
                         int tempCount = tempStack.getCount();
                         if (tempStack.isEmpty()) {
                             itemHandler.setStackInSlot(i, inStack);
-                            pEntity.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
+                            pAnt.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
                             break;
                         }
                         if (ItemStack.tagMatches(tempStack, inStack) && ItemStack.isSame(tempStack, inStack)) {
@@ -161,9 +160,9 @@ public class FungalContainerBlockEntity extends BlockEntity implements MenuProvi
                                 tempStack.setCount(tempStack.getCount()+itemsLeft);
                                 itemHandler.setStackInSlot(i,tempStack);
                                 itemsLeft = 0;
-                                pEntity.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
-                                pEntity.setHomeColonyPos(this.worldPosition);
-                                pEntity.memory.containerPos = this.worldPosition;
+                                pAnt.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
+                                pAnt.setHomePos(this.worldPosition);
+                                pAnt.memory.containerPos = this.worldPosition;
                             }
                             else{
                                 tempStack.setCount(tempStack.getMaxStackSize());
@@ -176,19 +175,19 @@ public class FungalContainerBlockEntity extends BlockEntity implements MenuProvi
             }
             this.setChanged();
         }
-        else{tempMethodForTest(pEntity.getLevel());}
+        else{tempMethodForTest(pAnt.getLevel());}
     }
 
 
     public static void tick(Level pLevel, BlockPos pPos, BlockState pState, FungalContainerBlockEntity pBlockEntity) {
         if(hasRecipe(pBlockEntity) && hasNotReachedStackLimit(pBlockEntity)) {
-            craftItem(pBlockEntity);
+            //craftItem(pBlockEntity);
         }
         if(!pLevel.isClientSide()){
             for(Ant pAnt : pLevel.getEntitiesOfClass(Ant.class, new AABB(pPos.getX()-10, pPos.getY()-5, pPos.getZ()-10,pPos.getX()+10, pPos.getY()+5, pPos.getZ()+10))){
                 if(pAnt.memory.containerPos == BlockPos.ZERO || pAnt.memory.containerPos == null ||
                         pLevel.getBlockState(pAnt.memory.containerPos).getBlock() != ModBlocks.LEAFY_CONTAINER_BLOCK.get() ||
-                AntUtils.getDist(pAnt.memory.containerPos, pAnt.getHomeColonyPos()) > AntUtils.getDist(pPos, pAnt.getHomeColonyPos())){
+                AntUtils.getDist(pAnt.memory.containerPos, pAnt.getHomePos()) > AntUtils.getDist(pPos, pAnt.getHomePos())){
                     pAnt.memory.containerPos = pPos;
                     pAnt.addEffect(new MobEffectInstance(MobEffects.GLOWING, 200));
                 }

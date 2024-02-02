@@ -102,7 +102,7 @@ public class AntEgg extends Ant implements IAnimatable {
                 pAnt.moveTo(Vec3.atCenterOf(this.blockPosition()));
                 pAnt.setColonyID(this.getColonyID());
                 pAnt.setWorkingStage(WorkingStages.SCOUTING);
-                pAnt.setHomeColonyPos(this.blockPosition());
+                pAnt.setHomePos(this.blockPosition());
                 pAnt.memory.workingStage = WorkingStages.SCOUTING;
                 this.getLevel().addFreshEntity(pAnt);
                 pAnt.memory.surfacePos = this.getFirstSurfacePos();

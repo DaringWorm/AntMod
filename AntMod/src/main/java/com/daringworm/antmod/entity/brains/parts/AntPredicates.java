@@ -6,6 +6,8 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.LivingEntity;
 
 public class AntPredicates {
+    public static final AntPredicate TRUE = new AntPredicate(a -> true);
+    public static final AntPredicate FALSE = new AntPredicate(a -> false);
     public static final AntPredicate IS_ALIVE = new AntPredicate(LivingEntity::isAlive);
     public static final AntPredicate TARGET_EXISTS = new AntPredicate(a -> (a.getTarget() != null && a.getTarget().isAlive() && a.canAttack(a.getTarget())) || a.getLastHurtByMob() != null);
     public static final AntPredicate HAS_SELECTED_TARGET = new AntPredicate(a -> a.getTarget() != null && a.getTarget().isAlive());

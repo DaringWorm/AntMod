@@ -13,6 +13,7 @@ import net.minecraft.core.Direction;
 import net.minecraft.network.chat.TextComponent;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
@@ -131,17 +132,16 @@ public class Action {
                         pAnt.walkTo(pAnt.getFirstSurfacePos(), 1, 4d);
                     }
                     else{
-                        if(pAnt.memory.colonyPos != null && pAnt.memory.colonyPos != BlockPos.ZERO){
-                            pAnt.walkTo(pAnt.memory.colonyPos, 1, 2d);
+                        if(pAnt.getColonyPos() != null && pAnt.getColonyPos() != BlockPos.ZERO){
+                            pAnt.walkTo(pAnt.getColonyPos(), 1, 2d);
                         }
                         else {
-                            pAnt.walkTo(pAnt.getHomeColonyPos(), 1, 2d);
+                            pAnt.walkTo(pAnt.getHomePos(), 1, 4d);
                         }
                     }
                 }
                 else {
-                    pAnt.walkTo(pAnt.getHomeColonyPos(), 1, 5d);
-
+                    pAnt.walkTo(pAnt.getHomePos(), 1, 4d);
                 }
             }
         }
@@ -334,18 +334,21 @@ public class Action {
             pAnt.setCanPickUpLoot(true);
             if(pAnt.memory.foundItemList.size() != 0) {
                 ItemEntity item = pAnt.memory.foundItemList.get(0);
-                if(pAnt.hasLineOfSight(item)) {
-                    pAnt.getNavigation().moveTo(item, 1);
-                    if (pAnt.getWorkingStage() == WorkingStages.SCOUTING) {
-                        pAnt.setWorkingStage(WorkingStages.FORAGING);
-                        pAnt.memory.workingStage = WorkingStages.FORAGING;
-                        if (pAnt.getLevel().canSeeSky(item.blockPosition())) {
-                            pAnt.memory.foodPos = item.blockPosition();
-                            pAnt.setFoodLocation(item.blockPosition());
-                        }
+                pAnt.getNavigation().moveTo(item, 1);
+                if (pAnt.getWorkingStage() == WorkingStages.SCOUTING) {
+                    pAnt.setWorkingStage(WorkingStages.FORAGING);
+                    pAnt.memory.workingStage = WorkingStages.FORAGING;
+                    if (pAnt.getLevel().canSeeSky(item.blockPosition())) {
+                        pAnt.memory.foodPos = item.blockPosition();
+                        pAnt.setFoodLocation(item.blockPosition());
                     }
                 }
+                if(pAnt.getNavigation().isStuck() || pAnt.getNavigation().isDone()){
+                    item.remove(Entity.RemovalReason.DISCARDED);
+                    pAnt.setItemInHand(InteractionHand.MAIN_HAND,item.getItem());
+                }
             }
+
         }
     }
 
@@ -420,8 +423,13 @@ public class Action {
         @Override
         public void run(Ant pAnt){
             if(pAnt.getLevel() instanceof ServerLevel){
+
+                String toSay = "";
+                if(pAnt.memory.errorAlertString == null){toSay = "Ant's brain encountered an error";}
+                else{toSay = pAnt.memory.errorAlertString;}
+
                 for(ServerPlayer player : pAnt.getLevel().getServer().getPlayerList().getPlayers()){
-                    player.sendMessage(new TextComponent("Ant's brain encountered an error"), player.getUUID());
+                    player.sendMessage(new TextComponent(toSay), player.getUUID());
                 }
             }
         }

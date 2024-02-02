@@ -1,4 +1,4 @@
 package com.daringworm.antmod.entity.brains;
 
-public class LeafCutterQueenBrain extends LeafCutterBrain{
+public final class LeafCutterQueenBrain extends LeafCutterBrain{
 }

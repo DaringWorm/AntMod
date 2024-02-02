@@ -20,10 +20,10 @@ import java.util.function.Supplier;
 
 import static com.daringworm.antmod.block.ModBlocks.BLOCKS;
 
-public class ModItems {public static final DeferredRegister<Item> ITEMS =
+public class ModItems {
+
+    public static final DeferredRegister<Item> ITEMS =
         DeferredRegister.create(ForgeRegistries.ITEMS, AntMod.MOD_ID);
-
-
 
     public static final RegistryObject<Item> FUNGUS = ITEMS.register("fungus",
             ()-> new Item(new Item.Properties().tab(ModCreativeModeTab.ANT_MOD_CTAB).stacksTo(64)));
