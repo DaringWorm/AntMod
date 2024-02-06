@@ -41,6 +41,8 @@ public abstract class ServerClassMixins implements ServerLevelUtil {
     @Override
     public AntColony getColonyWithID(int pID){return levelColonies.getColonyForID(pID);}
     @Override
+    public AntColony getFirstColony(){return levelColonies.getColonies().toList().get(0);}
+    @Override
     public void addColonyList(Set<AntColony> pSet){levelColonies = new LevelColonies<>(pSet);}
     @Override
     public void addColonyToList(AntColony pColony){levelColonies.add(pColony);}

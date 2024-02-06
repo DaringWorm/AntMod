@@ -54,6 +54,12 @@ public interface AntUtils {
         return target;
     }
 
+    public static int findDigit(int input, int digit){
+        int ten = (int) Math.pow(10,digit-1);
+        int noBigger = (input%(ten*10)-(input%ten));
+        return noBigger/ten;
+    }
+
     static boolean shouldSnip(BlockPos pPos, Level pLevel) {
 
         if(pPos == null || pPos == BlockPos.ZERO){return false;}
@@ -506,6 +512,16 @@ public interface AntUtils {
         for(BlockPos pos : pList) {
             if (getDist(pPos, pos)<getDist(returnPos,pPos)){
                 returnPos = pos;
+            }
+        }
+        return returnPos;
+    }
+
+    public static BlockPos findNearestBlockPos(BlockPos pos, ArrayList<BlockPos> pList){
+        BlockPos returnPos = BlockPos.ZERO;
+        for(BlockPos tempPos : pList) {
+            if (getDist(pos, tempPos)<getDist(returnPos,pos)){
+                returnPos = tempPos;
             }
         }
         return returnPos;

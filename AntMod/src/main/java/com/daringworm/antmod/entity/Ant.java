@@ -43,6 +43,7 @@ public abstract class Ant extends AgeableMob {
     public LeafCutterMemory memory;
 
     private static final EntityDataAccessor<BlockPos> HOME_POS = SynchedEntityData.defineId(Ant.class, EntityDataSerializers.BLOCK_POS);
+    private static final EntityDataAccessor<String> ROOM_ID = SynchedEntityData.defineId(Ant.class, EntityDataSerializers.STRING);
     private static final EntityDataAccessor<BlockPos> FIRST_SURFACE_POS = SynchedEntityData.defineId(Ant.class, EntityDataSerializers.BLOCK_POS);
     private static final EntityDataAccessor<BlockPos> FOOD_LOCATION = SynchedEntityData.defineId(Ant.class, EntityDataSerializers.BLOCK_POS);
     private static final EntityDataAccessor<Boolean> IS_ABOVEGROUND = SynchedEntityData.defineId(Ant.class, EntityDataSerializers.BOOLEAN);
@@ -73,6 +74,8 @@ public abstract class Ant extends AgeableMob {
     public BlockPos getHomePos() {
         return this.entityData.get(HOME_POS);
     }
+    public void setRoomID(String branchID) {this.entityData.set(ROOM_ID, branchID);}
+    public String getRoomID() {return this.entityData.get(ROOM_ID);}
     public void setFirstSurfacePos(BlockPos pPosition) {
         this.entityData.set(FIRST_SURFACE_POS, pPosition);
     }
@@ -144,7 +147,7 @@ public abstract class Ant extends AgeableMob {
         return noBigger/ten;
     }
 
-    public void walkTo(BlockPos blockPos, int speedModifier, double distanceModifier){
+    public void walkTo(BlockPos blockPos, double speedModifier, double distanceModifier){
         if(this.memory != null && this.memory.navDelay <= 25){return;}
         this.memory.navDelay = 0;
         assert blockPos != null && this.getLevel().isLoaded(blockPos) && blockPos != this.getNavigation().getTargetPos();
@@ -175,7 +178,37 @@ public abstract class Ant extends AgeableMob {
             this.getNavigation().moveTo(targetPos.getX(), targetPos.getY(), targetPos.getZ(), speedModifier);
             path = this.getNavigation().getPath();
         }
+    }
 
+    public void walkAlongList(ArrayList<BlockPos> posList, int speedModifier, double farthestAllowed){
+        assert !posList.isEmpty();
+
+        double MAX_ALLOWED_PATH_NODES = 4;
+
+        if(AntUtils.getDist(this.blockPosition(),posList.get(posList.size()-1)) > farthestAllowed) {
+            if (this.getNavigation().isDone() || this.getNavigation().isStuck()) {
+                BlockPos nearestPos = AntUtils.findNearestBlockPos(this, posList);
+                int index = posList.indexOf(nearestPos);
+                BlockPos nextPos = (index + 2 <= posList.size()) ? posList.get(index+1) : nearestPos;
+                BlockPos antPos = this.blockPosition();
+                double distanceToNearest = AntUtils.getHorizontalDist(nearestPos, antPos);
+                double distanceToNext = AntUtils.getHorizontalDist(nextPos, antPos);
+                double distanceFromNearestToNext = AntUtils.getDist(nearestPos, nextPos);
+
+                int verticalDistanceToNearest = Math.abs(antPos.getY()-nearestPos.getY());
+                int verticalDistanceToNext = Math.abs(antPos.getY()-nextPos.getY());
+                int verticalDistanceToFirst = Math.abs(antPos.getY()-posList.get(0).getY());
+
+                if(verticalDistanceToFirst < verticalDistanceToNearest){
+                    this.walkTo(posList.get(0), 1, Math.min(MAX_ALLOWED_PATH_NODES,distanceToNext));
+                }
+                else if (distanceToNext < distanceFromNearestToNext || distanceToNearest < farthestAllowed) {
+                    this.walkTo(nextPos, 1, Math.min(MAX_ALLOWED_PATH_NODES,distanceToNext));
+                } else {
+                    this.walkTo(nearestPos, 1, Math.min(MAX_ALLOWED_PATH_NODES,distanceToNearest));
+                }
+            }
+        }
     }
     
     public boolean shouldRunBrain() {
@@ -191,6 +224,7 @@ public abstract class Ant extends AgeableMob {
     protected void defineSynchedData() {
         super.defineSynchedData();
         this.entityData.define(HOME_POS, this.blockPosition());
+        this.entityData.define(ROOM_ID, "");
         this.entityData.define(FIRST_SURFACE_POS, BlockPos.ZERO);
         this.entityData.define(FOOD_LOCATION, BlockPos.ZERO);
         this.entityData.define(IS_ABOVEGROUND, false);
@@ -208,6 +242,7 @@ public abstract class Ant extends AgeableMob {
         pCompound.putInt("HomePosX", this.getHomePos().getX());
         pCompound.putInt("HomePosY", this.getHomePos().getY());
         pCompound.putInt("HomePosZ", this.getHomePos().getZ());
+        pCompound.putString("RoomID", this.getRoomID());
         pCompound.putBoolean("IsAboveground", this.getIsAboveground());
         pCompound.putBoolean("IsInTransition", this.getIsInTransition());
         pCompound.putBoolean("IsInTransition2", this.getIsSnippingAnimation());
@@ -233,6 +268,7 @@ public abstract class Ant extends AgeableMob {
         int j = pCompound.getInt("HomePosY");
         int k = pCompound.getInt("HomePosZ");
         this.setHomePos(new BlockPos(i, j, k));
+        this.setRoomID(pCompound.getString("RoomID"));
         super.readAdditionalSaveData(pCompound);
         this.setIsAboveground(pCompound.getBoolean("IsAboveground"));
         this.setIsInTransition(pCompound.getBoolean("IsInTransition"));

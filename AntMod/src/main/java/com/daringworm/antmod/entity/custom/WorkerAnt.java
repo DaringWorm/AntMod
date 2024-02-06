@@ -108,7 +108,7 @@ public class WorkerAnt extends Ant implements IAnimatable {
     public static AttributeSupplier setAttributes(){
         return Animal.createMobAttributes()
                 .add(Attributes.MAX_HEALTH, 20)
-                .add(Attributes.MOVEMENT_SPEED, 0.2)
+                .add(Attributes.MOVEMENT_SPEED, 0.33)
                 .add(Attributes.ATTACK_DAMAGE, 5)
                 .add(Attributes.ATTACK_SPEED, 5)
                 .add(Attributes.ARMOR, 8)

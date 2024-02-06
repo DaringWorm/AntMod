@@ -20,7 +20,7 @@ public class AntPredicates {
     public static final AntPredicate HAS_PASSIVE_TARGET = new AntPredicate(a -> a.memory.passiveTarget != null && a.memory.passiveTarget.isAlive());
     public static final AntPredicate CAN_REACH_PASSIVE_TARGET = new AntPredicate(a -> a.memory.passiveTarget != null && a.getDistTo(a.memory.passiveTarget.blockPosition())<2.3d);
     public static final AntPredicate HAS_ITEM = new AntPredicate(a -> !a.getMainHandItem().isEmpty());
-    public static final AntPredicate FOUND_CONTAINER = new AntPredicate(a -> a.memory.containerPos != BlockPos.ZERO && a.getLevel().getBlockState(a.memory.containerPos).getBlock() == ModBlocks.LEAFY_CONTAINER_BLOCK.get() && AntUtils.getDist(a.blockPosition(),a.memory.containerPos) < 10);
+    public static final AntPredicate FOUND_CONTAINER = new AntPredicate(a -> a.memory.containerPos != BlockPos.ZERO && a.getLevel().getBlockState(a.memory.containerPos).getBlock() == ModBlocks.LEAFY_CONTAINER_BLOCK.get() && AntUtils.getDist(a.blockPosition(),a.memory.containerPos) < 16d);
     public static final AntPredicate SHOULD_SNIP_INTEREST = new AntPredicate(a -> a.memory.foodStatePredicate(a).test(a.memory.interestPos));
 
 

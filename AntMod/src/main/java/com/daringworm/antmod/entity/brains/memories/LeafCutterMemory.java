@@ -1,5 +1,6 @@
 package com.daringworm.antmod.entity.brains.memories;
 
+import com.daringworm.antmod.colony.misc.ColonyBranch;
 import com.daringworm.antmod.entity.Ant;
 import com.daringworm.antmod.entity.brains.parts.Braincell;
 import com.daringworm.antmod.entity.brains.parts.WorkingStages;
@@ -9,6 +10,7 @@ import com.daringworm.antmod.colony.AntColony;
 import com.daringworm.antmod.colony.misc.PosSpherePair;
 import com.daringworm.antmod.mixin.tomixin.ServerLevelUtil;
 import net.minecraft.core.BlockPos;
+import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.item.ItemEntity;
@@ -45,6 +47,9 @@ public class LeafCutterMemory {
     public HashSet<BlockPos> fungusPosSet = new HashSet<>();
     public ArrayList<BlockPos> containerPosSet = new ArrayList<>();
     public ArrayList<ItemEntity> foundItemList = new ArrayList<>();
+    public ArrayList<BlockPos> goUndergroundList = new ArrayList<>();
+
+    public ColonyBranch colonyBranch;
 
     public Predicate<BlockPos> foodStatePredicate(Ant pAnt){
         return pPos -> {
@@ -65,9 +70,11 @@ public class LeafCutterMemory {
         pAnt.setWorkingStage(WorkingStages.SCOUTING);
         this.workingStage = pAnt.getWorkingStage();
         this.breakingProgress = 0;
+        this.containerPos = pAnt.getHomePos();
     }
 
     public void softRefresh(Ant pAnt){
+        this.containerPos = pAnt.getHomePos();
         this.pSLevel = (ServerLevel) pAnt.getLevel();
         assert pAnt.getLevel() instanceof ServerLevel;
 
@@ -76,12 +83,25 @@ public class LeafCutterMemory {
         this.workingStage = (pAnt.getWorkingStage());
         this.hungerLevel = pAnt.getHunger();
         this.foundItemList = ((ArrayList<ItemEntity>) pAnt.getLevel().getEntitiesOfClass(ItemEntity.class,pAnt.getBoundingBox().inflate(6)));
+        AntColony colony = ((ServerLevelUtil) (pSLevel)).getColonyWithID(cID);
 
         if(pAnt.getHomePos() == BlockPos.ZERO){pAnt.setHomePos(pAnt.blockPosition());}
         this.homePos = pAnt.getHomePos();
 
-        if(pAnt instanceof QueenAnt && ((ServerLevelUtil) pSLevel).getColonyWithID(pAnt.getColonyID()) == null){
-            ((ServerLevelUtil) (pSLevel)).addColonyToList(new AntColony(pSLevel, this.cID, this.homePos));
+        if(pAnt instanceof QueenAnt && colony == null){
+            colony = new AntColony(pSLevel, this.cID, this.homePos);
+            ((ServerLevelUtil) (pSLevel)).addColonyToList(colony);
+        }
+
+
+        if(colony != null) {
+            this.colonyBranch = colony.tunnels;
+            if (this.colonyBranch != null) {
+                pAnt.setRoomID(this.colonyBranch.getNearestBranchID(this.homePos));
+                if(pAnt.getRoomID() != null && this.goUndergroundList.isEmpty()) {
+                    this.goUndergroundList = (this.colonyBranch.getPosesToBranch(pAnt.getRoomID()));
+                }
+            }
         }
 
         if(this.workingStage == WorkingStages.ATTACKING || this.workingStage == WorkingStages.LATCHING){
@@ -99,9 +119,8 @@ public class LeafCutterMemory {
         if(this.surfacePos == null || this.surfacePos == BlockPos.ZERO){
             this.surfacePos = pAnt.getFirstSurfacePos();
             if(this.surfacePos == null || this.surfacePos == BlockPos.ZERO){
-                AntColony pColony = ((ServerLevelUtil)pAnt.getLevel()).getColonyWithID(pAnt.getColonyID());
-                if(pColony != null) {
-                    this.surfacePos = ((ServerLevelUtil) pAnt.getLevel()).getColonyWithID(pAnt.getColonyID()).startPos;
+                if(colony != null) {
+                    this.surfacePos = colony.startPos;
                     pAnt.setFirstSurfacePos(this.surfacePos);
                 }
             }

@@ -31,7 +31,7 @@ import java.util.Objects;
 public class WorkerAntRenderer extends ExtendedGeoEntityRenderer<WorkerAnt> {
     public WorkerAntRenderer(EntityRendererProvider.Context renderManager) {
         super(renderManager, new WorkerAntModel());
-        this.shadowRadius = 0.15f;
+        this.shadowRadius = 0.3f;
     }
 
 
@@ -92,7 +92,7 @@ public class WorkerAntRenderer extends ExtendedGeoEntityRenderer<WorkerAnt> {
              MultiBufferSource renderTypeBuffer, VertexConsumer vertexBuilder, int packedLightIn, ResourceLocation textureLocation) {
 
         float v = (ant.getSubClass()+20)/30f;
-        stack.scale(v*0.4f, v*0.4f, v*0.4f);
+        stack.scale(v*0.8f, v*0.8f, v*0.8f);
 
         return super.getRenderType(ant, partialTicks, stack, renderTypeBuffer, vertexBuilder, packedLightIn, textureLocation);
     }

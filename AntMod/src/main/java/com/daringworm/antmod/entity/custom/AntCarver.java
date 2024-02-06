@@ -269,10 +269,8 @@ public class AntCarver extends Ant implements IAnimatable {
 
     public void aiStep() {
         if(!this.level.isClientSide) {
-            if(Math.abs(this.getY()-this.getLevel().getSeaLevel())<10) {
-                ColonyGenerator goal = new ColonyGenerator(this.getLevel());
-                goal.generate(this.blockPosition());
-            }
+            ColonyGenerator goal = new ColonyGenerator(this.getLevel());
+            goal.generate(this.blockPosition());
             this.remove(RemovalReason.DISCARDED);
         }
     }

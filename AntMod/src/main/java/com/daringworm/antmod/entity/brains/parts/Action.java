@@ -20,12 +20,17 @@ import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.*;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.storage.loot.LootContext;
+import net.minecraft.world.level.storage.loot.parameters.LootContextParam;
 import net.minecraft.world.phys.Vec3;
+import org.spongepowered.asm.mixin.Shadow;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 public class Action {
 
@@ -127,21 +132,8 @@ public class Action {
         @Override
         public void run(Ant pAnt){
             if(pAnt.getNavigation().isStuck() || pAnt.getNavigation().isDone()){
-                if(pAnt.getLevel().canSeeSky(pAnt.blockPosition()) || pAnt.getLevel().getBlockState(pAnt.blockPosition()).getBlock() != ModBlocks.ANT_AIR.get()){
-                    if(AntUtils.getHorizontalDist(pAnt.blockPosition(),pAnt.getFirstSurfacePos()) > 4d) {
-                        pAnt.walkTo(pAnt.getFirstSurfacePos(), 1, 4d);
-                    }
-                    else{
-                        if(pAnt.getColonyPos() != null && pAnt.getColonyPos() != BlockPos.ZERO){
-                            pAnt.walkTo(pAnt.getColonyPos(), 1, 2d);
-                        }
-                        else {
-                            pAnt.walkTo(pAnt.getHomePos(), 1, 4d);
-                        }
-                    }
-                }
-                else {
-                    pAnt.walkTo(pAnt.getHomePos(), 1, 4d);
+                if(!pAnt.memory.goUndergroundList.isEmpty()) {
+                    pAnt.walkAlongList(pAnt.memory.goUndergroundList, 1, 4d);
                 }
             }
         }
@@ -225,11 +217,21 @@ public class Action {
             if(pPos != BlockPos.ZERO && pAnt.getDistTo(pPos) < 3d) {
                 if (blockToughness < breakingProgress) {
                     BlockState pState = pAnt.getLevel().getBlockState(pPos);
-
+                    ArrayList<ItemStack> drops = (ArrayList<ItemStack>) Block.getDrops(pState, (ServerLevel) pAnt.getLevel(),pPos,pAnt.getLevel().getBlockEntity(pPos));
 
                     if(pState.getBlock() instanceof CropBlock){
                         if(((CropBlock)pState.getBlock()).getMaxAge() == pState.getValue(((CropBlock) pState.getBlock()).getAgeProperty())) {
-                            pAnt.getLevel().destroyBlock(pPos, true);
+                            pAnt.getLevel().destroyBlock(pPos, false);
+                            if(!drops.isEmpty()) {
+                                pAnt.setItemInHand(InteractionHand.MAIN_HAND, drops.get(0));
+                                drops.remove(0);
+                                if(!drops.isEmpty()){
+                                    for(ItemStack stack : drops){
+                                        ItemEntity entity = new ItemEntity(pAnt.getLevel(),pAnt.getX(),pAnt.getY(),pAnt.getZ(),stack);
+                                        pAnt.getLevel().addFreshEntity(entity);
+                                    }
+                                }
+                            }
                             pAnt.memory.excavationListCooked.remove(pAnt.memory.interestPos);
                             pAnt.memory.interestPos = BlockPos.ZERO;
                             pAnt.memory.breakingProgress = 0;
@@ -243,13 +245,24 @@ public class Action {
                         }
                     }
                     else {
-                        pAnt.getLevel().destroyBlock(pPos, true);
+                        pAnt.getLevel().destroyBlock(pPos, false);
                         pAnt.memory.excavationListCooked.remove(pAnt.memory.interestPos);
                         pAnt.memory.interestPos = BlockPos.ZERO;
                         pAnt.memory.breakingProgress = 0;
                         pAnt.setSnippingAnimation(false);
                         if(pAnt.getLevel().canSeeSky(pPos) && pAnt.getDistTo(pAnt.getFirstSurfacePos())>45) {
                             pAnt.getLevel().setBlock(pPos, ModBlocks.FERTILE_AIR.get().defaultBlockState(), 2);
+                        }
+                    }
+
+                    if(!drops.isEmpty()) {
+                        pAnt.setItemInHand(InteractionHand.MAIN_HAND, drops.get(0));
+                        drops.remove(0);
+                        if(!drops.isEmpty()){
+                            for(ItemStack stack : drops){
+                                ItemEntity entity = new ItemEntity(pAnt.getLevel(),pAnt.getX(),pAnt.getY(),pAnt.getZ(),stack);
+                                pAnt.getLevel().addFreshEntity(entity);
+                            }
                         }
                     }
                 }
@@ -270,7 +283,7 @@ public class Action {
         public void run(Ant pAnt){
             BlockPos pPos = pAnt.memory.interestPos;
             int breakingProgress = pAnt.memory.breakingProgress;
-            float blockToughness = pAnt.level.getBlockState(pPos).getDestroySpeed(pAnt.level, pPos)*24;
+            float blockToughness = Math.max(16, (pAnt.level.getBlockState(pPos).getDestroySpeed(pAnt.level, pPos)*32));
             int destroyProgress = (int)((breakingProgress/blockToughness)*10);
 
             if(pPos != BlockPos.ZERO) {
@@ -361,7 +374,6 @@ public class Action {
         }
     }
 
-
     public static final class AttackEntityAction extends Action {
         @Override
         public void run(Ant pAnt){
@@ -403,6 +415,8 @@ public class Action {
 
                 if(loopTest){
                     Vec3 changevec = ((WorkerAnt) pAnt).getLatchOffset();
+
+                    pAnt.startRiding(pAnt.getTarget());
                     pAnt.moveTo(target.position().add(target.getDeltaMovement().add(new Vec3(0,target.getBbHeight()/2,0)).add(changevec)));
                     pAnt.setDeltaMovement(target.getDeltaMovement());
                     pAnt.getLookControl().setLookAt(target);
@@ -425,10 +439,9 @@ public class Action {
             if(pAnt.getLevel() instanceof ServerLevel){
 
                 String toSay = "";
-                if(pAnt.memory.errorAlertString == null){toSay = "Ant's brain encountered an error";}
-                else{toSay = pAnt.memory.errorAlertString;}
+                toSay = Objects.requireNonNullElse(pAnt.memory.errorAlertString, "Ant's brain encountered an error");
 
-                for(ServerPlayer player : pAnt.getLevel().getServer().getPlayerList().getPlayers()){
+                for(ServerPlayer player : Objects.requireNonNull(pAnt.getLevel().getServer()).getPlayerList().getPlayers()){
                     player.sendMessage(new TextComponent(toSay), player.getUUID());
                 }
             }

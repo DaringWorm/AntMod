@@ -19,7 +19,7 @@ public class ModEntityTypes {
 
    public static final RegistryObject<EntityType<WorkerAnt>> WORKERANT =
            ENTITY_TYPES.register("workerant", () -> EntityType.Builder.of(WorkerAnt::new, MobCategory.CREATURE)
-                   .sized( 0.6f, 0.5f)
+                   .sized( 0.90f, 0.66f)
                    .build(new ResourceLocation(AntMod.MOD_ID, "workerant").toString())
            );
 

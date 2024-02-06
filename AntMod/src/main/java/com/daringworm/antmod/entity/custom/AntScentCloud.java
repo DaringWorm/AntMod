@@ -74,7 +74,7 @@ public class AntScentCloud extends Entity implements IAnimatable {
                 timer = 0;
             }
 
-            if(this.AGE > 8000){this.remove(RemovalReason.DISCARDED);}
+            if(this.AGE > 4000){this.remove(RemovalReason.DISCARDED);}
 
             if (timer == 0 && hasDataToStart()) {
                 List<WorkerAnt> antsInVicinity = this.getLevel().getEntitiesOfClass(WorkerAnt.class, this.getBoundingBox().inflate(24,6,24));

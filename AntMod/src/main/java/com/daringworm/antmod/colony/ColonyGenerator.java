@@ -1,8 +1,12 @@
 package com.daringworm.antmod.colony;
 
 import com.daringworm.antmod.block.ModBlocks;
+import com.daringworm.antmod.colony.misc.ColonyGenUtils;
 import com.daringworm.antmod.colony.misc.PosPair;
 import com.daringworm.antmod.colony.misc.PosSpherePair;
+import com.daringworm.antmod.entity.ModEntityTypes;
+import com.daringworm.antmod.entity.brains.parts.WorkingStages;
+import com.daringworm.antmod.entity.custom.WorkerAnt;
 import com.daringworm.antmod.goals.AntUtils;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -12,6 +16,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.level.material.FluidState;
+import net.minecraft.world.phys.Vec3;
 
 import java.util.ArrayList;
 import java.util.Random;
@@ -83,7 +88,7 @@ public class ColonyGenerator implements AntUtils {
 
             howLongX = eX-lastPos.getX();
             howLongZ = eZ-lastPos.getZ();
-            xOrZ = nextBool(Math.abs(howLongX),Math.abs(howLongZ),rand);
+            xOrZ = ColonyGenUtils.nextBool(Math.abs(howLongX),Math.abs(howLongZ),rand);
             if((xOrZ && howLongX != 0) || howLongZ == 0){xOff = (howLongX > 0) ? 1 : -1;}
             else{zOff = (howLongZ > 0) ? 1: -1;}
 
@@ -142,12 +147,6 @@ public class ColonyGenerator implements AntUtils {
             distToEnd = AntUtils.getDist(currentPos,endPos);
             step++;
         }
-    }
-
-    static boolean nextBool(int yes, int no, Random rand){
-        int total = yes+no;
-        int chosen = (total>0)? rand.nextInt(total) : 0;
-        return chosen <= yes;
     }
 
     private void createRandomRoom(double height, int size, BlockPos center, Random rand, Block wallBlock, boolean randomSplotches){
@@ -215,7 +214,7 @@ public class ColonyGenerator implements AntUtils {
                     BlockState tempState = pLevel.getBlockState(tempPos);
                     if(tempState.getRenderShape() == RenderShape.INVISIBLE && tempState.getFluidState().getAmount() != FluidState.AMOUNT_FULL) {
                         BlockState underTempPos = pLevel.getBlockState(tempPos.below());
-                        boolean allow = nextBool(chancePercent, 100, rand);
+                        boolean allow = ColonyGenUtils.nextBool(chancePercent, 100, rand);
                         if(underTempPos.isFaceSturdy(pLevel,tempPos.below(),Direction.UP, SupportType.FULL) && allow){
                             pLevel.setBlock(tempPos,pBlock.defaultBlockState(),2);
                         }
@@ -323,36 +322,23 @@ public class ColonyGenerator implements AntUtils {
             }
         }
 
-        //Adds the ants and decoration and functionality blocks
-        /*{
-            for (BlockPos roomPos : colony.roomPosList) {
-                sprinkleArea(roomPos, 8, 4, 10, ModBlocks.LEAFY_CONTAINER_BLOCK.get(), colony.random,carver.getLevel());
-                carpetArea(roomPos, 8, 4, fungusStateList, colony.random, carver.getLevel());
+        //Adds the ants, decoration, and functionality blocks
 
-                WorkerAnt pAnt = new WorkerAnt(ModEntityTypes.WORKERANT.get(), carver.getLevel());
-                pAnt.moveTo(Vec3.atCenterOf(roomPos));
-                pAnt.setColonyID(carver.getColonyID());
-                pAnt.setWorkingStage(WorkingStages.SCOUTING);
-                pAnt.setHomePos(roomPos);
-                pAnt.memory.workingStage = WorkingStages.SCOUTING;
-                carver.getLevel().addFreshEntity(pAnt);
-                pAnt.memory.surfacePos = carver.blockPosition();
-                pAnt.setFirstSurfacePos(carver.blockPosition());
-            }
+        for (BlockPos roomPos : colony.tunnels.listRoomPoses()) {
+            sprinkleArea(roomPos, 8, 4, 10, ModBlocks.LEAFY_CONTAINER_BLOCK.get(), colony.random, level);
+            carpetArea(roomPos, 8, 4, fungusStateList, colony.random, level);
 
-            sprinkleArea(colony.queenRoomPos, 8, 4, 10, ModBlocks.LEAFY_CONTAINER_BLOCK.get(), colony.random,carver.getLevel());
-            carpetArea(colony.queenRoomPos, 8, 4, fungusStateList, colony.random, carver.getLevel());
-
-            QueenAnt pQueen = new QueenAnt(ModEntityTypes.QUEENANT.get(), carver.getLevel());
-            pQueen.moveTo(Vec3.atCenterOf(colony.queenRoomPos));
-            pQueen.setColonyID(carver.getColonyID());
-            pQueen.setWorkingStage(WorkingStages.FARMING);
-            pQueen.setHomePos(colony.queenRoomPos);
-            carver.getLevel().addFreshEntity(pQueen);
-            pQueen.memory.surfacePos = carver.blockPosition();
-            pQueen.setFirstSurfacePos(carver.blockPosition());
+            WorkerAnt pAnt = new WorkerAnt(ModEntityTypes.WORKERANT.get(), level);
+            pAnt.moveTo(Vec3.atCenterOf(roomPos));
+            pAnt.setColonyID(colony.colonyID);
+            pAnt.setWorkingStage(WorkingStages.SCOUTING);
+            pAnt.setHomePos(roomPos);
+            pAnt.memory.workingStage = WorkingStages.SCOUTING;
+            level.addFreshEntity(pAnt);
+            pAnt.memory.surfacePos = pPos;
+            pAnt.setFirstSurfacePos(pPos);
         }
-*/
+
 
         AntUtils.broadcastString(level,"Successfully generated colony. Carver placed " + numberOfBlocks + " blocks.");
     }

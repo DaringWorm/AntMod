@@ -184,12 +184,15 @@ public class FungalContainerBlockEntity extends BlockEntity implements MenuProvi
             //craftItem(pBlockEntity);
         }
         if(!pLevel.isClientSide()){
-            for(Ant pAnt : pLevel.getEntitiesOfClass(Ant.class, new AABB(pPos.getX()-10, pPos.getY()-5, pPos.getZ()-10,pPos.getX()+10, pPos.getY()+5, pPos.getZ()+10))){
-                if(pAnt.memory.containerPos == BlockPos.ZERO || pAnt.memory.containerPos == null ||
-                        pLevel.getBlockState(pAnt.memory.containerPos).getBlock() != ModBlocks.LEAFY_CONTAINER_BLOCK.get() ||
-                AntUtils.getDist(pAnt.memory.containerPos, pAnt.getHomePos()) > AntUtils.getDist(pPos, pAnt.getHomePos())){
+            for(Ant pAnt : pLevel.getEntitiesOfClass(Ant.class, new AABB(pPos.getX()-5, pPos.getY()-3, pPos.getZ()-5,pPos.getX()+5, pPos.getY()+3, pPos.getZ()+5))){
+                if(pLevel.getBlockState(pAnt.getHomePos()).getBlock() != ModBlocks.LEAFY_CONTAINER_BLOCK.get() /*||
+                        AntUtils.getDist(pPos,pAnt.getHomePos()) < AntUtils.getDist(pAnt.memory.containerPos, pAnt.getHomePos())*/){
+                    pAnt.setHomePos(pPos);
                     pAnt.memory.containerPos = pPos;
                     pAnt.addEffect(new MobEffectInstance(MobEffects.GLOWING, 200));
+                }
+                else if(pAnt.memory.containerPos == null){
+                    pAnt.memory.containerPos = pAnt.getHomePos();
                 }
             }
         }

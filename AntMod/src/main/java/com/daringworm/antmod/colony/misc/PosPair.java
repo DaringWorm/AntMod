@@ -26,6 +26,11 @@ public class PosPair implements AntUtils {
         this.level = pLevel;
     }
 
+    public PosPair(BlockPos top, BlockPos bottom){
+        this.top = top;
+        this.bottom = bottom;
+    }
+
     public boolean canConnectWithFloor(int distance){
         if(AntUtils.getDist(top,bottom)>distance){return false;}
         if(top == bottom){return true;}
