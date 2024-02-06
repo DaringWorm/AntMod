@@ -32,6 +32,10 @@ public class ModBlocks {
             () -> new Block(BlockBehaviour.Properties.of(Material.STONE).strength(1.5f)
                     .requiresCorrectToolForDrops()), ModCreativeModeTab.ANT_MOD_CTAB);
 
+    public static final RegistryObject<Block> ANT_DIRT = registerBlock("ant_dirt",
+            () -> new Block(BlockBehaviour.Properties.of(Material.DIRT).strength(0.5f)
+                    .requiresCorrectToolForDrops()), ModCreativeModeTab.ANT_MOD_CTAB);
+
     public static final RegistryObject<Block> ANTDEBRIS = registerBlock("ant_debris",
             () -> new Block(BlockBehaviour.Properties.of(Material.SPONGE).strength(1f)
                     .requiresCorrectToolForDrops()), ModCreativeModeTab.ANT_MOD_CTAB);

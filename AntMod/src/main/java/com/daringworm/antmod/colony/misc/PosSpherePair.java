@@ -3,19 +3,28 @@ package com.daringworm.antmod.colony.misc;
 import com.daringworm.antmod.block.ModBlocks;
 import com.daringworm.antmod.goals.AntUtils;
 import net.minecraft.core.BlockPos;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.state.BlockState;
 
 import java.util.ArrayList;
 
 public class PosSpherePair {
     public BlockPos blockPos;
     public double radius;
-    public boolean acceptAir;
+    private boolean checkSky = false;
 
     public PosSpherePair(BlockPos center, double sphereRadius){
         this.blockPos = center;
         this.radius = sphereRadius;
+    }
+
+    public PosSpherePair(BlockPos center, double sphereRadius, boolean runSkyCheck){
+        this.blockPos = center;
+        this.radius = sphereRadius;
+        this.checkSky = runSkyCheck;
     }
 
     public ArrayList<BlockPos> getBlockPoses(){
@@ -53,5 +62,23 @@ public class PosSpherePair {
         }
 
         return returnList;
+    }
+
+    public void setSphere(ServerLevel pLevel, Block innerBlock, Block outerBlock, double wallThickness){
+        PosSpherePair outerShell = new PosSpherePair(this.blockPos,this.radius+wallThickness);
+        ArrayList<BlockPos> totalList = outerShell.getBlockPoses();
+        ArrayList<BlockPos> innerList = this.getBlockPoses();
+        totalList.removeAll(innerList);
+        for(BlockPos pos : totalList){
+            if(!checkSky || !pLevel.canSeeSky(pos)) {
+                BlockState pState = pLevel.getBlockState(pos);
+                if (pState.getBlock() != innerBlock && pState.getBlock() != outerBlock) {
+                    pLevel.setBlock(pos, outerBlock.defaultBlockState(), 2);
+                }
+            }
+        }
+        for(BlockPos pos : innerList){
+            pLevel.setBlock(pos, innerBlock.defaultBlockState(),2);
+        }
     }
 }

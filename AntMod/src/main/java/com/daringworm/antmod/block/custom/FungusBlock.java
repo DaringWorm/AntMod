@@ -141,7 +141,6 @@ public class FungusBlock extends Block {
         if (!pState.canSurvive(pLevel, pPos)) {
             pLevel.destroyBlock(pPos, true);
         }
-
     }
 
     /**

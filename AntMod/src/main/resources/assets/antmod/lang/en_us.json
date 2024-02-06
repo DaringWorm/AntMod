@@ -23,5 +23,7 @@
 
   "block.antmod.leafy_mixture": "Leafy Mixture",
 
+  "block.antmod.ant_dirt": "Ant Dirt",
+
   "entity.antmod.worker_ant": "Worker Leafcutter"
 }

@@ -170,8 +170,9 @@ public class AntColony implements AutoCloseable{
         random = new Random((long) startPos.getX()*startPos.getY()*startPos.getZ());
 
         //makes the entrance
-        returnList.add(new PosSpherePair(startPos.above(4),7));
+        returnList.add(new PosSpherePair(startPos.above(4),7, true));
 
+        //makes the rest
         this.tunnels.generateNextBranch(35,-20,false);
         this.tunnels.generateNextBranches(5, 48,1,0,24,true);
         this.tunnels.generateNextBranches(2, 43,1,0,20,true);

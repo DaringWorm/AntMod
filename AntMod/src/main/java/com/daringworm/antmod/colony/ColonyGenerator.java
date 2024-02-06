@@ -10,6 +10,7 @@ import com.daringworm.antmod.entity.custom.WorkerAnt;
 import com.daringworm.antmod.goals.AntUtils;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.*;
 import net.minecraft.world.level.block.state.BlockState;
@@ -280,7 +281,7 @@ public class ColonyGenerator implements AntUtils {
     private int PASSAGE_LENGTH = 30;
     
     Block BLOCK1 = ModBlocks.ANT_AIR.get();
-    Block BLOCK2 = ModBlocks.LUMINOUSDEBRIS.get();
+    Block BLOCK2 = ModBlocks.ANT_DIRT.get();
     Block BLOCK3 = ModBlocks.ANTDEBRIS.get();
 
     private AntColony colony;
@@ -302,24 +303,8 @@ public class ColonyGenerator implements AntUtils {
         int numberOfBlocks = 0;
         AntColony colony = new AntColony(level,level.getRandom().nextInt(),pPos);
         ArrayList<PosSpherePair> sphereArray = colony.getColonyBlueprint();
-        for(PosSpherePair tempSphere : sphereArray){
-            ArrayList<BlockPos> posList = tempSphere.getBlockPoses();
-            for(BlockPos tempPos : posList){
-                if(level.getBlockState(tempPos).getBlock() != ModBlocks.ANT_AIR.get()){
-                    level.setBlock(tempPos,ModBlocks.ANT_AIR.get().defaultBlockState(), 2);
-
-                    for(Direction dir : Direction.values()){
-                        BlockPos tempPos1 = tempPos.relative(dir,1);
-                        BlockState tempState = level.getBlockState(tempPos1);
-                        if(!level.getFluidState(tempPos1).isEmpty()
-                                || (!level.canSeeSky(tempPos1) && tempState.getBlock() == Blocks.AIR)
-                                || (tempState.getBlock() instanceof FallingBlock)){
-                            level.setBlock(tempPos1, ModBlocks.LUMINOUSDEBRIS.get().defaultBlockState(),2);
-                        }
-                    }
-                    numberOfBlocks++;
-                }
-            }
+        for(PosSpherePair sphere : sphereArray){
+            sphere.setSphere((ServerLevel) this.level,this.BLOCK1,this.BLOCK2, 2);
         }
 
         //Adds the ants, decoration, and functionality blocks
