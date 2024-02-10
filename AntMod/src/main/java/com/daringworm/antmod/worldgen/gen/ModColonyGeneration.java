@@ -1,6 +1,7 @@
 package com.daringworm.antmod.worldgen.gen;
 
-import com.daringworm.antmod.worldgen.feature.PlaceFeature;
+import com.daringworm.antmod.worldgen.feature.PlaceAntFeaturesHolders;
+import com.daringworm.antmod.worldgen.feature.registries.AntCarversReg;
 import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
 import net.minecraft.resources.ResourceKey;
@@ -21,8 +22,12 @@ public class ModColonyGeneration {
 
         if(types.contains(BiomeDictionary.Type.SAVANNA)) {
             List<Holder<PlacedFeature>> base = event.getGeneration().getFeatures(GenerationStep.Decoration.VEGETAL_DECORATION);
-            base.add(PlaceFeature.COLONY_PLACED);
+            base.add(PlaceAntFeaturesHolders.GEODE_PLACED);
+
         }
 
+        if(types.contains(BiomeDictionary.Type.PLAINS)) {
+            event.getGeneration().addCarver(GenerationStep.Carving.AIR, AntCarversReg.CONFIGURED_COLONY_REGISTER.getHolder().get());
+        }
     }
 }

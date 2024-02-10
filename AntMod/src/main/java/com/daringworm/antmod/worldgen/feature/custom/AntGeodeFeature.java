@@ -1,40 +1,36 @@
 package com.daringworm.antmod.worldgen.feature.custom;
 
+import com.daringworm.antmod.block.ModBlocks;
+import com.daringworm.antmod.colony.AntColony;
+import com.daringworm.antmod.colony.misc.PosSpherePair;
 import com.google.common.collect.Lists;
 import com.mojang.datafixers.util.Pair;
 import com.mojang.serialization.Codec;
-import net.minecraft.Util;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.tags.BlockTags;
-import net.minecraft.util.Mth;
 import net.minecraft.world.level.WorldGenLevel;
-import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.level.block.BuddingAmethystBlock;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.levelgen.*;
 import net.minecraft.world.level.levelgen.feature.Feature;
 import net.minecraft.world.level.levelgen.feature.FeaturePlaceContext;
 import net.minecraft.world.level.levelgen.feature.configurations.NoneFeatureConfiguration;
-import net.minecraft.world.level.levelgen.synth.NormalNoise;
-import net.minecraft.world.level.material.FluidState;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 import java.util.function.Predicate;
 
-public class ColonyFeature extends Feature<NoneFeatureConfiguration> {
+public class AntGeodeFeature extends Feature<NoneFeatureConfiguration> {
     private static final Direction[] DIRECTIONS = Direction.values();
 
-    public ColonyFeature(Codec<NoneFeatureConfiguration> p_159834_) {
+    public AntGeodeFeature(Codec<NoneFeatureConfiguration> p_159834_) {
         super(p_159834_);
     }
 
 
     public boolean place(@NotNull FeaturePlaceContext<NoneFeatureConfiguration> featurePlaceContext) {
-        ColonyConfiguration geodeconfiguration = new ColonyConfiguration();
+        AntGeodeConfiguration geodeconfiguration = new AntGeodeConfiguration();
         Random random = featurePlaceContext.random();
         BlockPos blockpos = featurePlaceContext.origin();
         WorldGenLevel worldgenlevel = featurePlaceContext.level();
@@ -43,7 +39,18 @@ public class ColonyFeature extends Feature<NoneFeatureConfiguration> {
         List<Pair<BlockPos, Integer>> list = Lists.newLinkedList();
         int k = geodeconfiguration.distributionPoints.sample(random);
         WorldgenRandom worldgenrandom = new WorldgenRandom(new LegacyRandomSource(worldgenlevel.getSeed()));
-        NormalNoise normalnoise = NormalNoise.create(worldgenrandom, -4, 1.0D);
+
+        AntColony colony = new AntColony(featurePlaceContext.level().getLevel(),worldgenrandom.nextInt(),blockpos);
+
+        ArrayList<PosSpherePair> sphereList = colony.getColonyBlueprint(worldgenrandom);
+
+        Predicate<BlockState> predicate = isReplaceable(geodeconfiguration.geodeBlockSettings.cannotReplace);
+        for(PosSpherePair sphere : sphereList){
+            sphere.setSphereWorldgen(worldgenlevel,ModBlocks.ANT_AIR.get(),ModBlocks.ANT_DIRT.get(),1.2,predicate);
+        }
+
+
+        /*NormalNoise normalnoise = NormalNoise.create(worldgenrandom, -4, 1.0D);
         List<BlockPos> list1 = Lists.newLinkedList();
         double d0 = (double)k / (double)geodeconfiguration.outerWallDistance.getMaxValue();
         GeodeLayerSettings geodelayersettings = geodeconfiguration.geodeLayerSettings;
@@ -165,7 +172,7 @@ public class ColonyFeature extends Feature<NoneFeatureConfiguration> {
                 }
             }
         }
-
+*/
         return true;
     }
 }

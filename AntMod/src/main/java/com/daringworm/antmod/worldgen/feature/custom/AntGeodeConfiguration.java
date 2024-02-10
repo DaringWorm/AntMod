@@ -9,14 +9,13 @@ import net.minecraft.world.level.levelgen.GeodeBlockSettings;
 import net.minecraft.world.level.levelgen.GeodeCrackSettings;
 import net.minecraft.world.level.levelgen.GeodeLayerSettings;
 import net.minecraft.world.level.levelgen.feature.configurations.FeatureConfiguration;
-import net.minecraft.world.level.levelgen.feature.configurations.NoneFeatureConfiguration;
 import net.minecraft.world.level.levelgen.feature.stateproviders.BlockStateProvider;
 
 import java.util.List;
 
-public class ColonyConfiguration implements FeatureConfiguration {
-    public static final Codec<ColonyConfiguration> CODEC = Codec.unit(() -> ColonyConfiguration.INSTANCE);
-    public static final ColonyConfiguration INSTANCE = new ColonyConfiguration();
+public class AntGeodeConfiguration implements FeatureConfiguration {
+    public static final Codec<AntGeodeConfiguration> CODEC = Codec.unit(() -> AntGeodeConfiguration.INSTANCE);
+    public static final AntGeodeConfiguration INSTANCE = new AntGeodeConfiguration();
 
     public final GeodeBlockSettings geodeBlockSettings;
     public final GeodeLayerSettings geodeLayerSettings;
@@ -32,7 +31,7 @@ public class ColonyConfiguration implements FeatureConfiguration {
     public final double noiseMultiplier;
     public final int invalidBlocksThreshold;
 
-    public ColonyConfiguration() {
+    public AntGeodeConfiguration() {
         this.geodeBlockSettings = new GeodeBlockSettings(BlockStateProvider.simple(Blocks.AIR), BlockStateProvider.simple(Blocks.GLOWSTONE),
                 BlockStateProvider.simple(Blocks.BUDDING_AMETHYST), BlockStateProvider.simple(Blocks.DIAMOND_BLOCK),
                 BlockStateProvider.simple(Blocks.GLASS), List.of(Blocks.SMALL_AMETHYST_BUD.defaultBlockState(),

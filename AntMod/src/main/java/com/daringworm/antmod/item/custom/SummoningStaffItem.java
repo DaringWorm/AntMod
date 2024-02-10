@@ -1,7 +1,7 @@
 package com.daringworm.antmod.item.custom;
 
-import com.daringworm.antmod.worldgen.feature.custom.ColonyFeature;
-import com.daringworm.antmod.worldgen.feature.registries.ColonyFeatures;
+import com.daringworm.antmod.worldgen.feature.custom.AntGeodeFeature;
+import com.daringworm.antmod.worldgen.feature.registries.AntFeaturesReg;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.Multimap;
 import net.minecraft.server.level.ServerLevel;
@@ -63,7 +63,7 @@ public class SummoningStaffItem extends Item {
         }*/
         assert pLevel instanceof ServerLevel;
         ServerLevel serverlevel = (ServerLevel) pLevel;
-        ColonyFeature colonyFeature = ColonyFeatures.ANT_COLONY_BASE_REGISTER.get();
+        AntGeodeFeature colonyFeature = AntFeaturesReg.GEODE_BASE_REGISTER.get();
         }
 
     public InteractionResultHolder<ItemStack> use(Level pLevel, Player pPlayer, InteractionHand pHand) {

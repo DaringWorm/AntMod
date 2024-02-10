@@ -7,9 +7,10 @@ import com.daringworm.antmod.entity.client.*;
 import com.daringworm.antmod.item.ModItems;
 import com.daringworm.antmod.screen.FungalContainerScreen;
 import com.daringworm.antmod.screen.ModMenuTypes;
-import com.daringworm.antmod.worldgen.feature.registries.ColonyFeatures;
-import com.daringworm.antmod.worldgen.feature.registries.ConfiguredFeatures;
-import com.daringworm.antmod.worldgen.feature.registries.PlacedFeatures;
+import com.daringworm.antmod.worldgen.feature.registries.AntCarversReg;
+import com.daringworm.antmod.worldgen.feature.registries.AntFeaturesReg;
+import com.daringworm.antmod.worldgen.feature.registries.ConfiguredAntFeaturesReg;
+import com.daringworm.antmod.worldgen.feature.registries.PlacedAntFeaturesReg;
 import net.minecraft.client.gui.screens.MenuScreens;
 import net.minecraft.client.renderer.ItemBlockRenderTypes;
 import net.minecraft.client.renderer.RenderType;
@@ -49,11 +50,13 @@ public class AntMod
 
         ModMenuTypes.register(eventBus);
 
-        ConfiguredFeatures.register(eventBus);
+        ConfiguredAntFeaturesReg.register(eventBus);
 
-        ColonyFeatures.register(eventBus);
+        AntFeaturesReg.register(eventBus);
 
-        PlacedFeatures.register(eventBus);
+        PlacedAntFeaturesReg.register(eventBus);
+
+        AntCarversReg.register(eventBus);
 
 
         eventBus.addListener(this::setup);

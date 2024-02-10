@@ -104,6 +104,12 @@ public class AntColony implements AutoCloseable{
         return this.excavationSpheres;
     }
 
+    public ArrayList<PosSpherePair> getColonyBlueprint(Random rand){
+        this.random = rand;
+        if(this.excavationSpheres.isEmpty()){this.generateNewColonyBlueprint();}
+        return this.excavationSpheres;
+    }
+
 
     public QueenAnt getQueen(){
         Stream<QueenAnt> queenAntStream = this.level.getEntitiesOfClass(QueenAnt.class, new AABB(Double.MAX_VALUE, Double.MAX_VALUE, Double.MAX_VALUE, Double.MIN_VALUE, Double.MIN_VALUE, Double.MIN_VALUE)).stream();

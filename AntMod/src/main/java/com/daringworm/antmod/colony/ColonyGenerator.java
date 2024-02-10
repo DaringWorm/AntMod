@@ -300,7 +300,6 @@ public class ColonyGenerator implements AntUtils {
         }
 
 
-        int numberOfBlocks = 0;
         AntColony colony = new AntColony(level,level.getRandom().nextInt(),pPos);
         ArrayList<PosSpherePair> sphereArray = colony.getColonyBlueprint();
         for(PosSpherePair sphere : sphereArray){
@@ -308,7 +307,7 @@ public class ColonyGenerator implements AntUtils {
         }
 
         //Adds the ants, decoration, and functionality blocks
-
+/*
         for (BlockPos roomPos : colony.tunnels.listRoomPoses()) {
             sprinkleArea(roomPos, 8, 4, 10, ModBlocks.LEAFY_CONTAINER_BLOCK.get(), colony.random, level);
             carpetArea(roomPos, 8, 4, fungusStateList, colony.random, level);
@@ -324,7 +323,7 @@ public class ColonyGenerator implements AntUtils {
             pAnt.setFirstSurfacePos(pPos);
         }
 
-
-        AntUtils.broadcastString(level,"Successfully generated colony. Carver placed " + numberOfBlocks + " blocks.");
+*/
+        AntUtils.broadcastString(level,"Successfully generated colony. Carver placed " + sphereArray.size() + " spheres.");
     }
 }

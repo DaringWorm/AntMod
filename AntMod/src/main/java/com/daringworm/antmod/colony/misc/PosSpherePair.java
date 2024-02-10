@@ -5,11 +5,13 @@ import com.daringworm.antmod.goals.AntUtils;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.WorldGenLevel;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 
 import java.util.ArrayList;
+import java.util.function.Predicate;
 
 public class PosSpherePair {
     public BlockPos blockPos;
@@ -79,6 +81,25 @@ public class PosSpherePair {
         }
         for(BlockPos pos : innerList){
             pLevel.setBlock(pos, innerBlock.defaultBlockState(),2);
+        }
+    }
+
+    public void setSphereWorldgen(WorldGenLevel worldGenLevel, Block innerBlock, Block outerBlock, double wallThickness, Predicate<BlockState> replaceabilityPredicate){
+        PosSpherePair outerShell = new PosSpherePair(this.blockPos,this.radius+wallThickness);
+        ArrayList<BlockPos> totalList = outerShell.getBlockPoses();
+        ArrayList<BlockPos> innerList = this.getBlockPoses();
+        totalList.removeAll(innerList);
+        for(BlockPos pos : totalList){
+            BlockState pState = worldGenLevel.getBlockState(pos);
+            if (pState.getBlock() != innerBlock && pState.getBlock() != outerBlock && replaceabilityPredicate.test(pState)) {
+                worldGenLevel.setBlock(pos,outerBlock.defaultBlockState(),2);
+            }
+        }
+
+        for(BlockPos pos : innerList){
+            if(replaceabilityPredicate.test(worldGenLevel.getBlockState(pos))) {
+                worldGenLevel.setBlock(pos, innerBlock.defaultBlockState(), 2);
+            }
         }
     }
 }
