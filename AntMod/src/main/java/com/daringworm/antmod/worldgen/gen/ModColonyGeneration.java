@@ -19,10 +19,10 @@ public class ModColonyGeneration {
         ResourceKey<Biome> key = ResourceKey.create(Registry.BIOME_REGISTRY, Objects.requireNonNull(event.getName()));
         Set<BiomeDictionary.Type> types = BiomeDictionary.getTypes(key);
 
-        /*if(types.contains(BiomeDictionary.Type.SAVANNA)) {
+        if(types.contains(BiomeDictionary.Type.SAVANNA)) {
             List<Holder<PlacedFeature>> base = event.getGeneration().getFeatures(GenerationStep.Decoration.VEGETAL_DECORATION);
-            base.add(PlaceFeature.ANT_COLONY_PLACED);
-        }*/
+            base.add(PlaceFeature.COLONY_PLACED);
+        }
 
     }
 }

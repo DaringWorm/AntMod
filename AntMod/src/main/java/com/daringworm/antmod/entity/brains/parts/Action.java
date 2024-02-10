@@ -344,10 +344,9 @@ public class Action {
     public static final class PickupItemAction extends Action {
         @Override
         public void run(Ant pAnt){
-            pAnt.setCanPickUpLoot(true);
             if(pAnt.memory.foundItemList.size() != 0) {
                 ItemEntity item = pAnt.memory.foundItemList.get(0);
-                pAnt.getNavigation().moveTo(item, 1);
+                pAnt.getNavigation().moveTo(item, 1.2d);
                 if (pAnt.getWorkingStage() == WorkingStages.SCOUTING) {
                     pAnt.setWorkingStage(WorkingStages.FORAGING);
                     pAnt.memory.workingStage = WorkingStages.FORAGING;
@@ -356,12 +355,9 @@ public class Action {
                         pAnt.setFoodLocation(item.blockPosition());
                     }
                 }
-                if(pAnt.getNavigation().isStuck() || pAnt.getNavigation().isDone()){
-                    item.remove(Entity.RemovalReason.DISCARDED);
-                    pAnt.setItemInHand(InteractionHand.MAIN_HAND,item.getItem());
-                }
+                item.remove(Entity.RemovalReason.DISCARDED);
+                pAnt.setItemInHand(InteractionHand.MAIN_HAND,item.getItem());
             }
-
         }
     }
 

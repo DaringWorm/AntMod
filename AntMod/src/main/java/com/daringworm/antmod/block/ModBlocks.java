@@ -5,7 +5,6 @@ import com.daringworm.antmod.AntMod;
 import com.daringworm.antmod.block.custom.*;
 import com.daringworm.antmod.item.ModCreativeModeTab;
 import com.daringworm.antmod.item.ModItems;
-import com.daringworm.antmod.worldgen.feature.tree.PeachTreeGrower;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.Item;
@@ -72,12 +71,6 @@ public class ModBlocks {
     public static final RegistryObject<Block> PEACH_LEAVES = registerBlock("peach_leaves",
             () -> new Block(BlockBehaviour.Properties.of(Material.LEAVES).strength(1f)
                     .requiresCorrectToolForDrops()), ModCreativeModeTab.ANT_MOD_CTAB);
-
-    public static final RegistryObject<Block> PEACH_SAPLING = registerBlock("ebony_sapling",
-            () -> new SaplingBlock(new PeachTreeGrower(), BlockBehaviour.Properties.copy(Blocks.OAK_SAPLING)), ModCreativeModeTab.ANT_MOD_CTAB);
-
-    public static final RegistryObject<Block> COLONY_PLACER = registerBlock("colony_placer",
-            () -> new SaplingBlock(new PeachTreeGrower(), BlockBehaviour.Properties.copy(Blocks.OAK_SAPLING)), ModCreativeModeTab.ANT_MOD_CTAB);
 
 
     private static <T extends Block> RegistryObject<T> registerBlock

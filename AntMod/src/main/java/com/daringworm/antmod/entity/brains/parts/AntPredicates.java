@@ -13,7 +13,7 @@ public class AntPredicates {
     public static final AntPredicate HAS_SELECTED_TARGET = new AntPredicate(a -> a.getTarget() != null && a.getTarget().isAlive());
     public static final AntPredicate CAN_REACH_TARGET = new AntPredicate(a -> a.getTarget() != null && a.distanceToSqr(a.getTarget()) < 2.25d);
     public static final AntPredicate SEES_ITEMS  = new AntPredicate(a -> !a.memory.foundItemList.isEmpty());
-    public static final AntPredicate NAV_DONE = new AntPredicate(a -> a.getNavigation().isDone());
+    public static final AntPredicate NAV_DONE = new AntPredicate(a -> a.getNavigation().isDone() || a.getNavigation().isStuck());
     public static final AntPredicate FOUND_INTEREST_BLOCK = new AntPredicate(a -> a.memory.interestPos != BlockPos.ZERO);
     public static final AntPredicate IN_RANGE_OF_INTEREST_BLOCK = new AntPredicate(a -> a.getDistTo(a.memory.interestPos)<12d);
     public static final AntPredicate WAS_HURT = new AntPredicate(a-> a.getLastHurtByMob() != null && a.getLastHurtByMob().isAlive());

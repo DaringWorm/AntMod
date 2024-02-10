@@ -7,12 +7,13 @@ import com.daringworm.antmod.entity.client.*;
 import com.daringworm.antmod.item.ModItems;
 import com.daringworm.antmod.screen.FungalContainerScreen;
 import com.daringworm.antmod.screen.ModMenuTypes;
+import com.daringworm.antmod.worldgen.feature.registries.ColonyFeatures;
+import com.daringworm.antmod.worldgen.feature.registries.ConfiguredFeatures;
+import com.daringworm.antmod.worldgen.feature.registries.PlacedFeatures;
 import net.minecraft.client.gui.screens.MenuScreens;
 import net.minecraft.client.renderer.ItemBlockRenderTypes;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.entity.EntityRenderers;
-import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.SpawnPlacements;
 import net.minecraft.world.entity.animal.Animal;
 import net.minecraft.world.level.levelgen.Heightmap;
@@ -46,7 +47,13 @@ public class AntMod
 
         ModBlockEntities.register(eventBus);
 
-        ModMenuTypes.register((eventBus));
+        ModMenuTypes.register(eventBus);
+
+        ConfiguredFeatures.register(eventBus);
+
+        ColonyFeatures.register(eventBus);
+
+        PlacedFeatures.register(eventBus);
 
 
         eventBus.addListener(this::setup);

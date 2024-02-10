@@ -12,8 +12,8 @@ import net.minecraftforge.fml.common.Mod;
 public class ModWorldEvents {
     @SubscribeEvent
     public static void biomeLoadingEvent(final BiomeLoadingEvent event) {
-        //ModTreeGeneration.generateTrees(event);
-        //ModColonyGeneration.generateColonies(event);
+        ModTreeGeneration.generateTrees(event);
+        ModColonyGeneration.generateColonies(event);
         //ModEntityGeneration.onEntitySpawn(event);
     }
 }

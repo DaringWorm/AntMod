@@ -149,8 +149,9 @@ public abstract class Ant extends AgeableMob {
 
     public void walkTo(BlockPos blockPos, double speedModifier, double distanceModifier){
         if(this.memory != null && this.memory.navDelay <= 25){return;}
-        this.memory.navDelay = 0;
+        assert this.isOnGround();
         assert blockPos != null && this.getLevel().isLoaded(blockPos) && blockPos != this.getNavigation().getTargetPos();
+        this.memory.navDelay = 0;
         Path path = this.getNavigation().getPath();
         Level pLevel = this.getLevel();
         BlockPos targetPos = blockPos;
