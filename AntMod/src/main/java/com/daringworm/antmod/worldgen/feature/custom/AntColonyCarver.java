@@ -1,27 +1,33 @@
 package com.daringworm.antmod.worldgen.feature.custom;
 
+import com.daringworm.antmod.block.ModBlocks;
+import com.daringworm.antmod.colony.AntColony;
+import com.daringworm.antmod.colony.misc.PosSpherePair;
 import com.mojang.serialization.Codec;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.util.Mth;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.biome.Biome;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.CarvingMask;
 import net.minecraft.world.level.chunk.ChunkAccess;
 import net.minecraft.world.level.levelgen.Aquifer;
-import net.minecraft.world.level.levelgen.carver.CanyonCarverConfiguration;
+import net.minecraft.world.level.levelgen.carver.CarverConfiguration;
 import net.minecraft.world.level.levelgen.carver.CarvingContext;
 import net.minecraft.world.level.levelgen.carver.WorldCarver;
 
+import java.util.ArrayList;
 import java.util.Random;
 import java.util.function.Function;
 
-public class AntColonyCarver extends WorldCarver<CanyonCarverConfiguration> {
-    public AntColonyCarver(Codec<CanyonCarverConfiguration> p_64711_) {
+public class AntColonyCarver<C extends CarverConfiguration> extends WorldCarver<AntColonyConfiguration> {
+    public AntColonyCarver(Codec<AntColonyConfiguration> p_64711_) {
         super(p_64711_);
     }
 
-    public boolean isStartChunk(CanyonCarverConfiguration pConfig, Random pRandom) {
+    public boolean isStartChunk(AntColonyConfiguration pConfig, Random pRandom) {
         return pRandom.nextFloat() <= pConfig.probability;
     }
 
@@ -34,32 +40,37 @@ public class AntColonyCarver extends WorldCarver<CanyonCarverConfiguration> {
      * @param pChunk The chunk to be carved
      * @param pChunkPos The chunk position this carver is being called from
      */
-    public boolean carve(CarvingContext pContext, CanyonCarverConfiguration pConfig, ChunkAccess pChunk, Function<BlockPos, Holder<Biome>> pBiomeAccessor, Random pRandom, Aquifer pAquifer, ChunkPos pChunkPos, CarvingMask pCarvingMask) {
-        int i = (this.getRange() * 2 - 1) * 16;
-        double d0 = (double)pChunkPos.getBlockX(pRandom.nextInt(16));
-        int j = pConfig.y.sample(pRandom, pContext);
-        double d1 = (double)pChunkPos.getBlockZ(pRandom.nextInt(16));
-        float f = pRandom.nextFloat() * ((float)Math.PI * 2F);
-        float f1 = pConfig.verticalRotation.sample(pRandom);
-        double d2 = (double)pConfig.yScale.sample(pRandom);
-        float f2 = pConfig.shape.thickness.sample(pRandom);
-        int k = (int)((float)i * pConfig.shape.distanceFactor.sample(pRandom));
-        int l = 0;
-        this.doCarve(pContext, pConfig, pChunk, pBiomeAccessor, pRandom.nextLong(), pAquifer, d0, (double)j, d1, f2, f, f1, 0, k, d2, pCarvingMask);
+    @Override
+    public boolean carve(CarvingContext pContext, AntColonyConfiguration pConfig, ChunkAccess pChunk, Function<BlockPos, Holder<Biome>> pBiomeAccessor, Random pRandom, Aquifer pAquifer, ChunkPos pChunkPos, CarvingMask pCarvingMask) {
+
+        BlockPos startPosAbsolute = pChunkPos.getMiddleBlockPosition(70);
+
+        ArrayList<PosSpherePair> masterArray = AntColony.generateNewColonyBlueprint(startPosAbsolute);
+
+        for(PosSpherePair sphere : masterArray){
+            ChunkPos cPos = pChunk.getPos();
+            BlockPos bPos = sphere.centerPos;
+            if(
+                    cPos.getMaxBlockX() >= bPos.getX() &&
+                    cPos.getMaxBlockZ() >= bPos.getZ() &&
+                    cPos.getMinBlockX() <= bPos.getX() &&
+                    cPos.getMinBlockZ() <= bPos.getZ()
+            ){
+                pChunk.setBlockState(sphere.centerPos, Blocks.LAVA.defaultBlockState(),false);
+                //sphere.setSphereCarver(pChunk, ModBlocks.ANT_AIR.get().defaultBlockState(), ModBlocks.ANT_DIRT.get().defaultBlockState(),1.2d);
+            }
+        }
         return true;
     }
 
-    private void doCarve(CarvingContext pContext, CanyonCarverConfiguration pConfig, ChunkAccess pChunk, Function<BlockPos, Holder<Biome>> pBiomeAccessor, long pSeed, Aquifer pAquifer, double pX, double pY, double pZ, float pThickness, float pYaw, float pPitch, int pBranchIndex, int pBranchCount, double pHorizontalVerticalRatio, CarvingMask pCarvingMask) {
+    private void doCarve(CarvingContext pContext, AntColonyConfiguration pConfig, ChunkAccess pChunk, Function<BlockPos, Holder<Biome>> pBiomeAccessor, long pSeed, Aquifer pAquifer, double pX, double pY, double pZ, float pThickness, float pYaw, float pPitch, int pBranchIndex, int pBranchCount, double pHorizontalVerticalRatio, CarvingMask pCarvingMask) {
         Random random = new Random(pSeed);
-        float[] afloat = this.initWidthFactors(pContext, pConfig, random);
         float f = 0.0F;
         float f1 = 0.0F;
 
         for(int i = pBranchIndex; i < pBranchCount; ++i) {
             double d0 = 1.5D + (double)(Mth.sin((float)i * (float)Math.PI / (float)pBranchCount) * pThickness);
             double d1 = d0 * pHorizontalVerticalRatio;
-            d0 *= (double)pConfig.shape.horizontalRadiusFactor.sample(random);
-            d1 = this.updateVerticalRadius(pConfig, random, d1, (float)pBranchCount, (float)i);
             float f2 = Mth.cos(pPitch);
             float f3 = Mth.sin(pPitch);
             pX += (double)(Mth.cos(pYaw) * f2);
@@ -77,42 +88,24 @@ public class AntColonyCarver extends WorldCarver<CanyonCarverConfiguration> {
                     return;
                 }
 
-                this.carveEllipsoid(pContext, pConfig, pChunk, pBiomeAccessor, pAquifer, pX, pY, pZ, d0, d1, pCarvingMask, (p_159082_, p_159083_, p_159084_, p_159085_, p_159086_) -> {
-                    return this.shouldSkip(p_159082_, afloat, p_159083_, p_159084_, p_159085_, p_159086_);
-                });
+
             }
         }
 
     }
 
     /**
-     * Generates a random array full of width factors which are used to create the uneven walls of a ravine.
-     * @return An array of length {@code context.getGenDepth()}, populated with values between 1.0 and 2.0 inclusive.
-     */
-    private float[] initWidthFactors(CarvingContext pContext, CanyonCarverConfiguration pConfig, Random pRandom) {
-        int i = pContext.getGenDepth();
-        float[] afloat = new float[i];
-        float f = 1.0F;
+     * To be used in place of carveBlock in the WorldCarver supertype.
+     * This method does not mark blocks for flooding in the next world generation steps.
+     * **/
 
-        for(int j = 0; j < i; ++j) {
-            if (j == 0 || pRandom.nextInt(pConfig.shape.widthSmoothness) == 0) {
-                f = 1.0F + pRandom.nextFloat() * pRandom.nextFloat();
-            }
-
-            afloat[j] = f * f;
-        }
-
-        return afloat;
+    private boolean setBlock(ChunkAccess pChunk, BlockPos.MutableBlockPos pPos, BlockState pState) {
+        pChunk.setBlockState(pPos, pState, false);
+        return true;
     }
 
-    private double updateVerticalRadius(CanyonCarverConfiguration pConfig, Random pRandom, double p_159028_, float p_159029_, float p_159030_) {
-        float f = 1.0F - Mth.abs(0.5F - p_159030_ / p_159029_) * 2.0F;
-        float f1 = pConfig.shape.verticalRadiusDefaultFactor + pConfig.shape.verticalRadiusCenterFactor * f;
-        return (double)f1 * p_159028_ * (double)Mth.randomBetween(pRandom, 0.75F, 1.0F);
-    }
 
     private boolean shouldSkip(CarvingContext pContext, float[] pWidthFactors, double pRelativeX, double pRelativeY, double pRelativeZ, int pY) {
-        int i = pY - pContext.getMinGenY();
-        return (pRelativeX * pRelativeX + pRelativeZ * pRelativeZ) * (double)pWidthFactors[i - 1] + pRelativeY * pRelativeY / 6.0D >= 1.0D;
+        return false;
     }
 }

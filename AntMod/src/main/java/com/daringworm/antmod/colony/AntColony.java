@@ -2,6 +2,7 @@ package com.daringworm.antmod.colony;
 
 import com.daringworm.antmod.colony.misc.*;
 import com.daringworm.antmod.entity.custom.QueenAnt;
+import com.daringworm.antmod.goals.AntUtils;
 import com.daringworm.antmod.mixin.tomixin.ServerLevelUtil;
 import com.google.gson.*;
 import com.mojang.logging.LogUtils;
@@ -34,10 +35,10 @@ public class AntColony implements AutoCloseable{
     public Level level;
     private static final Logger LOGGER = LogUtils.getLogger();
     public File saveFolder;
-    private double passageWidth = 2.1d;
+    public static double passageWidth = 2.1d;
     private ArrayList<PosSpherePair> excavationSpheres = new ArrayList<>();
     private final int UNDERGOUND_PASSAGE_LENGTH = 20;
-    private final int UNDERGOUND_ROOM_SIZE = 24;
+    public static final int UNDERGOUND_ROOM_SIZE = 24;
 
     public AntColony(Level pLevel, int pColonyID, BlockPos pStartPos){
         this.level = pLevel;
@@ -47,6 +48,7 @@ public class AntColony implements AutoCloseable{
         this.startPos = pStartPos;
         this.generateNewColonyBlueprint();
     }
+    
 
     public AntColony(File colonyStorageFolder, String fileName, ServerLevel pLevel) {
         this.level = pLevel;
@@ -168,6 +170,29 @@ public class AntColony implements AutoCloseable{
         boolean success = ret.mkdirs();
         return ret;
     }
+    
+    public static final ArrayList<PosSpherePair> generateNewColonyBlueprint(BlockPos startPos){
+        double passageWidth = AntColony.passageWidth;
+        Random random = AntUtils.randFromPos(startPos);
+
+        ColonyBranch tunnels = new ColonyBranch(startPos, random.nextInt(360),new ArrayList<>(), false, "0");
+        ArrayList<PosSpherePair> returnList = new ArrayList<>();
+
+
+        //makes the entrance
+        returnList.add(new PosSpherePair(startPos.above(4),7, true));
+
+        //makes the rest
+        tunnels.generateNextBranch(35,-20,false);
+        tunnels.generateNextBranches(5, 48,1,0,24,true);
+        tunnels.generateNextBranches(2, 43,1,0,20,true);
+        tunnels.generateNextBranches(2, 35,1,0,16,true);
+
+        returnList.addAll(tunnels.generateBranchBlueprint(
+                passageWidth,passageWidth+0.5d, AntColony.UNDERGOUND_ROOM_SIZE));
+
+        return returnList;
+    }
 
 
     public ArrayList<PosSpherePair> generateNewColonyBlueprint(){
@@ -185,7 +210,7 @@ public class AntColony implements AutoCloseable{
         this.tunnels.generateNextBranches(2, 35,1,0,16,true);
 
         returnList.addAll(this.tunnels.generateBranchBlueprint(
-                this.passageWidth,this.passageWidth+0.5d, UNDERGOUND_ROOM_SIZE,this.random,this.level));
+                this.passageWidth,this.passageWidth+0.5d, UNDERGOUND_ROOM_SIZE));
 
         ((ServerLevelUtil) (level)).refreshColonyForID(this);
         this.excavationSpheres = returnList;

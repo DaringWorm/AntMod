@@ -1,5 +1,9 @@
 package com.daringworm.antmod.item.custom;
 
+import com.daringworm.antmod.block.ModBlocks;
+import com.daringworm.antmod.colony.AntColony;
+import com.daringworm.antmod.colony.misc.PosSpherePair;
+import com.daringworm.antmod.goals.AntUtils;
 import com.daringworm.antmod.worldgen.feature.custom.AntGeodeFeature;
 import com.daringworm.antmod.worldgen.feature.registries.AntFeaturesReg;
 import com.google.common.collect.ImmutableMultimap;
@@ -17,6 +21,8 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.UseAnim;
 import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.NotNull;
+
+import java.util.ArrayList;
 
 public class SummoningStaffItem extends Item {
     private final Multimap<Attribute, AttributeModifier> itemModifiers;
@@ -41,30 +47,17 @@ public class SummoningStaffItem extends Item {
 
     @Override
     public void releaseUsing(@NotNull ItemStack pStack, Level pLevel, @NotNull LivingEntity pEntity, int pTimeLeft) {
-        /*if(!pLevel.isClientSide()) {
-            WorkerAnt pAnt = pLevel.getEntitiesOfClass(WorkerAnt.class,pEntity.getBoundingBox().inflate(60)).get(0);
-            assert pAnt != null;
-            AntColony colony = ((ServerLevelUtil)pLevel).getColonyWithID(pAnt.getColonyID());
-            if(colony != null){
-                ColonyBranch branch = colony.tunnels;
-                if(branch != null){
-                    String nearPosID = branch.getNearestBranchID(pEntity.blockPosition());
-                    AntUtils.broadcastString(pLevel, nearPosID);
+        if(pLevel instanceof ServerLevel) {
+            ServerLevel serverlevel = (ServerLevel) pLevel;
 
-                    WorkerAnt newAnt = new WorkerAnt(ModEntityTypes.WORKERANT.get(), pLevel);
-                    newAnt.setHomePos(branch.getSubBranch(nearPosID).getPos());
-                    newAnt.setColonyID(pAnt.getColonyID());
-                    newAnt.setRoomID(nearPosID);
-                    newAnt.setWorkingStage(WorkingStages.SCOUTING);
-                    newAnt.moveTo(newAnt.getHomePos(),0,0);
-                    pLevel.addFreshEntity(newAnt);
-                }
+            ArrayList<PosSpherePair> sphereArray = AntColony.generateNewColonyBlueprint(pEntity.blockPosition());
+
+            AntUtils.broadcastString(serverlevel, "Colony has " + sphereArray.size() + " spheres!");
+            for (PosSpherePair sphere : sphereArray) {
+                sphere.setSphere(serverlevel, ModBlocks.ANT_AIR.get(), ModBlocks.ANT_DIRT.get(), 1.15);
             }
-        }*/
-        assert pLevel instanceof ServerLevel;
-        ServerLevel serverlevel = (ServerLevel) pLevel;
-        AntGeodeFeature colonyFeature = AntFeaturesReg.GEODE_BASE_REGISTER.get();
         }
+    }
 
     public InteractionResultHolder<ItemStack> use(Level pLevel, Player pPlayer, InteractionHand pHand) {
         ItemStack itemstack = pPlayer.getItemInHand(pHand);

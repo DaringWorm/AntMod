@@ -34,16 +34,16 @@ public final class ColonyGenUtils {
         return returnList;
     }
 
-    public static ArrayList<PosSpherePair> generatePassageBlueprint(PosPair pPath, double width, Random rand, Level pLevel){
-        rand = new Random((long) pPath.top.getX() *pPath.top.getY()*pPath.top.getZ());
+    public static ArrayList<PosSpherePair> generatePassageBlueprint(PosPair pPath, double width){
+        Random rand = new Random((long) pPath.top.getX() *pPath.top.getY()*pPath.top.getZ());
         ArrayList<PosSpherePair> returnList = new ArrayList<>();
         BlockPos start = pPath.top;
         BlockPos end = pPath.bottom;
         if(start == null || end == null){
             String sS = (start == null)? "null ":"not null ";
             String eS = (end == null)? "null.":"not null.";
-            AntUtils.broadcastString(pLevel, "Couldn't generate blueprint for an Ant tunnel, there was a null endpoint value: start pos is "
-                    + sS + "and the end pos is " + eS);
+            /*AntUtils.broadcastString(pLevel, "Couldn't generate blueprint for an Ant tunnel, there was a null endpoint value: start pos is "
+                    + sS + "and the end pos is " + eS);*/
             return returnList;
         }
 

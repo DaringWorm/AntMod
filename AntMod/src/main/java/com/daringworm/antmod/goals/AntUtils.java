@@ -31,6 +31,7 @@ import net.minecraftforge.items.ItemStackHandler;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 import java.util.Set;
 
 public interface AntUtils {
@@ -711,6 +712,9 @@ public interface AntUtils {
         return Math.sqrt(X+Z);
     }
 
+    public static Random randFromPos(BlockPos pos){
+        return new Random(pos.getX()*pos.getY()*pos.getZ());
+    }
 
     default boolean isCopper(BlockState pState){
         Block pBlock = pState.getBlock();

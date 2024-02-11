@@ -148,17 +148,17 @@ public class ColonyBranch {
         }
     }
 
-    public ArrayList<PosSpherePair> generateBranchBlueprint(double passageWidth, double roomHeight, int roomSize, Random rand, Level pLevel){
+    public ArrayList<PosSpherePair> generateBranchBlueprint(double passageWidth, double roomHeight, int roomSize){
         ArrayList<PosSpherePair> returnList = new ArrayList<>();
 
         for(ColonyBranch branch : this.branches){
             returnList.addAll(ColonyGenUtils.generatePassageBlueprint(
-                    new PosPair(this.getPos(),branch.getPos()),passageWidth, rand, pLevel));
+                    new PosPair(this.getPos(),branch.getPos()),passageWidth));
 
             if(branch.hasRoom){
-                returnList.addAll(ColonyGenUtils.generateRoomBlueprint(roomHeight,roomSize,branch.getPos(),rand));
+                returnList.addAll(ColonyGenUtils.generateRoomBlueprint(roomHeight,roomSize,branch.getPos(),AntUtils.randFromPos(this.getPos())));
             }
-            returnList.addAll(branch.generateBranchBlueprint(passageWidth,roomHeight, roomSize,rand,pLevel));
+            returnList.addAll(branch.generateBranchBlueprint(passageWidth,roomHeight, roomSize));
         }
 
         return returnList;
