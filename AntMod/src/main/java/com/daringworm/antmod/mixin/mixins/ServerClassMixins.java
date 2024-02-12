@@ -1,13 +1,19 @@
 package com.daringworm.antmod.mixin.mixins;
 
+import com.daringworm.antmod.block.ModBlocks;
 import com.daringworm.antmod.colony.AntColony;
+import com.daringworm.antmod.colony.ColonyGenerationBuffer;
 import com.daringworm.antmod.colony.LevelColonies;
+import com.daringworm.antmod.colony.misc.ColonyBranch;
+import com.daringworm.antmod.goals.AntUtils;
 import com.daringworm.antmod.mixin.tomixin.ServerLevelUtil;
 import com.google.common.collect.Lists;
+import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.level.block.Blocks;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -20,15 +26,12 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 @Mixin(ServerLevel.class)
 public abstract class ServerClassMixins implements ServerLevelUtil {
-
 
     @Final
     @Shadow
@@ -53,15 +56,20 @@ public abstract class ServerClassMixins implements ServerLevelUtil {
     }
 
     @Inject(at = @At("HEAD"), method = "tick")
-    private void createLevelColonyList(CallbackInfo ci) throws IOException {
+    private void tickColonyDoohickeys(CallbackInfo ci) throws IOException {
         Component component = Component.nullToEmpty("colonies empty");
         if(!players.isEmpty()) {
             ServerLevel pLevel = players.get(0).getLevel();
+
+            this.checkColonyBuffer(pLevel);
+            this.spawnAnts();
+
             String levelName = pLevel.toString();
             levelName = levelName.replace(".","_");
             levelName = levelName.replace("]","");
             levelName = levelName.replace("[","");
             levelName = levelName.replaceAll("ServerLevel","");
+
 
             String worldFilePath = pLevel.getServer().getServerDirectory().getPath() + "/saves/" + levelName + "/data/ant_colonies";
             File colonyStorageDirFile = new File(worldFilePath);
@@ -83,6 +91,28 @@ public abstract class ServerClassMixins implements ServerLevelUtil {
         }
     }
 
+    private void checkColonyBuffer(ServerLevel pLevel){
+        ArrayList<ColonyBranch> array = new ArrayList<>();
+        array.addAll(ColonyGenerationBuffer.looseBranches);
+        for(ColonyBranch branch : array){
+            BlockPos pos = branch.getPos();
+            if(pLevel.isLoaded(pos) && pLevel.getBlockState(pos) == Blocks.REDSTONE_BLOCK.defaultBlockState()){
+                pLevel.setBlock(pos, ModBlocks.ANT_AIR.get().defaultBlockState(),2);
+                levelColonies.add(new AntColony(pLevel,pLevel.getRandom().nextInt(),branch));
+                ColonyGenerationBuffer.looseBranches.removeIf(b -> Objects.equals(b,branch));
+            }
+        }
+    }
+
+    private void spawnAnts(){
+        ArrayList<AntColony> array = new ArrayList<>();
+        array.addAll(levelColonies.getColonies().toList());
+        for(AntColony colony : array){
+            if(!colony.hasSpawnedAnts){
+                colony.spawnAnts();
+            }
+        }
+    }
 
 
     private Set<String> getColonyFileNames(File directory) throws IOException {

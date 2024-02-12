@@ -238,7 +238,7 @@ public class WorkerAnt extends Ant implements IAnimatable {
     public void aiStep() {
         super.aiStep();
         if(!this.level.isClientSide) {
-            LeafCutterWorkerBrain.run(this);
+            //LeafCutterWorkerBrain.run(this);
             if(this.memory.braincellStage == 3){this.memory.braincellStage = 1;}
         }
         else{

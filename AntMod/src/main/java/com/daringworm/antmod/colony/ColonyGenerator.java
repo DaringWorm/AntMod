@@ -8,6 +8,7 @@ import com.daringworm.antmod.entity.ModEntityTypes;
 import com.daringworm.antmod.entity.brains.parts.WorkingStages;
 import com.daringworm.antmod.entity.custom.WorkerAnt;
 import com.daringworm.antmod.goals.AntUtils;
+import com.daringworm.antmod.mixin.tomixin.ServerLevelUtil;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
@@ -188,7 +189,7 @@ public class ColonyGenerator implements AntUtils {
         }
     }
 
-    private void carpetArea(BlockPos center, int distance, int vertical, ArrayList<BlockState> stateArrayList, Random rand, Level pLevel){
+    public static void carpetArea(BlockPos center, int distance, int vertical, ArrayList<BlockState> stateArrayList, Random rand, Level pLevel){
         for(int x = distance/2; x >= -distance/2; x--){
             for(int z = distance/2; z >= -distance/2; z--){
                 for(int y = vertical/2; y >= -vertical/2; y--){
@@ -207,7 +208,7 @@ public class ColonyGenerator implements AntUtils {
         }
     }
 
-    private void sprinkleArea(BlockPos center, int distance, int vertical, int chancePercent, Block pBlock, Random rand, Level pLevel){
+    public static void sprinkleArea(BlockPos center, int distance, int vertical, int chancePercent, Block pBlock, Random rand, Level pLevel){
         for(int x = distance/2; x >= -distance/2; x--){
             for(int z = distance/2; z >= -distance/2; z--){
                 for(int y = vertical/2; y >= -vertical/2; y--){
@@ -277,28 +278,32 @@ public class ColonyGenerator implements AntUtils {
         return level.getHeightmapPos(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, pos);
     }
 
-    private double CARVE_RADIUS = 1d;
-    private int PASSAGE_LENGTH = 30;
+    public static ArrayList<BlockState> getAllFungusStates(){
+        ArrayList<BlockState> fungusStateList = new ArrayList<>();
+        for(int i = 5; i >= 0; i--){
+            fungusStateList.add(ModBlocks.FUNGUS_BLOCK.get().defaultBlockState().setValue(BlockStateProperties.AGE_5, i));
+        }
+        return fungusStateList;
+    }
+
+    private final double CARVE_RADIUS = 1d;
+    private final int PASSAGE_LENGTH = 30;
     
     Block BLOCK1 = ModBlocks.ANT_AIR.get();
     Block BLOCK2 = ModBlocks.ANT_DIRT.get();
     Block BLOCK3 = ModBlocks.ANTDEBRIS.get();
 
-    private AntColony colony;
-    private Level level;
-    boolean hasSpawnedStuff = false;
+    private final Level level;
 
 
     public ColonyGenerator(Level pLevel) {
         this.level = pLevel;
     }
 
-    public void generate(BlockPos pPos) {
-        ArrayList<BlockState> fungusStateList = new ArrayList<>();
-        for(int i = 5; i >= 0; i--){
-            fungusStateList.add(ModBlocks.FUNGUS_BLOCK.get().defaultBlockState().setValue(BlockStateProperties.AGE_5, i));
-        }
 
+    public void generate(BlockPos pPos) {
+
+        ArrayList<BlockState> fungusStateList = getAllFungusStates();
 
         AntColony colony = new AntColony(level,level.getRandom().nextInt(),pPos);
         ArrayList<PosSpherePair> sphereArray = colony.getColonyBlueprint();
@@ -306,11 +311,13 @@ public class ColonyGenerator implements AntUtils {
             sphere.setSphere((ServerLevel) this.level,this.BLOCK1,this.BLOCK2, 2);
         }
 
+        ((ServerLevelUtil)(this.level)).addColonyToList(colony);
+
         //Adds the ants, decoration, and functionality blocks
-/*
+
         for (BlockPos roomPos : colony.tunnels.listRoomPoses()) {
-            sprinkleArea(roomPos, 8, 4, 10, ModBlocks.LEAFY_CONTAINER_BLOCK.get(), colony.random, level);
-            carpetArea(roomPos, 8, 4, fungusStateList, colony.random, level);
+            ColonyGenerator.sprinkleArea(roomPos, 8, 4, 10, ModBlocks.LEAFY_CONTAINER_BLOCK.get(), colony.random, level);
+            ColonyGenerator.carpetArea(roomPos, 8, 4, fungusStateList, colony.random, level);
 
             WorkerAnt pAnt = new WorkerAnt(ModEntityTypes.WORKERANT.get(), level);
             pAnt.moveTo(Vec3.atCenterOf(roomPos));
@@ -323,7 +330,7 @@ public class ColonyGenerator implements AntUtils {
             pAnt.setFirstSurfacePos(pPos);
         }
 
-*/
+
         AntUtils.broadcastString(level,"Successfully generated colony. Carver placed " + sphereArray.size() + " spheres.");
     }
 }

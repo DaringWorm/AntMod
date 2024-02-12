@@ -50,7 +50,7 @@ public class SummoningStaffItem extends Item {
         if(pLevel instanceof ServerLevel) {
             ServerLevel serverlevel = (ServerLevel) pLevel;
 
-            ArrayList<PosSpherePair> sphereArray = AntColony.generateNewColonyBlueprint(pEntity.blockPosition());
+            ArrayList<PosSpherePair> sphereArray = AntColony.generateNewColonyBlueprint(AntColony.generateNewTunnels(pEntity.blockPosition()));
 
             AntUtils.broadcastString(serverlevel, "Colony has " + sphereArray.size() + " spheres!");
             for (PosSpherePair sphere : sphereArray) {

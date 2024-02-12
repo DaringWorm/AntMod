@@ -32,14 +32,13 @@ public class AntCarversReg<C extends CarverConfiguration> {
     public static final RegistryObject<ConfiguredWorldCarver<AntColonyConfiguration>> CONFIGURED_COLONY_REGISTER =
             CONFIGURED_CARVERS.register("mod_cave",
             () -> COLONY_BASE_REGISTER.get().configured(new AntColonyConfiguration(
-                    0.003F,
+                    0.01F,
                     UniformHeight.of(VerticalAnchor.absolute(40), VerticalAnchor.absolute(80)),
                     ConstantFloat.of(3.0F),
                     VerticalAnchor.aboveBottom(40),
                     CarverDebugSettings.of(false, Blocks.WARPED_BUTTON.defaultBlockState()),
                     UniformInt.of(1,360),
-                    UniformInt.of(1,2),
-                    UniformInt.of(1,2)
+                    UniformInt.of(68,68)
                     )));
 
 

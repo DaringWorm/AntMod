@@ -15,6 +15,7 @@ import net.minecraft.world.entity.ai.util.DefaultRandomPos;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.block.*;
@@ -714,6 +715,15 @@ public interface AntUtils {
 
     public static Random randFromPos(BlockPos pos){
         return new Random(pos.getX()*pos.getY()*pos.getZ());
+    }
+
+    public static boolean isPosInChunk(BlockPos pos, ChunkPos chunk){
+        int cMaxX = chunk.getMaxBlockX();
+        int cMaxZ = chunk.getMaxBlockZ();
+        int cMinX = chunk.getMinBlockX();
+        int cMinZ = chunk.getMinBlockZ();
+
+        return pos.getX() <= cMaxX && pos.getX() >= cMinX && pos.getZ() <= cMaxZ && pos.getZ() >= cMinZ;
     }
 
     default boolean isCopper(BlockState pState){

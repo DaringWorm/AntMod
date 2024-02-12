@@ -104,17 +104,18 @@ public class PosSpherePair {
         }
     }
 
-    public void setSphereCarver(ChunkAccess chunkAccess, BlockState innerState, BlockState outerState, double wallThickness){
+    public void setSphereCarver(ChunkAccess chunkAccess, BlockState innerState, BlockState outerState, double wallThickness, boolean shouldReplaceAir){
         for(int x = (int)(radius+wallThickness); x >= -radius-wallThickness; x--){
             for(int y = (int)(radius+wallThickness); y >= -radius-wallThickness; y--){
                 for(int z = (int)(radius+wallThickness); z >= -radius-wallThickness; z--){
                     BlockPos tempPos = centerPos.offset(x,y,z);
-                    if(AntUtils.getDist(tempPos, centerPos) <= radius+wallThickness){
+                    if((AntUtils.isPosInChunk(tempPos,chunkAccess.getPos())) && (AntUtils.getDist(tempPos, centerPos) <= radius+wallThickness)){
                         if(chunkAccess.getBlockState(tempPos) != innerState){
                             if(AntUtils.getDist(tempPos, this.centerPos) <= this.radius) {
                                 chunkAccess.setBlockState(tempPos, innerState, false);
                             }
-                            else if(chunkAccess.getBlockState(tempPos) != outerState){
+                            else if(chunkAccess.getBlockState(tempPos) != outerState &&
+                                    (shouldReplaceAir || chunkAccess.getBlockState(tempPos).getBlock() != Blocks.AIR)){
                                 chunkAccess.setBlockState(tempPos,outerState,false);
                             }
                         }

@@ -18,38 +18,22 @@ public class AntColonyConfiguration extends CarverConfiguration {
             return p_158990_;
         }), IntProvider.CODEC.fieldOf("vertical_rotation").forGetter((p_158988_) -> {
             return p_158988_.verticalRotation;
-        }),IntProvider.CODEC.fieldOf("start_x").forGetter((p_158988_) -> {
-            return p_158988_.verticalRotation;
-        }),IntProvider.CODEC.fieldOf("start_z").forGetter((p_158988_) -> {
-            return p_158988_.verticalRotation;
+        }),IntProvider.CODEC.fieldOf("start_y").forGetter((p_158988_) -> {
+            return p_158988_.startY;
         })).apply(codecConfig, AntColonyConfiguration::new);
     });
     public final IntProvider verticalRotation;
-    public final IntProvider startX;
-    public final IntProvider startZ;
+    public final IntProvider startY;
 
 
-    public AntColonyConfiguration(float pProbability, HeightProvider pY, FloatProvider pYScale, VerticalAnchor pLavaLevel, CarverDebugSettings pDebugSettings, IntProvider pVerticalRotation, IntProvider startX,IntProvider startZ) {
+
+    public AntColonyConfiguration(float pProbability, HeightProvider pY, FloatProvider pYScale, VerticalAnchor pLavaLevel, CarverDebugSettings pDebugSettings, IntProvider pVerticalRotation, IntProvider startY) {
         super(pProbability, pY, pYScale, pLavaLevel, pDebugSettings);
         this.verticalRotation = pVerticalRotation;
-        this.startX = startX;
-        this.startZ = startZ;
+        this.startY = startY;
     }
 
-    public AntColonyConfiguration(CarverConfiguration p_158980_, IntProvider rotationProvider,IntProvider startX,IntProvider startZ) {
-        this(p_158980_.probability, p_158980_.y, p_158980_.yScale, p_158980_.lavaLevel, p_158980_.debugSettings, rotationProvider, startX, startZ);
-    }
-
-    public static class ColonyShapeConfiguration {
-        public static final Codec<AntColonyConfiguration.ColonyShapeConfiguration> CODEC = RecordCodecBuilder.create((p_159007_) -> {
-            return p_159007_.group(IntProvider.CODEC.fieldOf("distance_factor").forGetter((p_159019_) -> {
-                return p_159019_.distanceFactor;
-            })).apply(p_159007_, AntColonyConfiguration.ColonyShapeConfiguration::new);
-        });
-        public final IntProvider distanceFactor;
-
-        public ColonyShapeConfiguration(IntProvider p_159000_) {
-            this.distanceFactor = p_159000_;
-        }
+    public AntColonyConfiguration(CarverConfiguration p_158980_, IntProvider rotationProvider,IntProvider startX) {
+        this(p_158980_.probability, p_158980_.y, p_158980_.yScale, p_158980_.lavaLevel, p_158980_.debugSettings, rotationProvider, startX);
     }
 }

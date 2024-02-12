@@ -20,13 +20,22 @@ public class ModColonyGeneration {
         ResourceKey<Biome> key = ResourceKey.create(Registry.BIOME_REGISTRY, Objects.requireNonNull(event.getName()));
         Set<BiomeDictionary.Type> types = BiomeDictionary.getTypes(key);
 
-        if(types.contains(BiomeDictionary.Type.SAVANNA)) {
+        /*if(types.contains(BiomeDictionary.Type.SAVANNA)) {
             List<Holder<PlacedFeature>> base = event.getGeneration().getFeatures(GenerationStep.Decoration.VEGETAL_DECORATION);
             base.add(PlaceAntFeaturesHolders.GEODE_PLACED);
 
-        }
+        }*/
 
-        if(types.contains(BiomeDictionary.Type.PLAINS)) {
+        if((types.contains(BiomeDictionary.Type.PLAINS) || types.contains(BiomeDictionary.Type.JUNGLE)) &&
+                !types.contains(BiomeDictionary.Type.HILLS) &&
+                !types.contains(BiomeDictionary.Type.PLATEAU) &&
+                !types.contains(BiomeDictionary.Type.PEAK) &&
+                !types.contains(BiomeDictionary.Type.MODIFIED) &&
+                !types.contains(BiomeDictionary.Type.BEACH) &&
+                !types.contains(BiomeDictionary.Type.OCEAN) &&
+                !types.contains(BiomeDictionary.Type.RIVER) &&
+                !types.contains(BiomeDictionary.Type.DENSE)
+        ) {
             event.getGeneration().addCarver(GenerationStep.Carving.AIR, AntCarversReg.CONFIGURED_COLONY_REGISTER.getHolder().get());
         }
     }

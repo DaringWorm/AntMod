@@ -2,27 +2,40 @@ package com.daringworm.antmod.worldgen.feature.custom;
 
 import com.daringworm.antmod.block.ModBlocks;
 import com.daringworm.antmod.colony.AntColony;
+import com.daringworm.antmod.colony.ColonyGenerationBuffer;
+import com.daringworm.antmod.colony.misc.ColonyBranch;
 import com.daringworm.antmod.colony.misc.PosSpherePair;
+import com.daringworm.antmod.goals.AntUtils;
 import com.mojang.serialization.Codec;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.Mth;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.monster.ElderGuardian;
 import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.CarvingMask;
 import net.minecraft.world.level.chunk.ChunkAccess;
+import net.minecraft.world.level.dimension.DimensionType;
 import net.minecraft.world.level.levelgen.Aquifer;
 import net.minecraft.world.level.levelgen.carver.CarverConfiguration;
 import net.minecraft.world.level.levelgen.carver.CarvingContext;
 import net.minecraft.world.level.levelgen.carver.WorldCarver;
 
 import java.util.ArrayList;
+import java.util.Objects;
 import java.util.Random;
 import java.util.function.Function;
 
 public class AntColonyCarver<C extends CarverConfiguration> extends WorldCarver<AntColonyConfiguration> {
+
+    private static final double WALL_THICKNESS = 1.2d;
+
     public AntColonyCarver(Codec<AntColonyConfiguration> p_64711_) {
         super(p_64711_);
     }
@@ -45,23 +58,43 @@ public class AntColonyCarver<C extends CarverConfiguration> extends WorldCarver<
 
         BlockPos startPosAbsolute = pChunkPos.getMiddleBlockPosition(70);
 
-        ArrayList<PosSpherePair> masterArray = AntColony.generateNewColonyBlueprint(startPosAbsolute);
+        ColonyBranch branch = AntColony.generateNewTunnels(startPosAbsolute);
 
-        for(PosSpherePair sphere : masterArray){
+        ArrayList<PosSpherePair> masterArray = AntColony.generateNewColonyBlueprint(branch);
+
+        for(int i = 0; i < masterArray.size(); i++){
+            PosSpherePair sphere = masterArray.get(i);
             ChunkPos cPos = pChunk.getPos();
             BlockPos bPos = sphere.centerPos;
-            if(
-                    cPos.getMaxBlockX() >= bPos.getX() &&
-                    cPos.getMaxBlockZ() >= bPos.getZ() &&
-                    cPos.getMinBlockX() <= bPos.getX() &&
-                    cPos.getMinBlockZ() <= bPos.getZ()
-            ){
-                pChunk.setBlockState(sphere.centerPos, Blocks.LAVA.defaultBlockState(),false);
-                //sphere.setSphereCarver(pChunk, ModBlocks.ANT_AIR.get().defaultBlockState(), ModBlocks.ANT_DIRT.get().defaultBlockState(),1.2d);
+            BlockPos cbPos = cPos.getMiddleBlockPosition(bPos.getY());
+            if(AntUtils.getDist(bPos,cbPos) <= 8+sphere.radius+(WALL_THICKNESS*3)){
+                boolean replaceAir = (i >= 24);
+                sphere.setSphereCarver(pChunk, ModBlocks.ANT_AIR.get().defaultBlockState(), ModBlocks.ANT_DIRT.get().defaultBlockState(),WALL_THICKNESS, replaceAir);
             }
         }
+
+        /*
+        Sets the block and colony buffer to be checked by ServerLevelMixins.
+        The Mixin will check for the block at all the Buffer locations every game tick,
+        and make and save a new colony if it finds a match.
+
+        The buffer is static, so there could be a mismatch between servers or levels,
+        but I'm counting on that being extremely unlikely since the start positions of
+        both colonies would need to match perfectly.
+        */
+
+        if(Objects.equals(pChunk.getPos(), pChunkPos)) {
+            pChunk.setBlockState(startPosAbsolute, Blocks.REDSTONE_BLOCK.defaultBlockState(), false);
+        }
+
+        ColonyGenerationBuffer.tryToAdd(branch);
+
         return true;
     }
+
+
+
+
 
     private void doCarve(CarvingContext pContext, AntColonyConfiguration pConfig, ChunkAccess pChunk, Function<BlockPos, Holder<Biome>> pBiomeAccessor, long pSeed, Aquifer pAquifer, double pX, double pY, double pZ, float pThickness, float pYaw, float pPitch, int pBranchIndex, int pBranchCount, double pHorizontalVerticalRatio, CarvingMask pCarvingMask) {
         Random random = new Random(pSeed);
