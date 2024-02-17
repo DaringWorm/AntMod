@@ -83,7 +83,7 @@ public class AntMod
         ItemBlockRenderTypes.setRenderLayer(ModBlocks.LEAFY_CONTAINER_BLOCK.get(), RenderType.translucent());
         ItemBlockRenderTypes.setRenderLayer(ModBlocks.FUNGUS_BLOCK.get(), RenderType.cutout());
 
-        MenuScreens.register(ModMenuTypes.FUNGAL_CULTIVAR_MENU.get(), FungalContainerScreen::new);
+        MenuScreens.register(ModMenuTypes.LEAFY_CONTAINER_MENU.get(), FungalContainerScreen::new);
     }
 
     private void setup(final FMLCommonSetupEvent event){

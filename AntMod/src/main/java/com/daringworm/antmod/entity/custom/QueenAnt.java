@@ -98,12 +98,6 @@ public class QueenAnt extends Ant implements IAnimatable {
 
 
 
-    @Nullable
-    @Override
-    public AgeableMob getBreedOffspring(ServerLevel p_146743_, AgeableMob p_146744_) {
-        return null;
-    }
-
     private <E extends IAnimatable> PlayState predicate(AnimationEvent<E> event){
         if (event.isMoving()) {
             event.getController().setAnimation(new AnimationBuilder().addAnimation("animation.model.worker_ant_walk_fast", true));

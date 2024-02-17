@@ -1,6 +1,7 @@
 package com.daringworm.antmod.colony;
 
 import com.daringworm.antmod.block.ModBlocks;
+import com.daringworm.antmod.colony.misc.ColonyBranch;
 import com.daringworm.antmod.colony.misc.ColonyGenUtils;
 import com.daringworm.antmod.colony.misc.PosPair;
 import com.daringworm.antmod.colony.misc.PosSpherePair;
@@ -20,10 +21,33 @@ import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.phys.Vec3;
 
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Random;
 
 public class ColonyGenerator implements AntUtils {
+/*
+
+ private BlockPos findPosForDir(BlockPos startPos, int distanceFromCenter, Direction direction, Random rand){
+        int randomIntDistBound = rand.nextInt((int)distanceFromCenter+1);
+        int bigNumber = (randomIntDistBound >= (int)distanceFromCenter/2) ? randomIntDistBound : 0;
+        int smallNumber = (bigNumber != 0) ? (int)Math.abs(Math.sqrt((distanceFromCenter*distanceFromCenter)-(bigNumber*bigNumber))) : randomIntDistBound- randomIntDistBound/3;
+        smallNumber = (rand.nextBoolean()) ? -smallNumber : smallNumber;
+        if(bigNumber == 0){bigNumber = (int)Math.abs(Math.sqrt((distanceFromCenter*distanceFromCenter)-(smallNumber*smallNumber)));}
+
+        int xVar = (direction == Direction.EAST || direction == Direction.WEST) ?
+                ((direction == Direction.EAST) ? bigNumber : -bigNumber) : smallNumber;
+
+        int zVar = (direction == Direction.SOUTH || direction == Direction.NORTH) ?
+                ((direction == Direction.SOUTH) ? bigNumber : -bigNumber) : smallNumber;
+
+        return startPos.offset(xVar, 0, zVar);
+    }
+
+    private static BlockPos findSurfacePos(BlockPos pos, Level level){
+        return level.getHeightmapPos(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, pos);
+    }
+
 
     private boolean isAcceptableWall (Block pBlock, boolean accepAir){
         return pBlock == Blocks.STONE || pBlock == Blocks.GRANITE || pBlock == Blocks.ANDESITE || pBlock == Blocks.DIORITE ||
@@ -188,6 +212,8 @@ public class ColonyGenerator implements AntUtils {
             }
         }
     }
+*/
+
 
     public static void carpetArea(BlockPos center, int distance, int vertical, ArrayList<BlockState> stateArrayList, Random rand, Level pLevel){
         for(int x = distance/2; x >= -distance/2; x--){
@@ -226,57 +252,20 @@ public class ColonyGenerator implements AntUtils {
         }
     }
 
-    private BlockPos findExitPoint(BlockPos startPos, double maxIncline, Direction direction, Random rand){
+    public static BlockPos findExitPoint(Level level, BlockPos startPos, double maxIncline, int facingDegrees){
+        if(maxIncline <= 0){return BlockPos.ZERO;}
+        if(level.canSeeSky(startPos)){return startPos;}
 
-            assert maxIncline != 0;
-            int depth = findSurfacePos(startPos, level).getY() - startPos.getY();
-            double distanceFromCenter = Math.abs(depth / maxIncline);
-            int randomIntDistBound = rand.nextInt((int)(distanceFromCenter-distanceFromCenter/3)+1);
-            int bigNumber = (randomIntDistBound >= (int)distanceFromCenter/2) ? randomIntDistBound : 0;
-            int smallNumber = (bigNumber != 0) ? (int)Math.abs(Math.sqrt((distanceFromCenter*distanceFromCenter)-(bigNumber*bigNumber))) : randomIntDistBound;
-            smallNumber = (rand.nextBoolean()) ? -smallNumber : smallNumber;
-            if(bigNumber == 0){bigNumber = (int)Math.abs(Math.sqrt((distanceFromCenter*distanceFromCenter)-(smallNumber*smallNumber)));}
-
-            int xVar = (direction == Direction.EAST || direction == Direction.WEST) ?
-                    ((direction == Direction.EAST) ? bigNumber : -bigNumber) : smallNumber;
-
-            int zVar = (direction == Direction.SOUTH || direction == Direction.NORTH) ?
-                ((direction == Direction.SOUTH) ? bigNumber : -bigNumber) : smallNumber;
-
-            BlockPos returnPos = findSurfacePos(startPos.offset(xVar, 0, zVar), level);
-            for (int i = 1000; i > 0; i--) {
-                assert distanceFromCenter != 0;
-                if (((depth / distanceFromCenter) <= maxIncline)) {
-                    return returnPos;
-                } else {
-                    returnPos = findSurfacePos(returnPos.offset(xVar / Math.abs(xVar), 0, zVar / Math.abs(zVar)), level);
-                    distanceFromCenter = distanceFromCenter + 1.2;
-                    depth = findSurfacePos(returnPos, level).getY() - startPos.getY();
-                }
-            }
+        int i = 1;
+        while(i < 256){
+            i++;
+            BlockPos pos = ColonyBranch.nextBranchPos(startPos, facingDegrees, i, (int)(i * maxIncline));
+            if(level.canSeeSky(pos)){return pos;}
+        }
 
         return BlockPos.ZERO;
     }
 
-    private BlockPos findPosForDir(BlockPos startPos, int distanceFromCenter, Direction direction, Random rand){
-        int randomIntDistBound = rand.nextInt((int)distanceFromCenter+1);
-        int bigNumber = (randomIntDistBound >= (int)distanceFromCenter/2) ? randomIntDistBound : 0;
-        int smallNumber = (bigNumber != 0) ? (int)Math.abs(Math.sqrt((distanceFromCenter*distanceFromCenter)-(bigNumber*bigNumber))) : randomIntDistBound- randomIntDistBound/3;
-        smallNumber = (rand.nextBoolean()) ? -smallNumber : smallNumber;
-        if(bigNumber == 0){bigNumber = (int)Math.abs(Math.sqrt((distanceFromCenter*distanceFromCenter)-(smallNumber*smallNumber)));}
-
-        int xVar = (direction == Direction.EAST || direction == Direction.WEST) ?
-                ((direction == Direction.EAST) ? bigNumber : -bigNumber) : smallNumber;
-
-        int zVar = (direction == Direction.SOUTH || direction == Direction.NORTH) ?
-                ((direction == Direction.SOUTH) ? bigNumber : -bigNumber) : smallNumber;
-
-        return startPos.offset(xVar, 0, zVar);
-    }
-
-    private BlockPos findSurfacePos(BlockPos pos, Level level){
-        return level.getHeightmapPos(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, pos);
-    }
 
     public static ArrayList<BlockState> getAllFungusStates(){
         ArrayList<BlockState> fungusStateList = new ArrayList<>();
@@ -286,9 +275,6 @@ public class ColonyGenerator implements AntUtils {
         return fungusStateList;
     }
 
-    private final double CARVE_RADIUS = 1d;
-    private final int PASSAGE_LENGTH = 30;
-    
     Block BLOCK1 = ModBlocks.ANT_AIR.get();
     Block BLOCK2 = ModBlocks.ANT_DIRT.get();
     Block BLOCK3 = ModBlocks.ANTDEBRIS.get();
@@ -301,7 +287,7 @@ public class ColonyGenerator implements AntUtils {
     }
 
 
-    public void generate(BlockPos pPos) {
+    public void createAndGenerateColony(BlockPos pPos) {
 
         ArrayList<BlockState> fungusStateList = getAllFungusStates();
 
@@ -333,4 +319,44 @@ public class ColonyGenerator implements AntUtils {
 
         AntUtils.broadcastString(level,"Successfully generated colony. Carver placed " + sphereArray.size() + " spheres.");
     }
+
+    public void generateColony(AntColony colony) {
+        ArrayList<PosSpherePair> sphereArray = colony.getColonyBlueprint();
+        for(PosSpherePair sphere : sphereArray){
+            sphere.setSphere((ServerLevel) this.level,this.BLOCK1,this.BLOCK2, 2);
+        }
+
+        ((ServerLevelUtil)(this.level)).addColonyToList(colony);
+
+        //Adds the ants, decoration, and functionality blocks
+
+        for (BlockPos roomPos : colony.tunnels.listRoomPoses()) {
+            ColonyGenerator.sprinkleArea(roomPos, 8, 4, 10, ModBlocks.LEAFY_CONTAINER_BLOCK.get(), colony.random, level);
+            ColonyGenerator.carpetArea(roomPos, 8, 4, ColonyGenerator.getAllFungusStates(), colony.random, level);
+
+            WorkerAnt pAnt = new WorkerAnt(ModEntityTypes.WORKERANT.get(), level);
+            pAnt.moveTo(Vec3.atCenterOf(roomPos));
+            pAnt.setColonyID(colony.colonyID);
+            pAnt.setWorkingStage(WorkingStages.SCOUTING);
+            pAnt.setHomePos(roomPos);
+            pAnt.memory.workingStage = WorkingStages.SCOUTING;
+            level.addFreshEntity(pAnt);
+            pAnt.memory.surfacePos = colony.startPos;
+            pAnt.setFirstSurfacePos(colony.startPos);
+        }
+        AntUtils.broadcastString(level,"Successfully generated colony. Carver placed " + sphereArray.size() + " spheres.");
+    }
+
+    public void generateBranch(ColonyBranch branch, boolean wontReplaceAir, boolean wholeThing, int stepsIfNotWholeThing) {
+        ArrayList<PosSpherePair> sphereArray = (wholeThing)?
+                branch.generateBranchBlueprint(AntColony.passageWidth,AntColony.passageWidth+1,AntColony.UNDERGOUND_ROOM_SIZE) :
+                branch.generateLimitedBlueprint(AntColony.passageWidth,AntColony.passageWidth+1,AntColony.UNDERGOUND_ROOM_SIZE, stepsIfNotWholeThing, wontReplaceAir);
+        for(PosSpherePair sphere : sphereArray){
+            sphere.setSphere((ServerLevel) this.level,this.BLOCK1,this.BLOCK2, 2);
+        }
+
+        AntUtils.broadcastString(level,"Successfully generated branch. Carver placed " + sphereArray.size() + " spheres.");
+    }
+
+
 }

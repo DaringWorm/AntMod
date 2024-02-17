@@ -122,11 +122,6 @@ public class AntEgg extends Ant implements IAnimatable {
     }
 
 
-    @Nullable
-    @Override
-    public AgeableMob getBreedOffspring(ServerLevel p_146743_, AgeableMob p_146744_) {
-        return null;
-    }
 
     private <E extends IAnimatable> PlayState predicate(AnimationEvent<E> event){
         event.getController().setAnimation(new AnimationBuilder().addAnimation("animation.antthis.rest", true));

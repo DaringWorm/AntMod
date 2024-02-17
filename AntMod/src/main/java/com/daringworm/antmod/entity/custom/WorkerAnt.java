@@ -238,7 +238,7 @@ public class WorkerAnt extends Ant implements IAnimatable {
     public void aiStep() {
         super.aiStep();
         if(!this.level.isClientSide) {
-            //LeafCutterWorkerBrain.run(this);
+            LeafCutterWorkerBrain.run(this);
             if(this.memory.braincellStage == 3){this.memory.braincellStage = 1;}
         }
         else{
@@ -253,52 +253,7 @@ public class WorkerAnt extends Ant implements IAnimatable {
                 Actions.LATCH_ON.run(this);
             }
         }
-
-        /*
-        if(this.getTarget() != null && !this.getTarget().isAlive()){
-            this.setTarget(null);
-        }
-        if(this. getWorkingStage() == 3 && this.getTarget() == null){
-            this.setWorkingStage(0);
-        }
-
-        //sets first aboveground position and moderates the aboveground status
-        if (this.isAlive()) {
-            boolean flag = this.level.canSeeSky(this.blockPosition());
-            if (flag) {
-                if (this.getFirstSurfacePos()==BlockPos.ZERO) {
-                    this.setFirstSurfacePos(this.getOnPos());
-                    this.setIsAboveground(true);
-                }
-
-                if (flag){
-                    setIsAboveground(true);
-                }
-            }
-        }
-
-        //ticks down hunger if players are nearby
-        if(this.level.getNearestPlayer(this,100)!=null){
-            this.setHunger(this.getHunger()-1);
-        }
-
-        //sets food pos of successful ants
-        if (this.getFirstSurfacePos() == BlockPos.ZERO){
-            List<? extends WorkerAnt> antList = this.level.getEntitiesOfClass(WorkerAnt.class, this.getBoundingBox().inflate(8.0D, 4, 8.0D));
-            WorkerAnt ant1 = null;
-
-            for(WorkerAnt ant2 : antList) {
-                //TODO: place this in the if
-                /*&& ant1.getThisColonyID() == this.getThisColonyID()
-                if (ant2.getFirstSurfacePos() != BlockPos.ZERO && ant2.isCompetent()) {
-                    ant1 = ant2;
-                }
-            }
-            if (ant1 != null) {
-                this.setFoodLocation(ant1.getFoodLocation());
-                this.setFirstSurfacePos(ant1.getFirstSurfacePos());
-            }
-        }*/
+        
 
 
     }
@@ -306,12 +261,6 @@ public class WorkerAnt extends Ant implements IAnimatable {
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-
-
-    @Override
-    public AgeableMob getBreedOffspring(ServerLevel serverLevel, AgeableMob ageableMob) {
-        return null;
-    }
 
     private <E extends IAnimatable> PlayState walkPredicate(AnimationEvent<E> event){
         if (event.isMoving()) {

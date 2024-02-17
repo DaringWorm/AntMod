@@ -14,11 +14,13 @@ public class ModMenuTypes {
     public static final DeferredRegister<MenuType<?>> MENUS =
             DeferredRegister.create(ForgeRegistries.CONTAINERS, AntMod.MOD_ID);
 
-    public static final RegistryObject<MenuType<FungalContainerMenu>> FUNGAL_CULTIVAR_MENU =
-            registerMenuType(FungalContainerMenu::new, "fungal_cultivar_menu");
+    public static final RegistryObject<MenuType<LeafyContainerMenu>> LEAFY_CONTAINER_MENU =
+            registerMenuType(LeafyContainerMenu::new, "leafy_container_menu");
 
-    private static <T extends AbstractContainerMenu>RegistryObject<MenuType<T>> registerMenuType(IContainerFactory<T> factory,
-                                                                                                 String name) {
+    public static final RegistryObject<MenuType<AntTradingMenu>> ANT_TRADING_MENU =
+            registerMenuType(AntTradingMenu::new, "ant_trading_menu");
+
+    private static <T extends AbstractContainerMenu>RegistryObject<MenuType<T>> registerMenuType(IContainerFactory<T> factory, String name) {
         return MENUS.register(name, () -> IForgeMenuType.create(factory));
     }
 

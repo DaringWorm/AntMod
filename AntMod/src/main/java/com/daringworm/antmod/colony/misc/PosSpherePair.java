@@ -18,6 +18,7 @@ public class PosSpherePair {
     public BlockPos centerPos;
     public double radius;
     private boolean checkSky = false;
+    private boolean checkAir = false;
 
     public PosSpherePair(BlockPos center, double sphereRadius){
         this.centerPos = center;
@@ -44,6 +45,11 @@ public class PosSpherePair {
         }
 
         return returnList;
+    }
+
+    public PosSpherePair wontReplaceAir(boolean bool){
+        this.checkAir = bool;
+        return this;
     }
 
     public ArrayList<BlockPos> getBlockPoses(Level pLevel){
@@ -73,7 +79,7 @@ public class PosSpherePair {
         ArrayList<BlockPos> innerList = this.getBlockPoses();
         totalList.removeAll(innerList);
         for(BlockPos pos : totalList){
-            if(!checkSky || !pLevel.canSeeSky(pos)) {
+            if((!checkSky || !pLevel.canSeeSky(pos)) && (!checkAir || pLevel.getBlockState(pos).getBlock() != Blocks.AIR)) {
                 BlockState pState = pLevel.getBlockState(pos);
                 if (pState.getBlock() != innerBlock && pState.getBlock() != outerBlock) {
                     pLevel.setBlock(pos, outerBlock.defaultBlockState(), 2);

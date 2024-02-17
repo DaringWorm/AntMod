@@ -54,6 +54,18 @@ public abstract class ServerClassMixins implements ServerLevelUtil {
         levelColonies.update(pColony);
         pColony.save();
     }
+    @Override
+    public AntColony getClosestColony(BlockPos pos){
+        ArrayList<AntColony> colonies = new ArrayList<>(levelColonies.getColonies().toList());
+        if(colonies.isEmpty()){return null;}
+        AntColony currentNearest = colonies.get(0);
+        for(AntColony temp : colonies){
+            if(AntUtils.getDist(temp.startPos,pos) < AntUtils.getDist(currentNearest.startPos,pos)){
+                currentNearest = temp;
+            }
+        }
+        return currentNearest;
+    }
 
     @Inject(at = @At("HEAD"), method = "tick")
     private void tickColonyDoohickeys(CallbackInfo ci) throws IOException {

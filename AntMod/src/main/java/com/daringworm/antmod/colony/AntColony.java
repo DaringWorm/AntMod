@@ -11,12 +11,14 @@ import com.daringworm.antmod.mixin.tomixin.ServerLevelUtil;
 import com.google.gson.*;
 import com.mojang.logging.LogUtils;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import org.apache.commons.io.FileUtils;
+import org.checkerframework.checker.units.qual.C;
 import org.slf4j.Logger;
 
 import javax.json.Json;
@@ -192,7 +194,7 @@ public class AntColony implements AutoCloseable{
 
     public static final ColonyBranch generateNewTunnels(BlockPos startPos){
         Random random = AntUtils.randFromPos(startPos);
-        ColonyBranch tunnels = new ColonyBranch(startPos, random.nextInt(360),new ArrayList<>(), false, "0");
+        ColonyBranch tunnels = new ColonyBranch(startPos, random.nextInt(360), false, "0");
         tunnels.generateNextBranch(35,-20,false);
         tunnels.generateNextBranches(5, 48,1,0,24,true);
         tunnels.generateNextBranches(2, 43,1,0,20,true);
@@ -206,8 +208,6 @@ public class AntColony implements AutoCloseable{
         ArrayList<PosSpherePair> returnList = new ArrayList<>();
 
 
-        //makes the entrance
-        returnList.add(new PosSpherePair(startPos.above(4),7, true));
 
         //makes the rest
         returnList.addAll(tunnels.generateBranchBlueprint(
@@ -231,9 +231,28 @@ public class AntColony implements AutoCloseable{
             }
         }
 
+        //checks if the ants have an exit leading to the surface.
+
+        if(!this.level.canSeeSky(startPos)){
+            BlockPos subBranchPos = this.tunnels.branches.get(0).getPos();
+            int xN = this.startPos.getX()- subBranchPos.getX();
+            int zN = this.startPos.getZ()- subBranchPos.getZ();
+            BlockPos newExit = ColonyGenerator.findExitPoint(this.level,this.startPos,0.35, this.tunnels.getDegFacing()+180);
+            if(newExit != BlockPos.ZERO) {
+                ColonyBranch newTrunk = new ColonyBranch(newExit, this.tunnels.getDegFacing(), false, "0");
+                newTrunk.branches.add(this.tunnels.updateID("0", ""));
+                this.tunnels = newTrunk;
+                this.startPos = newExit;
+                this.generateNewColonyBlueprint();
+                ColonyGenerator generator = new ColonyGenerator(this.level);
+                generator.generateBranch(newTrunk, false, false, 0);
+            }
+        }
+
         //also places decoration and fungus at the moment.
 
         for (BlockPos roomPos : this.tunnels.listRoomPoses()) {
+
             ColonyGenerator.sprinkleArea(roomPos, 8, 4, 10, ModBlocks.LEAFY_CONTAINER_BLOCK.get(), this.random, level);
             ColonyGenerator.carpetArea(roomPos, 8, 4, ColonyGenerator.getAllFungusStates(), this.random, level);
 
@@ -258,12 +277,9 @@ public class AntColony implements AutoCloseable{
         ArrayList<PosSpherePair> returnList = new ArrayList<>();
         random = AntUtils.randFromPos(startPos);
 
-        //makes the entrance
-        returnList.add(new PosSpherePair(startPos.above(4),7, true));
-
         //makes the rest
         if(this.tunnels == null) {
-            this.tunnels = new ColonyBranch(startPos, this.random.nextInt(360), new ArrayList<>(), false, "0");
+            this.tunnels = new ColonyBranch(startPos, this.random.nextInt(360), false, "0");
             this.tunnels.generateNextBranch(35, -20, false);
             this.tunnels.generateNextBranches(5, 48, 1, 0, 24, true);
             this.tunnels.generateNextBranches(2, 43, 1, 0, 20, true);

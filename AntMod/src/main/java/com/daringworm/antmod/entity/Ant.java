@@ -2,6 +2,7 @@ package com.daringworm.antmod.entity;
 
 
 import com.daringworm.antmod.block.ModBlocks;
+import com.daringworm.antmod.block.entity.custom.FungalContainerBlockEntity;
 import com.daringworm.antmod.entity.brains.memories.LeafCutterMemory;
 import com.daringworm.antmod.colony.misc.PosPair;
 import com.daringworm.antmod.goals.AntUtils;
@@ -14,10 +15,12 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
+import net.minecraft.world.MenuProvider;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.animal.Animal;
@@ -31,6 +34,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.pathfinder.BlockPathTypes;
 import net.minecraft.world.level.pathfinder.Path;
 import net.minecraft.world.level.pathfinder.PathComputationType;
+import net.minecraftforge.network.NetworkHooks;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
@@ -38,7 +42,7 @@ import java.util.*;
 import static com.daringworm.antmod.goals.AntUtils.getDist;
 
 
-public abstract class Ant extends AgeableMob {
+public abstract class Ant extends PathfinderMob implements MenuProvider {
 
     public LeafCutterMemory memory;
 
@@ -385,12 +389,9 @@ public abstract class Ant extends AgeableMob {
 
     public InteractionResult mobInteract(Player pPlayer, InteractionHand pHand) {
         ItemStack itemstack = pPlayer.getItemInHand(pHand);
-        if (this.isFood(itemstack)) {
-
-            if (this.level.isClientSide) {
-                return InteractionResult.CONSUME;
-            }
-            this.setHunger(100000);
+        Level pLevel = pPlayer.getLevel();
+        if(!pLevel.isClientSide()){
+            //NetworkHooks.openGui(((ServerPlayer) pPlayer), (MenuProvider) this, this.blockPosition());
         }
         return super.mobInteract(pPlayer, pHand);
     }

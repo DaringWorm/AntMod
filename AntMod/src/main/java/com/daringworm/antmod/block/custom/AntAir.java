@@ -34,7 +34,7 @@ public class AntAir extends Block {
     }
 
     public void randomTick(BlockState pState, ServerLevel pLevel, BlockPos pPos, Random pRandom) {
-        //if(!pLevel.isAreaLoaded(pPos, 3)) {
+        /*//if(!pLevel.isAreaLoaded(pPos, 3)) {
             for (Direction dir : Direction.values()) {
                 BlockPos pos = pPos.relative(dir);
 
@@ -44,6 +44,6 @@ public class AntAir extends Block {
                     pLevel.setBlock(pos, ModBlocks.ANT_DIRT.get().defaultBlockState(), 2);
                 }
            // }
-        }
+        }*/
     }
 }

@@ -19,12 +19,11 @@ public class ColonyBranch {
     private final int facingDegrees;
     public boolean hasRoom;
     private final int roomSize;
-    public final String branchID;
+    public String branchID;
     public ArrayList<ColonyBranch> branches = new ArrayList<>();
 
-    public ColonyBranch(BlockPos startPos, int facing, ArrayList<ColonyBranch> branches, boolean hasRoom, String roomID){
+    public ColonyBranch(BlockPos startPos, int facing, boolean hasRoom, String roomID){
         this.originPos = startPos;
-        this.branches = branches;
         this.facingDegrees = facing;
         this.hasRoom = hasRoom;
         this.roomSize = 12;
@@ -94,18 +93,30 @@ public class ColonyBranch {
 
     public BlockPos getPos(){return this.originPos;}
 
-    public BlockPos nextBranchPos(int facingDegrees, double length, int yOff){
+    public int getDegFacing(){return this.facingDegrees;}
+
+    public ColonyBranch updateID(String idToAddStart, String idToAddEnd){
+        this.branchID = idToAddStart + this.branchID + idToAddEnd;
+        ArrayList<ColonyBranch> newList = new ArrayList<>();
+        for(ColonyBranch branch : this.branches){
+            newList.add(branch.updateID(idToAddStart,idToAddEnd));
+        }
+        this.branches = newList;
+        return this;
+    }
+
+    public static BlockPos nextBranchPos(BlockPos startPos, int facingDegrees, double length, int yOff){
         int deg = facingDegrees % 360;
         double rad = Math.toRadians(deg);
 
         int xOff = (int)Math.round(length*Math.cos(rad));
         int zOff = (int)Math.round(length*Math.sin(rad));
 
-        return this.originPos.offset(xOff, yOff, zOff);
+        return startPos.offset(xOff, yOff, zOff);
     }
 
     public void generateNextBranch(int length, int yOffset, boolean hasRoom){
-        this.branches.add(new ColonyBranch(this.nextBranchPos(this.facingDegrees,length,yOffset),this.facingDegrees,new ArrayList<>(), hasRoom, this.branchID + "0"));
+        this.branches.add(new ColonyBranch(nextBranchPos(this.getPos(), this.facingDegrees,length,yOffset),this.facingDegrees, hasRoom, this.branchID + "0"));
     }
 
     public void generateNextBranches(int numberPerStep, int degreesSpread, int steps, int yOffset, double length, boolean haveRooms){
@@ -121,23 +132,23 @@ public class ColonyBranch {
             int numLeft = numberPerStep-1;
             if(numberPerStep%2 == 0){
                 int newDir = this.facingDegrees+(degreesSpread/2);
-                this.branches.add(new ColonyBranch(nextBranchPos(newDir, length, yOffset), newDir, new ArrayList<>(),haveRooms,this.branchID+"0"));
+                this.branches.add(new ColonyBranch(nextBranchPos(this.getPos(), newDir, length, yOffset), newDir, haveRooms,this.branchID+"0"));
                 while(numLeft>0){
                     accumulatedDeg += degreesSpread;
                     newDir = newDir + (accumulatedDeg * i);
                     i= -i;
-                    this.branches.add(new ColonyBranch(nextBranchPos(newDir, length, yOffset), newDir, new ArrayList<>(),haveRooms, this.branchID + numLeft));
+                    this.branches.add(new ColonyBranch(nextBranchPos(this.getPos(), newDir, length, yOffset), newDir, haveRooms, this.branchID + numLeft));
                     numLeft--;
                 }
             }
             else{
-                this.branches.add(new ColonyBranch(nextBranchPos(this.facingDegrees, length, yOffset), this.facingDegrees, new ArrayList<>(),haveRooms, this.branchID+"0"));
+                this.branches.add(new ColonyBranch(nextBranchPos(this.getPos(), this.facingDegrees, length, yOffset), this.facingDegrees, haveRooms, this.branchID+"0"));
                 int newDir = this.facingDegrees;
                 while(numLeft>0){
                     accumulatedDeg += degreesSpread;
                     newDir = newDir + (accumulatedDeg * i);
                     i= -i;
-                    this.branches.add(new ColonyBranch(nextBranchPos(newDir, length, yOffset), newDir, new ArrayList<>(),haveRooms, this.branchID + numLeft));
+                    this.branches.add(new ColonyBranch(nextBranchPos(this.getPos(), newDir, length, yOffset), newDir, haveRooms, this.branchID + numLeft));
                     numLeft--;
                 }
             }
@@ -148,12 +159,28 @@ public class ColonyBranch {
         }
     }
 
+    public ArrayList<PosSpherePair> generateLimitedBlueprint(double passageWidth, double roomHeight, int roomSize, int steps, boolean wontReplaceAir){
+        ArrayList<PosSpherePair> returnList = new ArrayList<>();
+
+        for(ColonyBranch branch : this.branches){
+            returnList.addAll(ColonyGenUtils.generatePassageBlueprint(new PosPair(this.getPos(),branch.getPos()),passageWidth, wontReplaceAir));
+
+            if(branch.hasRoom){
+                returnList.addAll(ColonyGenUtils.generateRoomBlueprint(roomHeight,roomSize,branch.getPos(),AntUtils.randFromPos(this.getPos())));
+            }
+            if(steps > 0) {
+                returnList.addAll(branch.generateLimitedBlueprint(passageWidth, roomHeight, roomSize, steps - 1, wontReplaceAir));
+            }
+        }
+
+        return returnList;
+    }
+
     public ArrayList<PosSpherePair> generateBranchBlueprint(double passageWidth, double roomHeight, int roomSize){
         ArrayList<PosSpherePair> returnList = new ArrayList<>();
 
         for(ColonyBranch branch : this.branches){
-            returnList.addAll(ColonyGenUtils.generatePassageBlueprint(
-                    new PosPair(this.getPos(),branch.getPos()),passageWidth));
+            returnList.addAll(ColonyGenUtils.generatePassageBlueprint(new PosPair(this.getPos(),branch.getPos()),passageWidth, false));
 
             if(branch.hasRoom){
                 returnList.addAll(ColonyGenUtils.generateRoomBlueprint(roomHeight,roomSize,branch.getPos(),AntUtils.randFromPos(this.getPos())));

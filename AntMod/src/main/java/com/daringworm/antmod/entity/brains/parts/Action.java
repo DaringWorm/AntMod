@@ -18,6 +18,7 @@ import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.ItemStack;
@@ -143,7 +144,7 @@ public class Action {
         @Override
         public void run(Ant pAnt){
             if(pAnt.getNavigation().isStuck() || pAnt.getNavigation().isDone()){
-                if(pAnt.getLevel().canSeeSky(pAnt.blockPosition()) || AntUtils.getDist(pAnt.blockPosition(),pAnt.memory.surfacePos) < 12){
+                if(pAnt.getLevel().canSeeSky(pAnt.blockPosition()) || AntUtils.getHorizontalDist(pAnt.blockPosition(),pAnt.memory.surfacePos) < 12){
                     int stg = pAnt.memory.workingStage;
                     BlockPos fPos = pAnt.memory.foodPos;
                     if(fPos != null && fPos != BlockPos.ZERO && (stg == WorkingStages.SCOUTING || stg == WorkingStages.FORAGING)){
@@ -345,23 +346,27 @@ public class Action {
         @Override
         public void run(Ant pAnt){
             if(pAnt.memory.foundItemList.size() != 0) {
-                ItemEntity item = pAnt.memory.foundItemList.get(0);
-                pAnt.getNavigation().moveTo(item, 1.2d);
-                if (pAnt.getWorkingStage() == WorkingStages.SCOUTING) {
-                    pAnt.setWorkingStage(WorkingStages.FORAGING);
-                    pAnt.memory.workingStage = WorkingStages.FORAGING;
-                    if (pAnt.getLevel().canSeeSky(item.blockPosition())) {
-                        pAnt.memory.foodPos = item.blockPosition();
-                        pAnt.setFoodLocation(item.blockPosition());
+                List<ItemEntity> list = pAnt.getLevel().getEntitiesOfClass(ItemEntity.class,pAnt.getBoundingBox().inflate(6));
+                if(list.isEmpty()){return;}
+                ItemEntity item = list.get(0);
+                if(!item.isRemoved()) {
+                    pAnt.getNavigation().moveTo(item, 1.2d);
+                    if (pAnt.getWorkingStage() == WorkingStages.SCOUTING) {
+                        pAnt.setWorkingStage(WorkingStages.FORAGING);
+                        pAnt.memory.workingStage = WorkingStages.FORAGING;
+                        if (pAnt.getLevel().canSeeSky(item.blockPosition())) {
+                            pAnt.memory.foodPos = item.blockPosition();
+                            pAnt.setFoodLocation(item.blockPosition());
+                        }
                     }
+                    item.remove(Entity.RemovalReason.DISCARDED);
+                    pAnt.setItemInHand(InteractionHand.MAIN_HAND,item.getItem());
                 }
-                item.remove(Entity.RemovalReason.DISCARDED);
-                pAnt.setItemInHand(InteractionHand.MAIN_HAND,item.getItem());
             }
         }
     }
 
-    public static class FindSnippableBlockAction extends Action {
+    public static final class FindSnippableBlockAction extends Action {
         @Override
         public void run(Ant pAnt){
             assert pAnt.getLevel() instanceof ServerLevel;

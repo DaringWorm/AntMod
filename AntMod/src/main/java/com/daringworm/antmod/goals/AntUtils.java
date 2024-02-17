@@ -714,7 +714,7 @@ public interface AntUtils {
     }
 
     public static Random randFromPos(BlockPos pos){
-        return new Random(pos.getX()*pos.getY()*pos.getZ());
+        return new Random(Math.abs(pos.getX()*pos.getY()*pos.getZ()));
     }
 
     public static boolean isPosInChunk(BlockPos pos, ChunkPos chunk){

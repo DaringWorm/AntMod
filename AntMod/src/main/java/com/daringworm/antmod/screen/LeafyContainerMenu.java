@@ -2,7 +2,6 @@ package com.daringworm.antmod.screen;
 
 import com.daringworm.antmod.block.ModBlocks;
 import com.daringworm.antmod.block.entity.custom.FungalContainerBlockEntity;
-import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
@@ -15,16 +14,16 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraftforge.items.CapabilityItemHandler;
 import net.minecraftforge.items.SlotItemHandler;
 
-public class FungalContainerMenu extends AbstractContainerMenu {
+public class LeafyContainerMenu extends AbstractContainerMenu {
     private final FungalContainerBlockEntity blockEntity;
     private final Level level;
 
-    public FungalContainerMenu(int pContainerId, Inventory inv, FriendlyByteBuf extraData) {
+    public LeafyContainerMenu(int pContainerId, Inventory inv, FriendlyByteBuf extraData) {
         this(pContainerId, inv, inv.player.level.getBlockEntity(extraData.readBlockPos()));
     }
 
-    public FungalContainerMenu(int pContainerId, Inventory inv, BlockEntity entity) {
-        super(ModMenuTypes.FUNGAL_CULTIVAR_MENU.get(), pContainerId);
+    public LeafyContainerMenu(int pContainerId, Inventory inv, BlockEntity entity) {
+        super(ModMenuTypes.LEAFY_CONTAINER_MENU.get(), pContainerId);
         checkContainerSize(inv, 9);
         blockEntity = ((FungalContainerBlockEntity) entity);
         this.level = inv.player.level;
@@ -102,10 +101,6 @@ public class FungalContainerMenu extends AbstractContainerMenu {
     public boolean stillValid(Player pPlayer) {
         return stillValid(ContainerLevelAccess.create(level, blockEntity.getBlockPos()),
                 pPlayer, ModBlocks.LEAFY_CONTAINER_BLOCK.get());
-    }
-
-    public BlockPos getBlockPos(){
-        return this.blockEntity.getBlockPos();
     }
 
     private void addPlayerInventory(Inventory playerInventory) {

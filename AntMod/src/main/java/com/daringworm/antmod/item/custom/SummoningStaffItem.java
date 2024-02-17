@@ -2,12 +2,16 @@ package com.daringworm.antmod.item.custom;
 
 import com.daringworm.antmod.block.ModBlocks;
 import com.daringworm.antmod.colony.AntColony;
+import com.daringworm.antmod.colony.misc.BlockPosStringifier;
+import com.daringworm.antmod.colony.misc.ColonyBranch;
 import com.daringworm.antmod.colony.misc.PosSpherePair;
 import com.daringworm.antmod.goals.AntUtils;
+import com.daringworm.antmod.mixin.tomixin.ServerLevelUtil;
 import com.daringworm.antmod.worldgen.feature.custom.AntGeodeFeature;
 import com.daringworm.antmod.worldgen.feature.registries.AntFeaturesReg;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.Multimap;
+import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
@@ -47,14 +51,28 @@ public class SummoningStaffItem extends Item {
 
     @Override
     public void releaseUsing(@NotNull ItemStack pStack, Level pLevel, @NotNull LivingEntity pEntity, int pTimeLeft) {
-        if(pLevel instanceof ServerLevel) {
-            ServerLevel serverlevel = (ServerLevel) pLevel;
+        if(pLevel instanceof ServerLevel level) {
+            AntColony colony = ((ServerLevelUtil)pLevel).getClosestColony(pEntity.blockPosition());
 
-            ArrayList<PosSpherePair> sphereArray = AntColony.generateNewColonyBlueprint(AntColony.generateNewTunnels(pEntity.blockPosition()));
-
-            AntUtils.broadcastString(serverlevel, "Colony has " + sphereArray.size() + " spheres!");
-            for (PosSpherePair sphere : sphereArray) {
-                sphere.setSphere(serverlevel, ModBlocks.ANT_AIR.get(), ModBlocks.ANT_DIRT.get(), 1.15);
+            if(colony != null){
+                ColonyBranch tunnels = colony.tunnels;
+                if(tunnels != null){
+                    String branchID = tunnels.getNearestBranchID(pEntity.blockPosition());
+                    BlockPos branchPos = AntUtils.findNearestBlockPos(pEntity.blockPosition(), tunnels.listBranchPoses());
+                    AntUtils.broadcastString(level, "Nearest colony's ID is " +
+                            colony.colonyID +
+                            ". The nearest room within that colony is " +
+                            branchID +
+                            ", which is located at " +
+                            BlockPosStringifier.jsonFromPos(branchPos) +
+                            '.');
+                }
+                else{
+                    AntUtils.broadcastString(level, "Nearest colony has no branches.");
+                }
+            }
+            else{
+                AntUtils.broadcastString(level, "No colony was found.");
             }
         }
     }

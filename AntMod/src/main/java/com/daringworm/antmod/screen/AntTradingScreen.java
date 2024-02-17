@@ -9,12 +9,11 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
 
-
-public class FungalContainerScreen extends AbstractContainerScreen<LeafyContainerMenu> {
+public class AntTradingScreen extends AbstractContainerScreen<AntTradingMenu> {
     private static final ResourceLocation TEXTURE =
             new ResourceLocation(AntMod.MOD_ID, "textures/gui/fungal_cultivar_menu.png");
 
-    public FungalContainerScreen(LeafyContainerMenu pMenu, Inventory pPlayerInventory, Component pTitle) {
+    public AntTradingScreen(AntTradingMenu pMenu, Inventory pPlayerInventory, Component pTitle) {
         super(pMenu, pPlayerInventory, pTitle);
     }
 

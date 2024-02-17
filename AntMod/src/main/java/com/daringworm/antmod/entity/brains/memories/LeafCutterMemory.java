@@ -14,12 +14,14 @@ import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.block.NetherPortalBlock;
 import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.state.BlockState;
 
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.function.Predicate;
 
 public class LeafCutterMemory {
@@ -41,6 +43,7 @@ public class LeafCutterMemory {
     public BlockPos interestPos = BlockPos.ZERO;
     public BlockPos containerPos = BlockPos.ZERO;
     public BlockPos foodPos = BlockPos.ZERO;
+    public Player[] tradingWith;
 
     public ArrayList<PosSpherePair> excavationListRAW = new ArrayList<>();
     public ArrayList<BlockPos> excavationListCooked = new ArrayList<>();
@@ -82,8 +85,11 @@ public class LeafCutterMemory {
         this.navDelay++;
         this.workingStage = (pAnt.getWorkingStage());
         this.hungerLevel = pAnt.getHunger();
-        this.foundItemList = ((ArrayList<ItemEntity>) pAnt.getLevel().getEntitiesOfClass(ItemEntity.class,pAnt.getBoundingBox().inflate(6)));
         AntColony colony = ((ServerLevelUtil) (pSLevel)).getColonyWithID(cID);
+
+        if(pAnt.getMainHandItem().isEmpty() && workingStage != WorkingStages.ATTACKING && workingStage != WorkingStages.LATCHING){
+            this.foundItemList = ((ArrayList<ItemEntity>) pAnt.getLevel().getEntitiesOfClass(ItemEntity.class,pAnt.getBoundingBox().inflate(6)));
+        }
 
         if(pAnt.getHomePos() == BlockPos.ZERO){pAnt.setHomePos(pAnt.blockPosition());}
         this.homePos = pAnt.getHomePos();
@@ -95,8 +101,10 @@ public class LeafCutterMemory {
 
 
         if(colony != null) {
-            this.colonyBranch = colony.tunnels;
-            if (this.colonyBranch != null) {
+            if(this.colonyBranch == null) {
+                this.colonyBranch = colony.tunnels;
+            }
+            if (this.colonyBranch != null && (this.goUndergroundList.isEmpty() || Objects.equals(pAnt.getRoomID(),""))) {
                 pAnt.setRoomID(this.colonyBranch.getNearestBranchID(this.homePos));
                 if(pAnt.getRoomID() != null && this.goUndergroundList.isEmpty()) {
                     this.goUndergroundList = (this.colonyBranch.getPosesToBranch(pAnt.getRoomID()));

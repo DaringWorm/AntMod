@@ -3,9 +3,8 @@ package com.daringworm.antmod.block.entity.custom;
 import com.daringworm.antmod.block.ModBlocks;
 import com.daringworm.antmod.block.entity.ModBlockEntities;
 import com.daringworm.antmod.entity.Ant;
-import com.daringworm.antmod.goals.AntUtils;
 import com.daringworm.antmod.item.ModItems;
-import com.daringworm.antmod.screen.FungalContainerMenu;
+import com.daringworm.antmod.screen.LeafyContainerMenu;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
@@ -68,7 +67,7 @@ public class FungalContainerBlockEntity extends BlockEntity implements MenuProvi
     @Nullable
     @Override
     public AbstractContainerMenu createMenu(int pContainerId, Inventory pInventory, Player pPlayer) {
-        return new FungalContainerMenu(pContainerId,pInventory,this);}
+        return new LeafyContainerMenu(pContainerId,pInventory,this);}
 
 
     @Nonnull

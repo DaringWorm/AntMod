@@ -62,9 +62,8 @@ public class AntLarva extends AntEgg implements IAnimatable {
 
     }
     public void aiStep(){
-        this.setAge(this.getAge()+1);
         if(!this.getLevel().isClientSide) {
-            if (this.isAlive() && this.getAge() >= 40) {
+            if (this.isAlive()) {
                 WorkerAnt newAnt = ModEntityTypes.WORKERANT.get().create(this.level);
                 assert newAnt != null;
                 newAnt.setColonyID(this.getColonyID());
@@ -78,12 +77,6 @@ public class AntLarva extends AntEgg implements IAnimatable {
     }
 
 
-
-    @Nullable
-    @Override
-    public AgeableMob getBreedOffspring(ServerLevel p_146743_, AgeableMob p_146744_) {
-        return null;
-    }
 
     private <E extends IAnimatable> PlayState predicate(AnimationEvent<E> event){
         event.getController().setAnimation(new AnimationBuilder().addAnimation("antlarva1.animation.new", true));
