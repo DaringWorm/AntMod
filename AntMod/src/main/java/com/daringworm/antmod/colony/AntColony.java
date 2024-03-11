@@ -196,9 +196,9 @@ public class AntColony implements AutoCloseable{
         Random random = AntUtils.randFromPos(startPos);
         ColonyBranch tunnels = new ColonyBranch(startPos, random.nextInt(360), false, "0");
         tunnels.generateNextBranch(35,-20,false);
-        tunnels.generateNextBranches(5, 48,1,0,24,true);
-        tunnels.generateNextBranches(2, 43,1,0,20,true);
-        tunnels.generateNextBranches(2, 35,1,0,16,true);
+        tunnels.generateNextBranches(5, 48,1,-4, 1,24,true);
+        tunnels.generateNextBranches(2, 43,1,-4, 0,20,true);
+        tunnels.generateNextBranches(2, 35,1,-3, 2,16,true);
         return tunnels;
     }
     
@@ -223,8 +223,8 @@ public class AntColony implements AutoCloseable{
 
     public boolean spawnAnts(){
         if(this.level.isClientSide){return false;}
-        //quick performance check
 
+        //quick performance check
         for(BlockPos roomPos : this.tunnels.listRoomPoses()){
             if(!this.level.isLoaded(roomPos)){
                 return false;
@@ -237,7 +237,7 @@ public class AntColony implements AutoCloseable{
             BlockPos subBranchPos = this.tunnels.branches.get(0).getPos();
             int xN = this.startPos.getX()- subBranchPos.getX();
             int zN = this.startPos.getZ()- subBranchPos.getZ();
-            BlockPos newExit = ColonyGenerator.findExitPoint(this.level,this.startPos,0.35, this.tunnels.getDegFacing()+180);
+            BlockPos newExit = ColonyGenerator.findExitPoint(this.level,this.startPos,0.45, this.tunnels.getDegFacing()+180);
             if(newExit != BlockPos.ZERO) {
                 ColonyBranch newTrunk = new ColonyBranch(newExit, this.tunnels.getDegFacing(), false, "0");
                 newTrunk.branches.add(this.tunnels.updateID("0", ""));
@@ -279,11 +279,7 @@ public class AntColony implements AutoCloseable{
 
         //makes the rest
         if(this.tunnels == null) {
-            this.tunnels = new ColonyBranch(startPos, this.random.nextInt(360), false, "0");
-            this.tunnels.generateNextBranch(35, -20, false);
-            this.tunnels.generateNextBranches(5, 48, 1, 0, 24, true);
-            this.tunnels.generateNextBranches(2, 43, 1, 0, 20, true);
-            this.tunnels.generateNextBranches(2, 35, 1, 0, 16, true);
+            this.tunnels = generateNewTunnels(startPos);
         }
 
         returnList.addAll(this.tunnels.generateBranchBlueprint(

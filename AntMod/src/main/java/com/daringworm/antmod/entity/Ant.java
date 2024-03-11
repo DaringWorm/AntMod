@@ -1,6 +1,7 @@
 package com.daringworm.antmod.entity;
 
 
+import com.daringworm.antmod.DebugHelper;
 import com.daringworm.antmod.block.ModBlocks;
 import com.daringworm.antmod.block.entity.custom.FungalContainerBlockEntity;
 import com.daringworm.antmod.entity.brains.memories.LeafCutterMemory;
@@ -59,6 +60,7 @@ public abstract class Ant extends PathfinderMob implements MenuProvider {
     /**1 place is workingstage; 10 place is subclass; 100s place is for hascheckedhomepos; 1000s is latch direction for workerants**/
     private static final EntityDataAccessor<Integer> MISC_DATA = SynchedEntityData.defineId(Ant.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Integer> WORKING_STAGE = SynchedEntityData.defineId(Ant.class, EntityDataSerializers.INT);
+    private static final EntityDataAccessor<Integer> WALKING_COOLDOWN = SynchedEntityData.defineId(Ant.class, EntityDataSerializers.INT);
 
 
     public double getDistTo(BlockPos pPos){return getDist(this.blockPosition(),pPos);}
@@ -124,6 +126,10 @@ public abstract class Ant extends PathfinderMob implements MenuProvider {
         this.entityData.set(WORKING_STAGE, pStage);
     }
     public int getWorkingStage(){return this.entityData.get(WORKING_STAGE);}
+    public void setWalkingCooldown(int pStage) {
+        this.entityData.set(WALKING_COOLDOWN, pStage);
+    }
+    public int getWalkingCooldown(){return this.entityData.get(WALKING_COOLDOWN);}
 
     public void setThisMisc(int pValue, int digit) {
         int totalMisc = this.entityData.get(MISC_DATA);
@@ -152,9 +158,13 @@ public abstract class Ant extends PathfinderMob implements MenuProvider {
     }
 
     public void walkTo(BlockPos blockPos, double speedModifier, double distanceModifier){
+        if(this.getWalkingCooldown() < 20){
+            return;
+        }
+        this.getLevel().getProfiler().push("ant_navigation");
         if(this.memory != null && this.memory.navDelay <= 25){return;}
-        assert this.isOnGround();
-        assert blockPos != null && this.getLevel().isLoaded(blockPos) && blockPos != this.getNavigation().getTargetPos();
+        if(!this.isOnGround() && !this.isInWater()){return;}
+        assert blockPos != null && this.getLevel().isLoaded(blockPos) && blockPos != this.getNavigation().getPath().getEndNode().asBlockPos();
         this.memory.navDelay = 0;
         Path path = this.getNavigation().getPath();
         Level pLevel = this.getLevel();
@@ -169,6 +179,7 @@ public abstract class Ant extends PathfinderMob implements MenuProvider {
                     if (isTargetUpdated){
                         if(AntUtils.getDist(tempPos, this.blockPosition()) < AntUtils.getDist(targetPos, this.blockPosition())){
                             targetPos = tempPos;
+                            break;
                         }
                     }
                     else{
@@ -183,15 +194,19 @@ public abstract class Ant extends PathfinderMob implements MenuProvider {
             this.getNavigation().moveTo(targetPos.getX(), targetPos.getY(), targetPos.getZ(), speedModifier);
             path = this.getNavigation().getPath();
         }
+        this.setWalkingCooldown(0);
+        this.getLevel().getProfiler().pop();
+        DebugHelper.numberOfPathsRequested = DebugHelper.numberOfPathsRequested + 1;
     }
 
     public void walkAlongList(ArrayList<BlockPos> posList, int speedModifier, double farthestAllowed){
-        assert !posList.isEmpty();
+        if(this.getWalkingCooldown() < 20){return;}
+        if(posList.isEmpty()) return;
 
         double MAX_ALLOWED_PATH_NODES = 4;
 
         if(AntUtils.getDist(this.blockPosition(),posList.get(posList.size()-1)) > farthestAllowed) {
-            if (this.getNavigation().isDone() || this.getNavigation().isStuck()) {
+            if (!this.getNavigation().isInProgress()) {
                 BlockPos nearestPos = AntUtils.findNearestBlockPos(this, posList);
                 int index = posList.indexOf(nearestPos);
                 BlockPos nextPos = (index + 2 <= posList.size()) ? posList.get(index+1) : nearestPos;
@@ -214,6 +229,8 @@ public abstract class Ant extends PathfinderMob implements MenuProvider {
                 }
             }
         }
+        this.setWalkingCooldown(0);
+        DebugHelper.numberOfPathsRequested = DebugHelper.numberOfPathsRequested + 1;
     }
     
     public boolean shouldRunBrain() {
@@ -223,7 +240,6 @@ public abstract class Ant extends PathfinderMob implements MenuProvider {
             this.getLevel().isLoaded(this.blockPosition().east(16)) &&
             this.getLevel().isLoaded(this.blockPosition().west(16));
     }
-
 
 
     protected void defineSynchedData() {
@@ -240,6 +256,7 @@ public abstract class Ant extends PathfinderMob implements MenuProvider {
         this.entityData.define(COLONY_ID, (int) this.level.getGameTime());
         this.entityData.define(MISC_DATA, 1000000);
         this.entityData.define(WORKING_STAGE, 0);
+        this.entityData.define(WALKING_COOLDOWN, -10);
     }
 
     public void addAdditionalSaveData(@NotNull CompoundTag pCompound) {
@@ -262,6 +279,7 @@ public abstract class Ant extends PathfinderMob implements MenuProvider {
         pCompound.putInt("HungerLevel", this.getHunger());
         pCompound.putInt("MiscData", this.getThisMiscRAW());
         pCompound.putInt("WorkingStage", this.getWorkingStage());
+        pCompound.putInt("WalkingCooldown", this.getWalkingCooldown());
     }
 
     /**
@@ -291,6 +309,7 @@ public abstract class Ant extends PathfinderMob implements MenuProvider {
         this.setHunger(pCompound.getInt("HungerLevel"));
         this.setThisMiscRAW(pCompound.getInt("MiscData"));
         this.setWorkingStage(pCompound.getInt("WorkingStage"));
+        this.setWalkingCooldown(pCompound.getInt("WalkingCooldown"));
     }
 
 
@@ -311,21 +330,25 @@ public abstract class Ant extends PathfinderMob implements MenuProvider {
 
     public void aiStep() {
         super.aiStep();
+        this.getLevel().getProfiler().push("ant_ai");
+
         //sets first aboveground position and moderates the aboveground status
         if (this.isAlive()) {
-            boolean flag = this.level.canSeeSky(this.blockPosition());
+            /*boolean flag = this.level.canSeeSky(this.blockPosition());
             if (flag) {
                 if (this.getFirstSurfacePos()==BlockPos.ZERO) {
                     this.setFirstSurfacePos(this.getOnPos());
                     this.setIsAboveground(true);
                 }
                 setIsAboveground(true);
-            }
+            }*/
         }
         //ticks down hunger if players are nearby
         if(this.level.getNearestPlayer(this,100)!=null){
             this.setHunger(this.getHunger()-1);
         }
+        this.setWalkingCooldown(this.getWalkingCooldown()+1);
+        this.getLevel().getProfiler().pop();
     }
 
 

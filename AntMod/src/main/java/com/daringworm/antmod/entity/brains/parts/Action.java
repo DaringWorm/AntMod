@@ -41,16 +41,19 @@ public class Action {
     public static final class MoveToEntityAction extends Action {
         @Override
         public void run(Ant pAnt){
+            pAnt.getLevel().getProfiler().push("move_to_entity");
             Entity target = (pAnt.getTarget() != null && pAnt.getTarget().isAlive()) ? pAnt.getTarget() : pAnt.memory.passiveTarget;
             if(target != null && target.isAlive()) {
                 pAnt.getNavigation().moveTo(target, 1);
             }
+            pAnt.getLevel().getProfiler().pop();
         }
     }
 
     public static final class SelectItemToPickupAction extends Action {
         @Override
         public void run(Ant pAnt){
+            pAnt.getLevel().getProfiler().push("select_item_pickup");
             if(pAnt.memory.foundItemList.size()>0){
                 boolean hasntChosen = true;
                 /*for(ItemEntity item : pAnt.memory.foundItemList){
@@ -61,13 +64,14 @@ public class Action {
                 }*/
                 pAnt.memory.passiveTarget = pAnt.memory.foundItemList.get(0);
             }
+            pAnt.getLevel().getProfiler().pop();
         }
-
     }
 
     public static final class FindEmptyContainerAction extends Action{
         @Override
         public void run(Ant pAnt){
+            pAnt.getLevel().getProfiler().push("find_container");
             ArrayList<BlockPos> containerPoses = pAnt.memory.containerPosSet;
 
             if(!containerPoses.isEmpty()){
@@ -85,12 +89,14 @@ public class Action {
                     }
                 }
             }
+            pAnt.getLevel().getProfiler().pop();
         }
     }
 
     public static final class ScoutAction extends Action{
         @Override
         public void run(Ant pAnt){
+            pAnt.getLevel().getProfiler().push("scout");
             if(pAnt instanceof WorkerAnt){
 
                 if (pAnt.getNavigation().isDone() || pAnt.getNavigation().isStuck()) {
@@ -126,23 +132,30 @@ public class Action {
 
                 }
             }
+            pAnt.getLevel().getProfiler().pop();
         }
     }
 
     public static final class GoUndergroundAction extends Action{
         @Override
         public void run(Ant pAnt){
+            pAnt.getLevel().getProfiler().push("go_underground");
             if(pAnt.getNavigation().isStuck() || pAnt.getNavigation().isDone()){
                 if(!pAnt.memory.goUndergroundList.isEmpty()) {
-                    pAnt.walkAlongList(pAnt.memory.goUndergroundList, 1, 4d);
+                    pAnt.walkAlongList(pAnt.memory.goUndergroundList, 1, 6d);
+                }
+                else{
+                    Actions.ERROR_MSG_ACTION.run(pAnt);
                 }
             }
+            pAnt.getLevel().getProfiler().pop();
         }
     }
 
     public static final class GoAbovegroundAction extends Action{
         @Override
         public void run(Ant pAnt){
+            pAnt.getLevel().getProfiler().push("go_aboveground");
             if(pAnt.getNavigation().isStuck() || pAnt.getNavigation().isDone()){
                 if(pAnt.getLevel().canSeeSky(pAnt.blockPosition()) || AntUtils.getHorizontalDist(pAnt.blockPosition(),pAnt.memory.surfacePos) < 12){
                     int stg = pAnt.memory.workingStage;
@@ -161,12 +174,14 @@ public class Action {
                     pAnt.walkTo(pAnt.getFirstSurfacePos(),1, 5d);
                 }
             }
+            pAnt.getLevel().getProfiler().pop();
         }
     }
 
     public static final class PlaceItemInContainerAction extends Action{
         @Override
         public void run(Ant pAnt){
+            pAnt.getLevel().getProfiler().push("put_item_container");
             BlockState pState = pAnt.getLevel().getBlockState(pAnt.memory.interestPos);
             if(pState.getBlock() == ModBlocks.LEAFY_CONTAINER_BLOCK.get()){
                 FungalContainerBlockEntity pEntity = (FungalContainerBlockEntity) pAnt.getLevel().getBlockEntity(pAnt.memory.interestPos);
@@ -177,34 +192,40 @@ public class Action {
                     pAnt.memory.workingStage = WorkingStages.SCOUTING;
                 }
             }
+            pAnt.getLevel().getProfiler().pop();
         }
     }
 
     public static final class SetContainerAsInterestAction extends Action{
         @Override
         public void run(Ant pAnt){
+            pAnt.getLevel().getProfiler().push("set_container_interest");
             if(pAnt.memory.containerPos != BlockPos.ZERO){
                 pAnt.memory.interestPos = pAnt.memory.containerPos;
             }
             else if(pAnt.memory.homePos != BlockPos.ZERO){
                 pAnt.memory.interestPos = pAnt.memory.homePos;
             }
+            pAnt.getLevel().getProfiler().pop();
         }
     }
 
     public static final class MoveToBlockAction extends Action {
         @Override
         public void run(Ant pAnt){
+            pAnt.getLevel().getProfiler().push("move_to_block");
             BlockPos pPos = pAnt.memory.interestPos;
             if(pPos != BlockPos.ZERO && (pAnt.getNavigation().isDone() || pAnt.getNavigation().isStuck())) {
                 pAnt.walkTo(pPos, 1, 2d);
             }
+            pAnt.getLevel().getProfiler().pop();
         }
     }
 
     public static final class BreakBlockAction extends Action {
         @Override
         public void run(Ant pAnt){
+            pAnt.getLevel().getProfiler().push("break_block");
             BlockPos pPos = pAnt.memory.interestPos;
             if(pAnt.getLevel().getBlockState(pPos).getRenderShape() == RenderShape.INVISIBLE){
                 pAnt.memory.interestPos = BlockPos.ZERO;
@@ -276,12 +297,14 @@ public class Action {
             else{
                 pAnt.memory.breakingProgress = 0;
             }
+            pAnt.getLevel().getProfiler().pop();
         }
     }
 
     public static final class ExcavateColonyBlockAction extends Action {
         @Override
         public void run(Ant pAnt){
+            pAnt.getLevel().getProfiler().push("excavate_block");
             BlockPos pPos = pAnt.memory.interestPos;
             int breakingProgress = pAnt.memory.breakingProgress;
             float blockToughness = Math.max(16, (pAnt.level.getBlockState(pPos).getDestroySpeed(pAnt.level, pPos)*32));
@@ -313,12 +336,14 @@ public class Action {
             else{
                 pAnt.memory.breakingProgress = 0;
             }
+            pAnt.getLevel().getProfiler().pop();
         }
     }
 
     public static final class SetExcavationBlockAsInterestAction extends Action {
         @Override
         public void run(Ant pAnt){
+            pAnt.getLevel().getProfiler().push("set_excvtn_interest");
             LeafCutterMemory mem = pAnt.memory;
             if(mem.excavationListCooked.isEmpty()){
                 pAnt.memory.refreshExcavationList(pAnt); mem = pAnt.memory;
@@ -339,12 +364,14 @@ public class Action {
                     pAnt.memory.interestPos = AntUtils.findNearestBlockPos(pAnt, mem.excavationListCooked);
                 }
             }
+            pAnt.getLevel().getProfiler().pop();
         }
     }
 
     public static final class PickupItemAction extends Action {
         @Override
         public void run(Ant pAnt){
+            pAnt.getLevel().getProfiler().push("pickup_item");
             if(pAnt.memory.foundItemList.size() != 0) {
                 List<ItemEntity> list = pAnt.getLevel().getEntitiesOfClass(ItemEntity.class,pAnt.getBoundingBox().inflate(6));
                 if(list.isEmpty()){return;}
@@ -363,44 +390,52 @@ public class Action {
                     pAnt.setItemInHand(InteractionHand.MAIN_HAND,item.getItem());
                 }
             }
+            pAnt.getLevel().getProfiler().pop();
         }
     }
 
     public static final class FindSnippableBlockAction extends Action {
         @Override
         public void run(Ant pAnt){
+            pAnt.getLevel().getProfiler().push("find_foliage");
             assert pAnt.getLevel() instanceof ServerLevel;
             ServerLevel pLevel = (ServerLevel) pAnt.getLevel();
             pAnt.memory.interestPos = BlockPos.findClosestMatch(pAnt.blockPosition(),8,4, pAnt.memory.foodStatePredicate(pAnt)).orElse(BlockPos.ZERO);
+            pAnt.getLevel().getProfiler().pop();
         }
     }
 
     public static final class AttackEntityAction extends Action {
         @Override
         public void run(Ant pAnt){
+            pAnt.getLevel().getProfiler().push("attack_entity");
             LivingEntity target = pAnt.getTarget();
             if(target != null && target.isAlive() && pAnt.canAttack(target)) {
                 if(pAnt.distanceToSqr(target) <= 2.5f && pAnt.hasLineOfSight(target)){
                     target.hurt(DamageSource.mobAttack(pAnt), 2f);
                 }
             }
+            pAnt.getLevel().getProfiler().pop();
         }
     }
 
     public static final class SetAggressorAsTargetAction extends Action {
         @Override
         public void run(Ant pAnt){
+            pAnt.getLevel().getProfiler().push("set_aggro_target");
             LivingEntity target = pAnt.getLastHurtByMob();
             if(target != null && target.isAlive() && pAnt.canAttack(target)) {
                 pAnt.setTarget(target);
             }
             pAnt.setLastHurtByMob(null);
+            pAnt.getLevel().getProfiler().pop();
         }
     }
 
     public static final class LatchOnTargetAction extends Action {
         @Override
         public void run(Ant pAnt){
+            pAnt.getLevel().getProfiler().push("latch_on_target");
             assert pAnt instanceof WorkerAnt;
             LivingEntity target = pAnt.getTarget();
             if(target != null && target.isAlive()){
@@ -431,12 +466,14 @@ public class Action {
                     pAnt.setWorkingStage(5);
                 }
             }
+            pAnt.getLevel().getProfiler().pop();
         }
     }
 
     public static final class ErrorAlertAction extends Action {
         @Override
         public void run(Ant pAnt){
+            pAnt.getLevel().getProfiler().push("error_alert");
             if(pAnt.getLevel() instanceof ServerLevel){
 
                 String toSay = "";
@@ -446,6 +483,7 @@ public class Action {
                     player.sendMessage(new TextComponent(toSay), player.getUUID());
                 }
             }
+            pAnt.getLevel().getProfiler().pop();
         }
     }
 }

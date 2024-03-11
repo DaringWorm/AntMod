@@ -1,10 +1,12 @@
 package com.daringworm.antmod.mixin.mixins;
 
+import com.daringworm.antmod.DebugHelper;
 import com.daringworm.antmod.block.ModBlocks;
 import com.daringworm.antmod.colony.AntColony;
 import com.daringworm.antmod.colony.ColonyGenerationBuffer;
 import com.daringworm.antmod.colony.LevelColonies;
 import com.daringworm.antmod.colony.misc.ColonyBranch;
+import com.daringworm.antmod.entity.Ant;
 import com.daringworm.antmod.goals.AntUtils;
 import com.daringworm.antmod.mixin.tomixin.ServerLevelUtil;
 import com.google.common.collect.Lists;
@@ -100,6 +102,16 @@ public abstract class ServerClassMixins implements ServerLevelUtil {
                     serverplayer.displayClientMessage(component, false);
                 }
             }
+        }
+    }
+
+    @Inject(at = @At("TAIL"), method = "tick")
+    private void broadcastAntInefficiencies(CallbackInfo ci){
+        if(players.isEmpty()){return;}
+        ServerLevel pLevel = players.get(0).getLevel();
+        if(DebugHelper.numberOfPathsRequested > 0) {
+            //AntUtils.broadcastString(pLevel, "Ants requested " + DebugHelper.numberOfPathsRequested + " paths this tick.");
+            DebugHelper.numberOfPathsRequested = 0;
         }
     }
 

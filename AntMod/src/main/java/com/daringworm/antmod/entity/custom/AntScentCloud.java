@@ -92,22 +92,18 @@ public class AntScentCloud extends Entity implements IAnimatable {
 
     }
 
+    public int getInterestPosesSize(){return this.interestPosSet.size();}
+
     public void updateAntInterest(Ant pAnt){
         if((pAnt.getTarget() == null || !pAnt.getTarget().isAlive()) &&
                 this.hasDataToStart() && this.WORKING_STAGE >= pAnt.memory.workingStage){
 
             int stg = this.WORKING_STAGE;
 
-            if(stg == WorkingStages.FORAGING){
-                if (pAnt.getMainHandItem().isEmpty() && !AntUtils.shouldSnip(pAnt.memory.interestPos, this.getLevel()) &&
-                        (this.getLevel().canSeeSky(this.blockPosition()) == this.getLevel().canSeeSky(pAnt.blockPosition()) ||
-                        Math.abs(this.getY()-pAnt.getY()) < 8)) {
-                    BlockPos targetPos = BlockPos.ZERO;
-                    for(BlockPos tempPos : this.interestPosSet){
-                        if(pAnt.getDistTo(tempPos) < pAnt.getDistTo(targetPos)){
-                            targetPos = tempPos;
-                        }
-                    }
+            if(stg == WorkingStages.FORAGING && !this.interestPosSet.isEmpty()){
+                if (pAnt.getMainHandItem().isEmpty() && (!AntUtils.shouldSnip(pAnt.memory.interestPos, this.getLevel()) || pAnt.memory.interestPos == BlockPos.ZERO) &&
+                        (Math.abs(this.getY()-pAnt.getY()) < 8)) {
+                    BlockPos targetPos = AntUtils.findNearestBlockPos(pAnt,new ArrayList<>(List.copyOf(interestPosSet)));
                     pAnt.memory.interestPos = targetPos;
                     this.interestPosSet.remove(targetPos);
                     pAnt.setWorkingStage(WorkingStages.FORAGING);

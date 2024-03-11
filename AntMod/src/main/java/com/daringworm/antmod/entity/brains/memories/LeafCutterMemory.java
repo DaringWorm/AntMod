@@ -105,7 +105,9 @@ public class LeafCutterMemory {
                 this.colonyBranch = colony.tunnels;
             }
             if (this.colonyBranch != null && (this.goUndergroundList.isEmpty() || Objects.equals(pAnt.getRoomID(),""))) {
-                pAnt.setRoomID(this.colonyBranch.getNearestBranchID(this.homePos));
+                if(this.colonyBranch.getNearestBranchID(this.homePos) != null) {
+                    pAnt.setRoomID(this.colonyBranch.getNearestBranchID(this.homePos));
+                }
                 if(pAnt.getRoomID() != null && this.goUndergroundList.isEmpty()) {
                     this.goUndergroundList = (this.colonyBranch.getPosesToBranch(pAnt.getRoomID()));
                 }
@@ -123,6 +125,10 @@ public class LeafCutterMemory {
             pAnt.setWorkingStage(WorkingStages.FORAGING);
             this.workingStage = WorkingStages.FORAGING;
         }
+
+        /*if(this.workingStage == WorkingStages.FORAGING && (pAnt.getMainHandItem().isEmpty() || pAnt.memory.interestPos == null || pAnt.memory.interestPos == BlockPos.ZERO)){
+            pAnt.setWorkingStage(WorkingStages.SCOUTING);
+        }*/
 
         if(this.surfacePos == null || this.surfacePos == BlockPos.ZERO){
             this.surfacePos = pAnt.getFirstSurfacePos();

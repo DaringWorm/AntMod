@@ -1,11 +1,13 @@
 package com.daringworm.antmod.entity.custom;
 
+import com.daringworm.antmod.DebugHelper;
 import com.daringworm.antmod.entity.ModEntityTypes;
 import com.daringworm.antmod.entity.brains.LeafCutterWorkerBrain;
 import com.daringworm.antmod.entity.Ant;
 
 import com.daringworm.antmod.entity.brains.parts.Actions;
 import com.daringworm.antmod.entity.brains.parts.WorkingStages;
+import com.daringworm.antmod.goals.AntUtils;
 import com.daringworm.antmod.item.ModItems;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
@@ -25,7 +27,9 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.goal.FloatGoal;
 import net.minecraft.world.entity.animal.Animal;
 import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -237,8 +241,12 @@ public class WorkerAnt extends Ant implements IAnimatable {
 
     public void aiStep() {
         super.aiStep();
+
+        this.getLevel().getProfiler().push("worker_ant_ai");
         if(!this.level.isClientSide) {
+            this.getLevel().getProfiler().push("brain");
             LeafCutterWorkerBrain.run(this);
+            this.getLevel().getProfiler().pop();
             if(this.memory.braincellStage == 3){this.memory.braincellStage = 1;}
         }
         else{
@@ -253,8 +261,10 @@ public class WorkerAnt extends Ant implements IAnimatable {
                 Actions.LATCH_ON.run(this);
             }
         }
-        
+        this.getLevel().getProfiler().pop();
+    }
 
+    protected void customServerAiStep() {
 
     }
 
@@ -316,4 +326,9 @@ public class WorkerAnt extends Ant implements IAnimatable {
         return 0.5F;
     }
 
+    @org.jetbrains.annotations.Nullable
+    @Override
+    public AbstractContainerMenu createMenu(int pContainerId, Inventory pInventory, Player pPlayer) {
+        return null;
+    }
 }

@@ -56,9 +56,10 @@ public class AntColonyCarver<C extends CarverConfiguration> extends WorldCarver<
     @Override
     public boolean carve(CarvingContext pContext, AntColonyConfiguration pConfig, ChunkAccess pChunk, Function<BlockPos, Holder<Biome>> pBiomeAccessor, Random pRandom, Aquifer pAquifer, ChunkPos pChunkPos, CarvingMask pCarvingMask) {
 
-        BlockPos startPosAbsolute = pChunkPos.getMiddleBlockPosition(70);
+        BlockPos startPosAbsolute = pChunkPos.getMiddleBlockPosition(63);
 
-        ColonyBranch branch = AntColony.generateNewTunnels(startPosAbsolute);
+        ColonyBranch branch = ColonyGenerationBuffer.getBranchForPos(startPosAbsolute);
+        if(branch == null){branch = AntColony.generateNewTunnels(startPosAbsolute);}
 
         ArrayList<PosSpherePair> masterArray = AntColony.generateNewColonyBlueprint(branch);
 

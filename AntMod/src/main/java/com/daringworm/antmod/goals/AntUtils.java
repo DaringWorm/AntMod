@@ -508,19 +508,22 @@ public interface AntUtils {
         return returnList;
     }
 
-    public static BlockPos findNearestBlockPos(Ant pAnt, List<BlockPos> pList){
-        BlockPos pPos = pAnt.blockPosition();
-        BlockPos returnPos = BlockPos.ZERO;
-        for(BlockPos pos : pList) {
-            if (getDist(pPos, pos)<getDist(returnPos,pPos)){
-                returnPos = pos;
+    public static BlockPos findNearestBlockPos(Ant pAnt, ArrayList<BlockPos> pList){
+        if (pList.isEmpty()) {return BlockPos.ZERO;}
+        BlockPos returnPos = pList.get(0);
+
+        BlockPos antPos = pAnt.blockPosition();
+        for(BlockPos tempPos : pList) {
+            if (getDist(antPos, tempPos)<getDist(returnPos,antPos)){
+                returnPos = tempPos;
             }
         }
         return returnPos;
     }
 
     public static BlockPos findNearestBlockPos(BlockPos pos, ArrayList<BlockPos> pList){
-        BlockPos returnPos = BlockPos.ZERO;
+        if(pList.isEmpty()){return BlockPos.ZERO;}
+        BlockPos returnPos = pList.get(0);
         for(BlockPos tempPos : pList) {
             if (getDist(pos, tempPos)<getDist(returnPos,pos)){
                 returnPos = tempPos;

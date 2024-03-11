@@ -110,7 +110,7 @@ public class PosSpherePair {
         }
     }
 
-    public void setSphereCarver(ChunkAccess chunkAccess, BlockState innerState, BlockState outerState, double wallThickness, boolean shouldReplaceAir){
+    public void setSphereCarver(ChunkAccess chunkAccess, BlockState innerState, BlockState outerState, double wallThickness, boolean shouldCheckSky){
         for(int x = (int)(radius+wallThickness); x >= -radius-wallThickness; x--){
             for(int y = (int)(radius+wallThickness); y >= -radius-wallThickness; y--){
                 for(int z = (int)(radius+wallThickness); z >= -radius-wallThickness; z--){
@@ -121,7 +121,7 @@ public class PosSpherePair {
                                 chunkAccess.setBlockState(tempPos, innerState, false);
                             }
                             else if(chunkAccess.getBlockState(tempPos) != outerState &&
-                                    (shouldReplaceAir || chunkAccess.getBlockState(tempPos).getBlock() != Blocks.AIR)){
+                                    (chunkAccess.getBlockState(tempPos).getBlock() != Blocks.AIR || !canSeeSky(chunkAccess,tempPos))){
                                 chunkAccess.setBlockState(tempPos,outerState,false);
                             }
                         }
@@ -130,4 +130,15 @@ public class PosSpherePair {
             }
         }
     }
+
+
+    private boolean canSeeSky(ChunkAccess access, BlockPos pos){
+        for(int i = pos.getY()+1; i< access.getHeight(); i++){
+            if(access.getBlockState(pos.atY(i)) != Blocks.AIR.defaultBlockState()){return false;}
+        }
+        return true;
+    }
+
 }
+
+

@@ -45,13 +45,13 @@ public class FungalFarmingGoal<T extends LivingEntity> extends Goal implements A
 
     boolean isCompressingContainers = false;
 
-    List<BlockPos> containerPosList = new ArrayList<>();
+    ArrayList<BlockPos> containerPosList = new ArrayList<>();
 
-    List<BlockPos> usableContainerPosList = new ArrayList<>();
+    ArrayList<BlockPos> usableContainerPosList = new ArrayList<>();
 
-    List<BlockPos> fungusPosList = new ArrayList<>();
+    ArrayList<BlockPos> fungusPosList = new ArrayList<>();
 
-    List<BlockPos> fungusAdjacentPosList = new ArrayList<>();
+    ArrayList<BlockPos> fungusAdjacentPosList = new ArrayList<>();
 
     private int destroyWait = 0;
 

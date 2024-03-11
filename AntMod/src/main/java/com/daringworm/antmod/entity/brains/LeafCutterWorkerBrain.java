@@ -13,9 +13,12 @@ import java.util.ArrayList;
 
 public final class LeafCutterWorkerBrain extends LeafCutterBrain{
     public static void run(WorkerAnt pAnt){
+
         Braincell cellToRun = pAnt.memory.cellToRun;
         if((pAnt.getLevel().getGameTime()%(pAnt.findDigit(pAnt.getId(),1)+1) == 0 || cellToRun == null) && pAnt.shouldRunBrain()) {
+            pAnt.getLevel().getProfiler().push("update_memory");
             pAnt.memory.softRefresh(pAnt);
+            pAnt.getLevel().getProfiler().pop();
 
             Braincell nextCell = BrainTrees.getNextCell(pAnt);
             boolean shouldMSG = false;
