@@ -11,14 +11,11 @@ import com.daringworm.antmod.mixin.tomixin.ServerLevelUtil;
 import com.google.gson.*;
 import com.mojang.logging.LogUtils;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
-import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import org.apache.commons.io.FileUtils;
-import org.checkerframework.checker.units.qual.C;
 import org.slf4j.Logger;
 
 import javax.json.Json;
@@ -260,7 +257,7 @@ public class AntColony implements AutoCloseable{
             pAnt.moveTo(Vec3.atCenterOf(roomPos));
             pAnt.setColonyID(this.colonyID);
             pAnt.setWorkingStage(WorkingStages.SCOUTING);
-            pAnt.setHomePos(roomPos);
+            pAnt.setHomeContainerPos(roomPos);
             pAnt.memory.workingStage = WorkingStages.SCOUTING;
             level.addFreshEntity(pAnt);
             pAnt.memory.surfacePos = this.startPos;

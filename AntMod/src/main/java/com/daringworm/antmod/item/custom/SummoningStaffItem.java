@@ -1,17 +1,8 @@
 package com.daringworm.antmod.item.custom;
 
-import com.daringworm.antmod.DebugHelper;
 import com.daringworm.antmod.block.ModBlocks;
-import com.daringworm.antmod.colony.AntColony;
-import com.daringworm.antmod.colony.misc.BlockPosStringifier;
-import com.daringworm.antmod.colony.misc.ColonyBranch;
 import com.daringworm.antmod.colony.misc.PosSpherePair;
-import com.daringworm.antmod.entity.custom.AntScentCloud;
-import com.daringworm.antmod.entity.custom.WorkerAnt;
 import com.daringworm.antmod.goals.AntUtils;
-import com.daringworm.antmod.mixin.tomixin.ServerLevelUtil;
-import com.daringworm.antmod.worldgen.feature.custom.AntGeodeFeature;
-import com.daringworm.antmod.worldgen.feature.registries.AntFeaturesReg;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.Multimap;
 import net.minecraft.core.BlockPos;
@@ -27,9 +18,9 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.UseAnim;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Blocks;
 import org.jetbrains.annotations.NotNull;
 
-import javax.sound.sampled.BooleanControl;
 import java.util.ArrayList;
 
 public class SummoningStaffItem extends Item {
@@ -92,7 +83,7 @@ public class SummoningStaffItem extends Item {
             else{
                 AntUtils.broadcastString(level, "No colony was found.");
             }*/
-
+            /*
             WorkerAnt ant = pLevel.getEntitiesOfClass(WorkerAnt.class, pEntity.getBoundingBox().inflate(2d,2d,2d)).get(0);
             if(ant != null){
                 AntUtils.broadcastString(pLevel,"" + BlockPosStringifier.jsonFromPos(ant.memory.interestPos));
@@ -101,6 +92,30 @@ public class SummoningStaffItem extends Item {
             AntScentCloud cloud = pLevel.getEntitiesOfClass(AntScentCloud.class, pEntity.getBoundingBox().inflate(8d,8d,8d)).get(0);
             if(cloud != null){
                 AntUtils.broadcastString(pLevel, "This cloud has " + cloud.getInterestPosesSize() + " positions.");
+            }*/
+            int size = 16;
+            double sphereOffset = 3.4d;
+            double sphereRadius = 2d;
+            BlockPos ep = pEntity.blockPosition();
+            ArrayList<BlockPos> airPoses = new ArrayList<>();
+            for(int x = size; x > -size; --x){
+                for(int y = size; y > -size; --y){
+                    for(int z = size; z > -size; --z){
+                        BlockPos pos = new BlockPos(x,y,z).offset(ep.getX(),ep.getY(),ep.getZ());
+                        if(AntUtils.getDist(pos, ep) < size) {
+                            level.setBlock(pos, (level.getRandom().nextInt(5) == 1)? ModBlocks.FUNGUS_GARDEN.get().defaultBlockState() : ModBlocks.FUNGUS_BLOCK.get().defaultBlockState(), 2);
+                        }
+
+                        if(level.getRandom().nextBoolean() &&
+                                AntUtils.getDist(AntUtils.findNearestBlockPos(pos,airPoses), pos) > sphereOffset){
+                            airPoses.add(pos);
+                        }
+                    }
+                }
+            }
+
+            for(BlockPos pos : airPoses){
+                new PosSpherePair(pos,sphereRadius).setSphere(level, Blocks.AIR, Blocks.AIR, 0);
             }
 
         }

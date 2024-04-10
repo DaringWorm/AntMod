@@ -1,19 +1,15 @@
 package com.daringworm.antmod.goals;
 
 import java.util.EnumSet;
-import java.util.function.Predicate;
 
 import com.daringworm.antmod.block.ModBlocks;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.ai.goal.Goal;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.block.state.predicate.BlockStatePredicate;
 import net.minecraft.world.level.gameevent.GameEvent;
 
 public class DestroySoftStoneGoal extends Goal {
@@ -54,7 +50,7 @@ public class DestroySoftStoneGoal extends Goal {
             if (shouldDestroy(this.mob.getFeetBlockState())) {
                 return true;
             } else {
-                return this.level.getBlockState(blockpos.below()).is(ModBlocks.ANTSTONE.get());
+                return this.level.getBlockState(blockpos.below()).is(ModBlocks.ANT_STONE.get());
             }
         }
     }
@@ -98,7 +94,7 @@ public class DestroySoftStoneGoal extends Goal {
             BlockPos blockpos = this.mob.blockPosition();
             BlockPos blockpos1 = blockpos.below();
             BlockPos blockpos2 = blockpos.north();
-            if (this.level.getBlockState(blockpos2).is(ModBlocks.ANTSTONE.get())) {
+            if (this.level.getBlockState(blockpos2).is(ModBlocks.ANT_STONE.get())) {
                 if (net.minecraftforge.event.ForgeEventFactory.getMobGriefingEvent(this.level, this.mob)) {
                     this.level.destroyBlock(blockpos2, true);
                 }
@@ -109,9 +105,9 @@ public class DestroySoftStoneGoal extends Goal {
 
             else {
 
-                if (this.level.getBlockState(blockpos1).is(ModBlocks.ANTSTONE.get())) {
+                if (this.level.getBlockState(blockpos1).is(ModBlocks.ANT_STONE.get())) {
                     if (net.minecraftforge.event.ForgeEventFactory.getMobGriefingEvent(this.level, this.mob)) {
-                        this.level.levelEvent(2001, blockpos1, Block.getId(ModBlocks.ANTSTONE.get().defaultBlockState()));
+                        this.level.levelEvent(2001, blockpos1, Block.getId(ModBlocks.ANT_STONE.get().defaultBlockState()));
                         this.level.destroyBlock(blockpos1, false);
                     }
 

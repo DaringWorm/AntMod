@@ -7,14 +7,7 @@ import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
-import net.minecraft.world.InteractionHand;
-import net.minecraft.world.InteractionResult;
-import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
 import net.minecraft.world.level.BlockGetter;
-import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.block.*;
 import net.minecraft.world.level.block.state.BlockState;
@@ -22,7 +15,6 @@ import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.IntegerProperty;
 import net.minecraft.world.level.pathfinder.PathComputationType;
-import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
@@ -31,9 +23,8 @@ import net.minecraftforge.common.ForgeHooks;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
-import java.util.concurrent.ThreadLocalRandom;
 
-import static com.daringworm.antmod.block.custom.FungusBlock.AGE;
+import static com.daringworm.antmod.block.custom.FungusCarpet.AGE;
 
 
 public class LeafyMixture extends Block {
@@ -92,11 +83,11 @@ public class LeafyMixture extends Block {
      * Performs a random tick on a block.
      */
     public void randomTick(BlockState pState, ServerLevel pLevel, BlockPos pPos, Random pRandom) {
-        BlockState baseFungusState = ModBlocks.FUNGUS_BLOCK.get().defaultBlockState();
+        BlockState baseFungusState = ModBlocks.FUNGUS_CARPET.get().defaultBlockState();
         boolean shouldConsume = false;
         if (pLevel.canSeeSky(pPos.above()) && pLevel.isDay()) {
             pLevel.playSound(null, pPos, SoundEvents.TNT_PRIMED, SoundSource.BLOCKS, 2.0F, 1.0F);
-            pLevel.setBlock(pPos, ModBlocks.ANTDEBRIS.get().defaultBlockState(), 2);
+            pLevel.setBlock(pPos, ModBlocks.ANT_DEBRIS.get().defaultBlockState(), 2);
         }
         else {
             int searchRadius = 2;
@@ -112,7 +103,7 @@ public class LeafyMixture extends Block {
                 for (int y = 2; y >= -2; y--) {
                     for (int z = searchRadius; z >= -searchRadius; z--) {
                         BlockPos tempPos = new BlockPos(x + pPos.getX(), y + pPos.getY(), z + pPos.getZ());
-                        if (pLevel.getBlockState(tempPos).getBlock() == ModBlocks.FUNGUS_BLOCK.get()) {
+                        if (pLevel.getBlockState(tempPos).getBlock() == ModBlocks.FUNGUS_CARPET.get()) {
                             fungusPosList.add(tempPos);
                             fungusOnList.add(tempPos.below());
                             fungusOnList.add(tempPos.north());
@@ -125,7 +116,7 @@ public class LeafyMixture extends Block {
             }
             fungusPosList.removeIf(tempPos -> pLevel.getBlockState(tempPos).getValue(AGE)>3);
 
-            fungusOnList.removeIf(tempPos -> pLevel.getBlockState(tempPos).getBlock() == ModBlocks.FUNGUS_BLOCK.get() ||
+            fungusOnList.removeIf(tempPos -> pLevel.getBlockState(tempPos).getBlock() == ModBlocks.FUNGUS_CARPET.get() ||
                     pLevel.getBlockState(tempPos).getRenderShape() != RenderShape.INVISIBLE);
 
 
@@ -159,7 +150,7 @@ public class LeafyMixture extends Block {
                                 isCopper(pLevel.getBlockState(spreadPos.west()));
 
                         //decides if it wants to spread to the pos given from the above
-                        if (blockstate.getBlock() == ModBlocks.FUNGUS_BLOCK.get() || getRenderShape(blockstate) == RenderShape.INVISIBLE) {
+                        if (blockstate.getBlock() == ModBlocks.FUNGUS_CARPET.get() || getRenderShape(blockstate) == RenderShape.INVISIBLE) {
                             //if its air:
                             if (getRenderShape(blockstate) == RenderShape.INVISIBLE && Block.isFaceFull(blockstate2.getCollisionShape(pLevel, spreadPos.below()), Direction.UP) &&
                                     !pLevel.canSeeSky(spreadPos) && !copperTest) {
@@ -169,7 +160,7 @@ public class LeafyMixture extends Block {
 
                             }
                             //if it's upgrading an existing fungal block:
-                            else if (blockstate.getBlock() == ModBlocks.FUNGUS_BLOCK.get() && blockstate.getValue(AGE) < 4) {
+                            else if (blockstate.getBlock() == ModBlocks.FUNGUS_CARPET.get() && blockstate.getValue(AGE) < 4) {
                                 int newage = blockstate.getValue(AGE);
                                 if(copperTest){
                                     if(newage>0) {
@@ -196,7 +187,7 @@ public class LeafyMixture extends Block {
                 if (pState.getValue(CONSUMPTION) < 4) {
                     pLevel.setBlock(pPos, ModBlocks.LEAFY_MIXTURE.get().defaultBlockState().setValue(CONSUMPTION, pState.getValue(CONSUMPTION) + 1), 2);
                 } else {
-                    pLevel.setBlock(pPos, ModBlocks.FUNGUS_BLOCK.get().defaultBlockState().setValue(AGE, 4), 2);
+                    pLevel.setBlock(pPos, ModBlocks.FUNGUS_CARPET.get().defaultBlockState().setValue(AGE, 4), 2);
                 }
             }
         }

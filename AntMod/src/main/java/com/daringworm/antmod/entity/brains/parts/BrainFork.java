@@ -1,6 +1,7 @@
 package com.daringworm.antmod.entity.brains.parts;
 
 import com.daringworm.antmod.entity.Ant;
+import com.daringworm.antmod.entity.brains.memories.LeafCutterMemory;
 import com.daringworm.antmod.entity.custom.WorkerAnt;
 
 import java.lang.reflect.Array;

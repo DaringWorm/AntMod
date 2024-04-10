@@ -31,7 +31,7 @@ import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
 
 
-public class FungusBlock extends Block {
+public class FungusCarpet extends Block {
 
     public void grow (BlockPos pPos, LivingEntity pEntity, Level pLevel){
         BlockState pState = pLevel.getBlockState(pPos);
@@ -51,7 +51,7 @@ public class FungusBlock extends Block {
         return pBlock.getSoundType(pState) == SoundType.COPPER || pBlock == Blocks.COPPER_ORE || pBlock == Blocks.DEEPSLATE_COPPER_ORE;
     }
 
-    private boolean isFood(ItemStack pStack) {
+    public static boolean isFood(ItemStack pStack) {
         return pStack.is(Items.WHEAT_SEEDS) ||
                 pStack.is(Items.BEETROOT_SEEDS) ||
                 pStack.is(Items.PUMPKIN_SEEDS) ||
@@ -115,9 +115,10 @@ public class FungusBlock extends Block {
     }
 
     public static final IntegerProperty AGE = BlockStateProperties.AGE_5;
-    public FungusBlock(BlockBehaviour.Properties properties) {
+
+    public FungusCarpet(BlockBehaviour.Properties properties) {
         super(properties);
-        this.registerDefaultState(this.stateDefinition.any().setValue(AGE, Integer.valueOf(0)));
+        this.registerDefaultState(this.stateDefinition.any().setValue(AGE, 0));
     }
 
     public VoxelShape getVisualShape(BlockState pState, BlockGetter pReader, BlockPos pPos, CollisionContext pContext) {
@@ -186,7 +187,7 @@ public class FungusBlock extends Block {
                             BlockState blockstate = pLevel.getBlockState(newPos2);
                             BlockState blockstate2 = pLevel.getBlockState(newPos2.below());
                             //decides if it wants to spread to the pos given from the above
-                            if (blockstate.getBlock() == ModBlocks.FUNGUS_BLOCK.get() || blockstate.getRenderShape() == RenderShape.INVISIBLE) {
+                            if (blockstate.getBlock() == ModBlocks.FUNGUS_CARPET.get() || blockstate.getRenderShape() == RenderShape.INVISIBLE) {
 
                                 boolean copperTest = isCopper(pLevel.getBlockState(newPos.below())) ||
                                         isCopper(pLevel.getBlockState(newPos.north())) ||

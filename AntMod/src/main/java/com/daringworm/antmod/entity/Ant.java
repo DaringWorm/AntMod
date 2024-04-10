@@ -3,7 +3,7 @@ package com.daringworm.antmod.entity;
 
 import com.daringworm.antmod.DebugHelper;
 import com.daringworm.antmod.block.ModBlocks;
-import com.daringworm.antmod.block.entity.custom.FungalContainerBlockEntity;
+import com.daringworm.antmod.colony.AntColony;
 import com.daringworm.antmod.entity.brains.memories.LeafCutterMemory;
 import com.daringworm.antmod.colony.misc.PosPair;
 import com.daringworm.antmod.goals.AntUtils;
@@ -16,7 +16,6 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
-import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
@@ -35,7 +34,6 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.pathfinder.BlockPathTypes;
 import net.minecraft.world.level.pathfinder.Path;
 import net.minecraft.world.level.pathfinder.PathComputationType;
-import net.minecraftforge.network.NetworkHooks;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
@@ -61,7 +59,7 @@ public abstract class Ant extends PathfinderMob implements MenuProvider {
     private static final EntityDataAccessor<Integer> MISC_DATA = SynchedEntityData.defineId(Ant.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Integer> WORKING_STAGE = SynchedEntityData.defineId(Ant.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Integer> WALKING_COOLDOWN = SynchedEntityData.defineId(Ant.class, EntityDataSerializers.INT);
-
+    private static final EntityDataAccessor<String> MEMORY = SynchedEntityData.defineId(Ant.class,EntityDataSerializers.STRING);
 
     public double getDistTo(BlockPos pPos){return getDist(this.blockPosition(),pPos);}
 
@@ -71,15 +69,21 @@ public abstract class Ant extends PathfinderMob implements MenuProvider {
 
     public BlockPos getColonyPos(){
         if(((ServerLevelUtil) this.getLevel()).getColonyWithID(this.getColonyID()) != null){
-            return ((ServerLevelUtil) this.getLevel()).getColonyWithID(this.getColonyID()).getEntranceBottom();
+            AntColony colony = getColony();
+            if(colony != null) {
+                return colony.getEntranceBottom();
+            }
+            else return null;
         }
         else return BlockPos.ZERO;
     }
 
-    public void setHomePos(BlockPos pPosition) {this.entityData.set(HOME_POS, pPosition);}
-    public BlockPos getHomePos() {
-        return this.entityData.get(HOME_POS);
+    public AntColony getColony(){
+        return ((ServerLevelUtil) this.getLevel()).getColonyWithID(this.getColonyID());
     }
+
+    public void setHomeContainerPos(BlockPos pPosition) {this.entityData.set(HOME_POS, pPosition);}
+    public BlockPos getHomeContainerPos() {return this.entityData.get(HOME_POS);}
     public void setRoomID(String branchID) {this.entityData.set(ROOM_ID, branchID);}
     public String getRoomID() {return this.entityData.get(ROOM_ID);}
     public void setFirstSurfacePos(BlockPos pPosition) {
@@ -234,7 +238,8 @@ public abstract class Ant extends PathfinderMob implements MenuProvider {
     }
     
     public boolean shouldRunBrain() {
-        return this.getLevel().isLoaded(this.blockPosition()) &&
+        return this.memory != null &&
+                this.getLevel().isLoaded(this.blockPosition()) &&
             this.getLevel().isLoaded(this.blockPosition().north(16)) &&
             this.getLevel().isLoaded(this.blockPosition().south(16)) &&
             this.getLevel().isLoaded(this.blockPosition().east(16)) &&
@@ -257,13 +262,14 @@ public abstract class Ant extends PathfinderMob implements MenuProvider {
         this.entityData.define(MISC_DATA, 1000000);
         this.entityData.define(WORKING_STAGE, 0);
         this.entityData.define(WALKING_COOLDOWN, -10);
+        this.entityData.define(MEMORY, "null");
     }
 
     public void addAdditionalSaveData(@NotNull CompoundTag pCompound) {
         super.addAdditionalSaveData(pCompound);
-        pCompound.putInt("HomePosX", this.getHomePos().getX());
-        pCompound.putInt("HomePosY", this.getHomePos().getY());
-        pCompound.putInt("HomePosZ", this.getHomePos().getZ());
+        pCompound.putInt("HomePosX", this.getHomeContainerPos().getX());
+        pCompound.putInt("HomePosY", this.getHomeContainerPos().getY());
+        pCompound.putInt("HomePosZ", this.getHomeContainerPos().getZ());
         pCompound.putString("RoomID", this.getRoomID());
         pCompound.putBoolean("IsAboveground", this.getIsAboveground());
         pCompound.putBoolean("IsInTransition", this.getIsInTransition());
@@ -280,6 +286,7 @@ public abstract class Ant extends PathfinderMob implements MenuProvider {
         pCompound.putInt("MiscData", this.getThisMiscRAW());
         pCompound.putInt("WorkingStage", this.getWorkingStage());
         pCompound.putInt("WalkingCooldown", this.getWalkingCooldown());
+        pCompound.putString("Memory", (this.memory != null && !this.getLevel().isClientSide())? this.memory.saveToString() : "null");
     }
 
     /**
@@ -290,7 +297,7 @@ public abstract class Ant extends PathfinderMob implements MenuProvider {
         int i = pCompound.getInt("HomePosX");
         int j = pCompound.getInt("HomePosY");
         int k = pCompound.getInt("HomePosZ");
-        this.setHomePos(new BlockPos(i, j, k));
+        this.setHomeContainerPos(new BlockPos(i, j, k));
         this.setRoomID(pCompound.getString("RoomID"));
         super.readAdditionalSaveData(pCompound);
         this.setIsAboveground(pCompound.getBoolean("IsAboveground"));
@@ -310,6 +317,9 @@ public abstract class Ant extends PathfinderMob implements MenuProvider {
         this.setThisMiscRAW(pCompound.getInt("MiscData"));
         this.setWorkingStage(pCompound.getInt("WorkingStage"));
         this.setWalkingCooldown(pCompound.getInt("WalkingCooldown"));
+        if(!this.getLevel().isClientSide()) {
+            this.memory = new LeafCutterMemory(pCompound.getString("Memory"), this);
+        }
     }
 
 
@@ -317,10 +327,6 @@ public abstract class Ant extends PathfinderMob implements MenuProvider {
         super(entitytype, pLevel);
         this.setPathfindingMalus(BlockPathTypes.DANGER_FIRE, 16.0F);
         this.setPathfindingMalus(BlockPathTypes.DAMAGE_FIRE, -1.0F);
-        if(!pLevel.isClientSide){
-            this.memory = new LeafCutterMemory(this);
-        }
-
     }
 
     protected void customServerAiStep() {

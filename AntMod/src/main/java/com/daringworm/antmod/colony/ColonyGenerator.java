@@ -3,7 +3,6 @@ package com.daringworm.antmod.colony;
 import com.daringworm.antmod.block.ModBlocks;
 import com.daringworm.antmod.colony.misc.ColonyBranch;
 import com.daringworm.antmod.colony.misc.ColonyGenUtils;
-import com.daringworm.antmod.colony.misc.PosPair;
 import com.daringworm.antmod.colony.misc.PosSpherePair;
 import com.daringworm.antmod.entity.ModEntityTypes;
 import com.daringworm.antmod.entity.brains.parts.WorkingStages;
@@ -17,11 +16,9 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.*;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
-import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.phys.Vec3;
 
-import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Random;
 
@@ -270,14 +267,14 @@ public class ColonyGenerator implements AntUtils {
     public static ArrayList<BlockState> getAllFungusStates(){
         ArrayList<BlockState> fungusStateList = new ArrayList<>();
         for(int i = 5; i >= 0; i--){
-            fungusStateList.add(ModBlocks.FUNGUS_BLOCK.get().defaultBlockState().setValue(BlockStateProperties.AGE_5, i));
+            fungusStateList.add(ModBlocks.FUNGUS_CARPET.get().defaultBlockState().setValue(BlockStateProperties.AGE_5, i));
         }
         return fungusStateList;
     }
 
     Block BLOCK1 = ModBlocks.ANT_AIR.get();
     Block BLOCK2 = ModBlocks.ANT_DIRT.get();
-    Block BLOCK3 = ModBlocks.ANTDEBRIS.get();
+    Block BLOCK3 = ModBlocks.ANT_DEBRIS.get();
 
     private final Level level;
 
@@ -309,7 +306,7 @@ public class ColonyGenerator implements AntUtils {
             pAnt.moveTo(Vec3.atCenterOf(roomPos));
             pAnt.setColonyID(colony.colonyID);
             pAnt.setWorkingStage(WorkingStages.SCOUTING);
-            pAnt.setHomePos(roomPos);
+            pAnt.setHomeContainerPos(roomPos);
             pAnt.memory.workingStage = WorkingStages.SCOUTING;
             level.addFreshEntity(pAnt);
             pAnt.memory.surfacePos = pPos;
@@ -338,7 +335,7 @@ public class ColonyGenerator implements AntUtils {
             pAnt.moveTo(Vec3.atCenterOf(roomPos));
             pAnt.setColonyID(colony.colonyID);
             pAnt.setWorkingStage(WorkingStages.SCOUTING);
-            pAnt.setHomePos(roomPos);
+            pAnt.setHomeContainerPos(roomPos);
             pAnt.memory.workingStage = WorkingStages.SCOUTING;
             level.addFreshEntity(pAnt);
             pAnt.memory.surfacePos = colony.startPos;

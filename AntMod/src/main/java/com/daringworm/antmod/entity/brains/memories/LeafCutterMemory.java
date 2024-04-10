@@ -10,7 +10,6 @@ import com.daringworm.antmod.colony.AntColony;
 import com.daringworm.antmod.colony.misc.PosSpherePair;
 import com.daringworm.antmod.mixin.tomixin.ServerLevelUtil;
 import net.minecraft.core.BlockPos;
-import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.item.ItemEntity;
@@ -68,16 +67,22 @@ public class LeafCutterMemory {
     public LeafCutterMemory(Ant pAnt){
         this.cID = pAnt.getColonyID();
         this.hungerLevel = pAnt.getHunger();
-        this.homePos = pAnt.getHomePos();
+        this.homePos = pAnt.getHomeContainerPos();
         this.pSLevel = (ServerLevel)pAnt.getLevel();
-        pAnt.setWorkingStage(WorkingStages.SCOUTING);
+        //pAnt.setWorkingStage(WorkingStages.SCOUTING);
         this.workingStage = pAnt.getWorkingStage();
         this.breakingProgress = 0;
-        this.containerPos = pAnt.getHomePos();
+        this.containerPos = pAnt.getHomeContainerPos();
+    }
+
+    public LeafCutterMemory(String str, Ant pAnt){
+        if(Objects.equals(str, "null")){
+            new LeafCutterMemory(pAnt);
+        }
     }
 
     public void softRefresh(Ant pAnt){
-        this.containerPos = pAnt.getHomePos();
+        this.containerPos = pAnt.getHomeContainerPos();
         this.pSLevel = (ServerLevel) pAnt.getLevel();
         assert pAnt.getLevel() instanceof ServerLevel;
 
@@ -91,8 +96,8 @@ public class LeafCutterMemory {
             this.foundItemList = ((ArrayList<ItemEntity>) pAnt.getLevel().getEntitiesOfClass(ItemEntity.class,pAnt.getBoundingBox().inflate(6)));
         }
 
-        if(pAnt.getHomePos() == BlockPos.ZERO){pAnt.setHomePos(pAnt.blockPosition());}
-        this.homePos = pAnt.getHomePos();
+        if(pAnt.getHomeContainerPos() == BlockPos.ZERO){pAnt.setHomeContainerPos(pAnt.blockPosition());}
+        this.homePos = pAnt.getHomeContainerPos();
 
         if(pAnt instanceof QueenAnt && colony == null){
             colony = new AntColony(pSLevel, this.cID, this.homePos);
@@ -170,4 +175,7 @@ public class LeafCutterMemory {
         }
     }
 
+    public String saveToString(){
+        return "null";
+    }
 }

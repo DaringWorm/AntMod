@@ -1,8 +1,14 @@
 package com.daringworm.antmod.block.entity.custom;
 
 import com.daringworm.antmod.block.ModBlocks;
+import com.daringworm.antmod.block.custom.FungalContainer;
+import com.daringworm.antmod.block.custom.FungusCarpet;
 import com.daringworm.antmod.block.entity.ModBlockEntities;
 import com.daringworm.antmod.entity.Ant;
+import com.daringworm.antmod.entity.ModEntityTypes;
+import com.daringworm.antmod.entity.brains.parts.WorkingStages;
+import com.daringworm.antmod.entity.custom.AntScentCloud;
+import com.daringworm.antmod.goals.AntUtils;
 import com.daringworm.antmod.item.ModItems;
 import com.daringworm.antmod.screen.LeafyContainerMenu;
 import net.minecraft.core.BlockPos;
@@ -25,8 +31,6 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.item.alchemy.PotionUtils;
 import net.minecraft.world.item.alchemy.Potions;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
@@ -60,7 +64,7 @@ public class FungalContainerBlockEntity extends BlockEntity implements MenuProvi
     }
 
     @Override
-    public Component getDisplayName() {
+    public @NotNull Component getDisplayName() {
         return new TextComponent("Leafy Container");
     }
 
@@ -110,7 +114,9 @@ public class FungalContainerBlockEntity extends BlockEntity implements MenuProvi
             inventory.setItem(i, itemHandler.getStackInSlot(i));
         }
 
-        Containers.dropContents(this.level, this.worldPosition, inventory);
+        if(this.level != null) {
+            Containers.dropContents(this.level, this.worldPosition, inventory);
+        }
 
     }
 
@@ -138,6 +144,20 @@ public class FungalContainerBlockEntity extends BlockEntity implements MenuProvi
         return false;
     }
 
+    private boolean shouldTriggerFarming(){
+        int numberOfEdibleSlots = 0;
+        for(int i = 0; i < itemHandler.getSlots(); i++){
+            ItemStack tempStack = itemHandler.getStackInSlot(i);
+            if(!tempStack.isEmpty() && FungusCarpet.isFood(tempStack)){
+                ++numberOfEdibleSlots;
+            }
+        }
+        if(numberOfEdibleSlots >= itemHandler.getSlots()/2){
+            return true;
+        }
+        return false;
+    }
+
 
     public void takeInHandItem(Ant pAnt){
         if(this.canAcceptHandItem(pAnt)){
@@ -160,7 +180,7 @@ public class FungalContainerBlockEntity extends BlockEntity implements MenuProvi
                                 itemHandler.setStackInSlot(i,tempStack);
                                 itemsLeft = 0;
                                 pAnt.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
-                                pAnt.setHomePos(this.worldPosition);
+                                pAnt.setHomeContainerPos(this.worldPosition);
                                 pAnt.memory.containerPos = this.worldPosition;
                             }
                             else{
@@ -174,38 +194,43 @@ public class FungalContainerBlockEntity extends BlockEntity implements MenuProvi
             }
             this.setChanged();
         }
-        else{tempMethodForTest(pAnt.getLevel());}
+        else if(this.getLevel() != null){
+            BlockState fullState = ModBlocks.LEAFY_CONTAINER_BLOCK.get().defaultBlockState().setValue(FungalContainer.FULL, true);
+            this.getLevel().setBlock(this.getBlockPos(),fullState,2);
+        }
+        if(this.shouldTriggerFarming()){
+            spawnScentCloud(pAnt.getLevel());
+            pAnt.setWorkingStage(WorkingStages.FARMING);
+        }
     }
 
 
     public static void tick(Level pLevel, BlockPos pPos, BlockState pState, FungalContainerBlockEntity pBlockEntity) {
-        if(hasRecipe(pBlockEntity) && hasNotReachedStackLimit(pBlockEntity)) {
+        /*if(hasRecipe(pBlockEntity) && hasNotReachedStackLimit(pBlockEntity)) {
             //craftItem(pBlockEntity);
-        }
-        if(!pLevel.isClientSide()){
+        }*/
+        if(!pLevel.isClientSide() && !pLevel.getBlockState(pPos).getValue(FungalContainer.FULL)){
             for(Ant pAnt : pLevel.getEntitiesOfClass(Ant.class, new AABB(pPos.getX()-5, pPos.getY()-3, pPos.getZ()-5,pPos.getX()+5, pPos.getY()+3, pPos.getZ()+5))){
-                if(pLevel.getBlockState(pAnt.getHomePos()).getBlock() != ModBlocks.LEAFY_CONTAINER_BLOCK.get() /*||
-                        AntUtils.getDist(pPos,pAnt.getHomePos()) < AntUtils.getDist(pAnt.memory.containerPos, pAnt.getHomePos())*/){
-                    pAnt.setHomePos(pPos);
+                BlockState antHomeState = pLevel.getBlockState(pAnt.getHomeContainerPos());
+                boolean distanceFlag = AntUtils.getDist(pAnt.getHomeContainerPos(), pPos) > AntUtils.getDist(pAnt.getColony().tunnels.getSubBranch(pAnt.getRoomID()).getPos(), pPos);
+                if(antHomeState.getBlock() != ModBlocks.LEAFY_CONTAINER_BLOCK.get() || !antHomeState.getValue(FungalContainer.FULL) || distanceFlag){
+                    pAnt.setHomeContainerPos(pPos);
                     pAnt.memory.containerPos = pPos;
                     pAnt.addEffect(new MobEffectInstance(MobEffects.GLOWING, 200));
-                }
-                else if(pAnt.memory.containerPos == null){
-                    pAnt.memory.containerPos = pAnt.getHomePos();
                 }
             }
         }
     }
 
-    private void tempMethodForTest(Level pLevel){
-        Block blockToPlace = Blocks.TINTED_GLASS;
-        BlockPos pPos = BlockPos.findClosestMatch(this.worldPosition,32,16, p -> pLevel.getBlockState(p).isSolidRender(pLevel,p)
-                && pLevel.getBlockState(p).getBlock() != blockToPlace). orElse(null);
-        assert pPos != null;
-        pLevel.setBlock(pPos, blockToPlace.defaultBlockState(),2);
+    private void spawnScentCloud(Level pLevel){
         for(int i = 0; i < itemHandler.getSlots(); i++) {
             this.itemHandler.setStackInSlot(i, ItemStack.EMPTY);
         }
+        AntScentCloud cloud = new AntScentCloud(ModEntityTypes.ANT_EFFECT_CLOUD.get(), pLevel);
+        cloud.WORKING_STAGE = WorkingStages.FARMING;
+        //cloud.COLONY_ID = ((ServerLevelUtil)pLevel).getClosestColony(this.worldPosition).colonyID;
+        cloud.setPos(this.worldPosition.getX(),this.worldPosition.getY(), this.worldPosition.getZ());
+        pLevel.addFreshEntity(cloud);
     }
 
 

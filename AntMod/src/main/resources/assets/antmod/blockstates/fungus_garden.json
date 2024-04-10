@@ -1,0 +1,10 @@
+{
+  "variants": {
+    "powered=false": {
+      "model": "antmod:block/brown_fungus_garden"
+  },
+    "powered=true": {
+      "model": "antmod:block/green_fungus_garden"
+    }
+  }
+}

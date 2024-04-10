@@ -1,0 +1,77 @@
+{
+  "multipart": [
+    {
+      "when": {
+        "up": "true"
+      },
+      "apply":
+        {
+          "model": "antmod:block/fungus_fuzz_down",
+          "x": 180
+        }
+    },
+    {
+      "when": {
+        "OR": [
+          {
+            "down": true
+          },
+          {
+            "up": false,
+            "down": false,
+            "north": false,
+            "south": false,
+            "east": false,
+            "west": false
+          }
+        ]
+      },
+      "apply":
+      {
+        "model": "antmod:block/fungus_fuzz_down"
+      }
+    },
+    {
+      "when": {
+        "north": "true"
+      },
+      "apply":
+      {
+        "model": "antmod:block/fungus_fuzz_down",
+        "x": 90
+      }
+    },
+    {
+      "when": {
+        "south": "true"
+      },
+      "apply":
+      {
+        "model": "antmod:block/fungus_fuzz_down",
+        "x": 270
+      }
+    },
+    {
+      "when": {
+        "east": "true"
+      },
+      "apply":
+      {
+        "model": "antmod:block/fungus_fuzz_down",
+        "y": 90,
+        "x": 90
+      }
+    },
+    {
+      "when": {
+        "west": "true"
+      },
+      "apply":
+      {
+        "model": "antmod:block/fungus_fuzz_down",
+        "y": 90,
+        "x": 270
+      }
+    }
+  ]
+}

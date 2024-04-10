@@ -1,0 +1,6 @@
+{
+  "parent":"block/cube_all",
+  "textures":{
+    "all":"antmod:block/green_fungus_garden"
+  }
+}

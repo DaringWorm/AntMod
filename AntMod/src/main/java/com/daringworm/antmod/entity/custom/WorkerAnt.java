@@ -1,20 +1,18 @@
 package com.daringworm.antmod.entity.custom;
 
-import com.daringworm.antmod.DebugHelper;
 import com.daringworm.antmod.entity.ModEntityTypes;
 import com.daringworm.antmod.entity.brains.LeafCutterWorkerBrain;
 import com.daringworm.antmod.entity.Ant;
 
+import com.daringworm.antmod.entity.brains.memories.LeafCutterMemory;
 import com.daringworm.antmod.entity.brains.parts.Actions;
 import com.daringworm.antmod.entity.brains.parts.WorkingStages;
-import com.daringworm.antmod.goals.AntUtils;
 import com.daringworm.antmod.item.ModItems;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
-import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.DifficultyInstance;
@@ -136,11 +134,14 @@ public class WorkerAnt extends Ant implements IAnimatable {
 
     @Nullable
     public SpawnGroupData finalizeSpawn(ServerLevelAccessor pLevel, DifficultyInstance pDifficulty, MobSpawnType pReason, @Nullable SpawnGroupData pSpawnData, @Nullable CompoundTag pDataTag) {
-        this.setHomePos(this.blockPosition());
+        this.setHomeContainerPos(this.blockPosition());
         this.setFoodLocation(BlockPos.ZERO);
         this.setLatchDirection(findDigit((int)this.level.getGameTime(),1));
         this.setSubClass(findDigit((int)this.level.getGameTime(),1));
         this.maxUpStep = 1.13F;
+        if(!this.getLevel().isClientSide()){
+            memory = new LeafCutterMemory(this);
+        }
         return super.finalizeSpawn(pLevel, pDifficulty, pReason, pSpawnData, pDataTag);
     }
 
@@ -187,11 +188,13 @@ public class WorkerAnt extends Ant implements IAnimatable {
 
     @Override
     public InteractionResult interactAt(Player pPlayer, Vec3 pVec, InteractionHand pHand) {
-        if(pPlayer.getMainHandItem().getItem() == ModItems.WORKER_ANT_SPAWN_EGG.get()){
+        if(pPlayer.getMainHandItem().getItem() == ModItems.WORKER_ANT_SPAWN_EGG.get() && !this.getLevel().isClientSide()){
             WorkerAnt newAnt = new WorkerAnt(ModEntityTypes.WORKERANT.get(), this.level);
             newAnt.setColonyID(this.getColonyID());
             newAnt.setPos(this.position());
+            newAnt.setWorkingStage(WorkingStages.SCOUTING);
             this.level.addFreshEntity(newAnt);
+            newAnt.memory = new LeafCutterMemory(newAnt);
         }
         return InteractionResult.PASS;
     }
@@ -247,12 +250,12 @@ public class WorkerAnt extends Ant implements IAnimatable {
             this.getLevel().getProfiler().push("brain");
             LeafCutterWorkerBrain.run(this);
             this.getLevel().getProfiler().pop();
-            if(this.memory.braincellStage == 3){this.memory.braincellStage = 1;}
+            if(this.memory != null && this.memory.braincellStage == 3){this.memory.braincellStage = 1;}
         }
         else{
 
         }
-        if(this.brain == null || this.memory == null){
+        if(this.memory == null){
             Actions.ERROR_MSG_ACTION.run(this);
         }
         if(this.getWorkingStage() == WorkingStages.LATCHING){

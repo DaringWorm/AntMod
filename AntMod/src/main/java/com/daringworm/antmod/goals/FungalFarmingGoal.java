@@ -17,7 +17,7 @@ import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
 
-import static com.daringworm.antmod.block.custom.FungusBlock.AGE;
+import static com.daringworm.antmod.block.custom.FungusCarpet.AGE;
 
 public class FungalFarmingGoal<T extends LivingEntity> extends Goal implements AntUtils {
     public FungalFarmingGoal(Ant pAnt) {
@@ -101,7 +101,7 @@ public class FungalFarmingGoal<T extends LivingEntity> extends Goal implements A
         lastContainerCheck++;
         lastAdjPCheck++;
         aiTimer = aiTimer + random;
-        BlockPos homePos = ant.getHomePos();
+        BlockPos homePos = ant.getHomeContainerPos();
         BlockPos antPos = ant.blockPosition();
         ItemStack heldItem = ant.getMainHandItem();
         double dist2home = AntUtils.getDist(antPos,homePos);
@@ -159,7 +159,7 @@ public class FungalFarmingGoal<T extends LivingEntity> extends Goal implements A
             }
 
             if(fungusPosList.isEmpty() || (advancedCheckTimer > 5 && dist2home<10)){
-                fungusPosList = AntUtils.findAllBlockPos(ModBlocks.FUNGUS_BLOCK.get(),ant.blockPosition(),10,6,ant.level);
+                fungusPosList = AntUtils.findAllBlockPos(ModBlocks.FUNGUS_CARPET.get(),ant.blockPosition(),10,6,ant.level);
             }
 
             if(fungusPosList.isEmpty()){fungusAdjacentPosList.clear();}
@@ -179,7 +179,7 @@ public class FungalFarmingGoal<T extends LivingEntity> extends Goal implements A
                     if(ant.level.getBlockState(tempPos).getRenderShape() != RenderShape.INVISIBLE){
                         cPosTemp.add(tempPos);
                     }
-                    if(!isAdjacentTo(ant.level,tempPos,ModBlocks.FUNGUS_BLOCK.get(),true)){
+                    if(!isAdjacentTo(ant.level,tempPos,ModBlocks.FUNGUS_CARPET.get(),true)){
                         cPosTemp.add(tempPos);
                     }
                     if(AntUtils.getDist(tempPos,homePos)>10){
@@ -275,9 +275,9 @@ public class FungalFarmingGoal<T extends LivingEntity> extends Goal implements A
                 BlockPos foodPos = AntUtils.findNearestBlockPos(ant,fungusPosList);
                 BlockState pState = ant.level.getBlockState(foodPos);
                 BlockState pStateUnder = ant.level.getBlockState(ant.blockPosition());
-                if(pStateUnder.getBlock() == ModBlocks.FUNGUS_BLOCK.get()){foodPos = ant.blockPosition();pState = pStateUnder;}
+                if(pStateUnder.getBlock() == ModBlocks.FUNGUS_CARPET.get()){foodPos = ant.blockPosition();pState = pStateUnder;}
 
-                if(pState.getBlock() == ModBlocks.FUNGUS_BLOCK.get()) {
+                if(pState.getBlock() == ModBlocks.FUNGUS_CARPET.get()) {
                     ant.walkTo(foodPos,1,1d);
                     if (AntUtils.getDist(antPos, foodPos) < distToInteract) {
                         isBreakingBlock = true;

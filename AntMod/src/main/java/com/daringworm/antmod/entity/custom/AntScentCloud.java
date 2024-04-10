@@ -11,14 +11,11 @@ import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientboundAddEntityPacket;
-import net.minecraft.world.effect.MobEffectInstance;
-import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.PushReaction;
 import org.jetbrains.annotations.NotNull;
@@ -150,7 +147,7 @@ public class AntScentCloud extends Entity implements IAnimatable {
                     random.nextFloat(pSpeed * 2) - pSpeed);
         }
 
-        for(BlockPos tempPos :interestPosSet){
+        /*for(BlockPos tempPos :interestPosSet){
             ParticleOptions particleoptions = ParticleTypes.HEART;
             pLevel.addAlwaysVisibleParticle(particleoptions,
                     tempPos.getX(),
@@ -160,7 +157,7 @@ public class AntScentCloud extends Entity implements IAnimatable {
                     random.nextFloat(pSpeed * 2) - pSpeed,
                     random.nextFloat(pSpeed * 2) - pSpeed);
             //this.getLevel().setBlock(tempPos.above(7), Blocks.GLASS.defaultBlockState(), 2);
-        }
+        }*/
     }
 
     private void runStageAction(){
@@ -171,23 +168,15 @@ public class AntScentCloud extends Entity implements IAnimatable {
         if(stg == WorkingStages.SCOUTING){
         }
         if(stg == WorkingStages.FORAGING){
-            if(this.holdingPosSet.isEmpty() && nextPosSet.isEmpty() && currentPosSet.isEmpty()){
-                holdingPosSet.add(this.blockPosition());}
-            if(this.discardedPosSet.size() >= maxAllowedSearchArea){
-                holdingPosSet.clear();
-                discardedPosSet.clear();
-                nextPosSet.clear();
-                currentPosSet.clear();
-                if(interestPosSet.isEmpty()){
-                    this.remove(RemovalReason.DISCARDED);
-                }
-            }
             this.expandSearchArea();
             this.interestEntitySet.clear();
             this.interestItemSet.addAll(this.getLevel().getEntitiesOfClass(ItemEntity.class, this.getBoundingBox().inflate(4d)));
         }
         if(stg == WorkingStages.FARMING){
             this.expandSearchArea();
+            if(this.getLevel().getGameTime() % 200 == 0) {
+                AntUtils.broadcastString(this.getLevel(), "Test. There are " + interestPosSet.size() + " interest poses, and " + containerPosSet.size() + " containers.");
+            }
         }
         if(stg == WorkingStages.NURSING){
             this.interestEntitySet.clear();
@@ -213,6 +202,18 @@ public class AntScentCloud extends Entity implements IAnimatable {
     }
 
     private void expandSearchArea(){
+
+        if(this.holdingPosSet.isEmpty() && nextPosSet.isEmpty() && currentPosSet.isEmpty()){holdingPosSet.add(this.blockPosition());}
+        if(this.discardedPosSet.size() >= maxAllowedSearchArea){
+            holdingPosSet.clear();
+            discardedPosSet.clear();
+            nextPosSet.clear();
+            currentPosSet.clear();
+            if(interestPosSet.isEmpty()){
+                this.remove(RemovalReason.DISCARDED);
+            }
+        }
+
         int i = 0;
         if(currentPosSet.isEmpty()){
             if(holdingPosSet.isEmpty()){
@@ -225,14 +226,19 @@ public class AntScentCloud extends Entity implements IAnimatable {
             }
             holdingPosSet.removeAll(currentPosSet);
         }
+
         for(BlockPos tempPos : currentPosSet){
             HashSet<BlockPos> tempSet = getStaircasePoses(tempPos);
             tempSet.removeAll(currentPosSet);
             tempSet.removeAll(holdingPosSet);
             tempSet.removeAll(nextPosSet);
             nextPosSet.addAll(tempSet);
-            for(BlockPos tempPos1 : tempSet){checkForInterest(tempPos1);}
+
+            for(BlockPos tempPos1 : tempSet){
+                checkForInterest(tempPos1);
+            }
         }
+
         discardedPosSet.addAll(currentPosSet);
         currentPosSet.clear();
     }
@@ -247,19 +253,12 @@ public class AntScentCloud extends Entity implements IAnimatable {
         }
         else if(this.WORKING_STAGE == WorkingStages.FARMING){
             Block pBlock = pLevel.getBlockState(pPos).getBlock();
-            if (pBlock == ModBlocks.FUNGUS_BLOCK.get()) {
+            if (pBlock == ModBlocks.FUNGUS_CARPET.get()) {
                 interestPosSet.add(pPos);
             } else if (pBlock == ModBlocks.LEAFY_CONTAINER_BLOCK.get()) {
                 containerPosSet.add(pPos);
             }
-            for(Direction dir : Direction.values()) {
-                pBlock = pLevel.getBlockState(pPos.relative(dir)).getBlock();
-                if (pBlock == ModBlocks.FUNGUS_BLOCK.get()) {
-                    interestPosSet.add(pPos);
-                } else if (pBlock == ModBlocks.LEAFY_CONTAINER_BLOCK.get()) {
-                    containerPosSet.add(pPos);
-                }
-            }
+
         }
     }
 

@@ -81,7 +81,8 @@ public class AntMod
         EntityRenderers.register(ModEntityTypes.ANT_EFFECT_CLOUD.get(), AntScentCloudRenderer::new);
 
         ItemBlockRenderTypes.setRenderLayer(ModBlocks.LEAFY_CONTAINER_BLOCK.get(), RenderType.translucent());
-        ItemBlockRenderTypes.setRenderLayer(ModBlocks.FUNGUS_BLOCK.get(), RenderType.cutout());
+        ItemBlockRenderTypes.setRenderLayer(ModBlocks.FUNGUS_CARPET.get(), RenderType.cutout());
+        ItemBlockRenderTypes.setRenderLayer(ModBlocks.FUNGUS_FUZZ.get(), RenderType.cutout());
 
         MenuScreens.register(ModMenuTypes.LEAFY_CONTAINER_MENU.get(), FungalContainerScreen::new);
     }

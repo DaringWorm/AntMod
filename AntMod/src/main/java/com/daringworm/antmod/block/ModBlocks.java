@@ -10,9 +10,9 @@ import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.level.block.SaplingBlock;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.material.Material;
+import net.minecraft.world.level.material.MaterialColor;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
@@ -27,7 +27,7 @@ public class ModBlocks {
 
 
 
-    public static final RegistryObject<Block> ANTSTONE = registerBlock("ant_stone",
+    public static final RegistryObject<Block> ANT_STONE = registerBlock("ant_stone",
             () -> new Block(BlockBehaviour.Properties.of(Material.STONE).strength(1.5f)
                     .requiresCorrectToolForDrops()), ModCreativeModeTab.ANT_MOD_CTAB);
 
@@ -35,13 +35,25 @@ public class ModBlocks {
             () -> new Block(BlockBehaviour.Properties.of(Material.DIRT).strength(0.5f)
                     .requiresCorrectToolForDrops()), ModCreativeModeTab.ANT_MOD_CTAB);
 
-    public static final RegistryObject<Block> ANTDEBRIS = registerBlock("ant_debris",
+    public static final RegistryObject<Block> ANT_DEBRIS = registerBlock("ant_debris",
             () -> new Block(BlockBehaviour.Properties.of(Material.SPONGE).strength(1f)
                     .requiresCorrectToolForDrops()), ModCreativeModeTab.ANT_MOD_CTAB);
 
-    public static final RegistryObject<Block> LUMINOUSDEBRIS = registerBlock("luminous_ant_debris",
+    public static final RegistryObject<Block> GLOWING_DEBRIS = registerBlock("luminous_ant_debris",
             () -> new Block(BlockBehaviour.Properties.of(Material.SPONGE).lightLevel((p_50872_) -> {return 8;}).strength(0.8f)
                     .requiresCorrectToolForDrops()), ModCreativeModeTab.ANT_MOD_CTAB);
+
+    public static final RegistryObject<Block> FUNGUS_GARDEN = registerBlock("fungus_garden",
+            () -> new FungusGarden(BlockBehaviour.Properties.of(Material.SPONGE).lightLevel((p_50872_) -> {return 3;}).strength(0.8f)
+                    .requiresCorrectToolForDrops()), ModCreativeModeTab.ANT_MOD_CTAB);
+
+    public static final RegistryObject<Block> FUNGUS_BLOCK = registerBlock("fungus_block",
+            () -> new Block(BlockBehaviour.Properties.of(Material.SPONGE).lightLevel((p_50872_) -> {return 3;}).strength(0.8f)
+                    .requiresCorrectToolForDrops()), ModCreativeModeTab.ANT_MOD_CTAB);
+
+    public static final RegistryObject<Block> FUNGUS_FUZZ = registerBlock("fungus_fuzz",
+            () -> new FungusFuzz(BlockBehaviour.Properties.of(Material.LEAVES)
+                    .requiresCorrectToolForDrops().noOcclusion().noCollission().instabreak()), ModCreativeModeTab.ANT_MOD_CTAB);
 
 
     public static final RegistryObject<Block> LEAFY_CONTAINER_BLOCK = registerBlock("fungal_container_block",
@@ -56,9 +68,9 @@ public class ModBlocks {
             () -> new FertileAir(BlockBehaviour.Properties.copy(Blocks.AIR).noOcclusion()),
             ModCreativeModeTab.ANT_MOD_CTAB);
 
-    public static final RegistryObject<Block> FUNGUS_BLOCK = registerBlock("fungus_block",
-            () -> new FungusBlock(BlockBehaviour.Properties.of(Material.LEAVES).strength(0.2f).lightLevel((p_50872_) ->
-                    {return 12;}).strength(0.8f).requiresCorrectToolForDrops().noOcclusion()), ModCreativeModeTab.ANT_MOD_CTAB);
+    public static final RegistryObject<Block> FUNGUS_CARPET = registerBlock("fungus_carpet",
+            () -> new FungusCarpet(BlockBehaviour.Properties.of(Material.LEAVES).strength(0.2f).lightLevel((p_50872_) ->
+                    12).strength(0.8f).requiresCorrectToolForDrops().noOcclusion()), ModCreativeModeTab.ANT_MOD_CTAB);
 
     public static final RegistryObject<Block> LEAFY_MIXTURE = registerBlock("leafy_mixture",
             () -> new LeafyMixture(BlockBehaviour.Properties.of(Material.LEAVES).strength(0.2f).
@@ -68,9 +80,6 @@ public class ModBlocks {
             () -> new LeafyMixture(BlockBehaviour.Properties.of(Material.LEAVES).strength(0.2f).
                     strength(0.8f).requiresCorrectToolForDrops().noOcclusion()), ModCreativeModeTab.ANT_MOD_CTAB);
 
-    public static final RegistryObject<Block> PEACH_LEAVES = registerBlock("peach_leaves",
-            () -> new Block(BlockBehaviour.Properties.of(Material.LEAVES).strength(1f)
-                    .requiresCorrectToolForDrops()), ModCreativeModeTab.ANT_MOD_CTAB);
 
 
     private static <T extends Block> RegistryObject<T> registerBlock
@@ -78,7 +87,6 @@ public class ModBlocks {
         RegistryObject<T> toReturn = BLOCKS.register(name, block);
         registerBlockItem(name, toReturn, tab);
         return toReturn;
-
     }
 
 

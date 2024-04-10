@@ -10,24 +10,18 @@ import com.daringworm.antmod.entity.custom.WorkerAnt;
 import com.daringworm.antmod.goals.AntUtils;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.network.chat.TextComponent;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.*;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.storage.loot.LootContext;
-import net.minecraft.world.level.storage.loot.parameters.LootContextParam;
 import net.minecraft.world.phys.Vec3;
-import org.spongepowered.asm.mixin.Shadow;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -65,6 +59,17 @@ public class Action {
                 pAnt.memory.passiveTarget = pAnt.memory.foundItemList.get(0);
             }
             pAnt.getLevel().getProfiler().pop();
+        }
+    }
+
+    public static final class EatFungusAction extends Action {
+        @Override
+        public void run(Ant pAnt){
+            if(false){
+
+
+                pAnt.memory.passiveTarget = pAnt.memory.foundItemList.get(0);
+            }
         }
     }
 
@@ -272,7 +277,7 @@ public class Action {
                         pAnt.memory.interestPos = BlockPos.ZERO;
                         pAnt.memory.breakingProgress = 0;
                         pAnt.setSnippingAnimation(false);
-                        if(pAnt.getLevel().canSeeSky(pPos) && pAnt.getDistTo(pAnt.getFirstSurfacePos())>45) {
+                        if(pAnt.getLevel().canSeeSky(pPos) && pAnt.getDistTo(pAnt.getFirstSurfacePos())>45 && pAnt.getLevel().getRandom().nextBoolean()) {
                             pAnt.getLevel().setBlock(pPos, ModBlocks.FERTILE_AIR.get().defaultBlockState(), 2);
                         }
                     }
@@ -318,7 +323,7 @@ public class Action {
                         BlockPos tempPos = pAnt.memory.interestPos.relative(dir,1);
                         BlockState tempState = pAnt.getLevel().getBlockState(tempPos);
                         if(!pAnt.getLevel().getFluidState(tempPos).isEmpty() || (!pAnt.getLevel().canSeeSky(tempPos) && tempState.getBlock() == Blocks.AIR)){
-                            pAnt.getLevel().setBlock(tempPos, ModBlocks.LUMINOUSDEBRIS.get().defaultBlockState(),2);
+                            pAnt.getLevel().setBlock(tempPos, ModBlocks.GLOWING_DEBRIS.get().defaultBlockState(),2);
                         }
                     }
                     pAnt.memory.excavationListCooked.remove(pAnt.memory.interestPos);
@@ -477,11 +482,9 @@ public class Action {
             if(pAnt.getLevel() instanceof ServerLevel){
 
                 String toSay = "";
-                toSay = Objects.requireNonNullElse(pAnt.memory.errorAlertString, "Ant's brain encountered an error");
+                toSay = (pAnt.memory != null)? Objects.requireNonNullElse(pAnt.memory.errorAlertString, "Ant's brain encountered an error") : "Ant has a null memory";
 
-                for(ServerPlayer player : Objects.requireNonNull(pAnt.getLevel().getServer()).getPlayerList().getPlayers()){
-                    player.sendMessage(new TextComponent(toSay), player.getUUID());
-                }
+                AntUtils.broadcastString(pAnt.getLevel(),toSay);
             }
             pAnt.getLevel().getProfiler().pop();
         }
