@@ -10,7 +10,7 @@ import net.minecraft.world.phys.Vec3;
 import java.util.EnumSet;
 import java.util.List;
 
-public class ClampOnTargetGoal extends Goal implements AntUtils {
+public class ClampOnTargetGoal extends Goal {
     private final WorkerAnt ant;
 
     private int lockedOnDuration =0;

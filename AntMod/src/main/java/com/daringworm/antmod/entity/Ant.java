@@ -4,6 +4,8 @@ package com.daringworm.antmod.entity;
 import com.daringworm.antmod.DebugHelper;
 import com.daringworm.antmod.block.ModBlocks;
 import com.daringworm.antmod.colony.AntColony;
+import com.daringworm.antmod.colony.misc.BlockPosStringifier;
+import com.daringworm.antmod.colony.misc.PosSpherePair;
 import com.daringworm.antmod.entity.brains.memories.LeafCutterMemory;
 import com.daringworm.antmod.colony.misc.PosPair;
 import com.daringworm.antmod.goals.AntUtils;
@@ -26,114 +28,134 @@ import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.animal.Animal;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.level.BlockAndTintGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.LevelReader;
+import net.minecraft.world.level.block.NetherPortalBlock;
+import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.pathfinder.BlockPathTypes;
 import net.minecraft.world.level.pathfinder.Path;
 import net.minecraft.world.level.pathfinder.PathComputationType;
+import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.NotNull;
 
+import javax.annotation.Nullable;
 import java.util.*;
+import java.util.function.Predicate;
 
 import static com.daringworm.antmod.goals.AntUtils.getDist;
 
 
 public abstract class Ant extends PathfinderMob implements MenuProvider {
 
-    public LeafCutterMemory memory;
+    @Nullable
+    private Entity passiveTarget;
 
-    private static final EntityDataAccessor<BlockPos> HOME_POS = SynchedEntityData.defineId(Ant.class, EntityDataSerializers.BLOCK_POS);
-    private static final EntityDataAccessor<String> ROOM_ID = SynchedEntityData.defineId(Ant.class, EntityDataSerializers.STRING);
-    private static final EntityDataAccessor<BlockPos> FIRST_SURFACE_POS = SynchedEntityData.defineId(Ant.class, EntityDataSerializers.BLOCK_POS);
-    private static final EntityDataAccessor<BlockPos> FOOD_LOCATION = SynchedEntityData.defineId(Ant.class, EntityDataSerializers.BLOCK_POS);
-    private static final EntityDataAccessor<Boolean> IS_ABOVEGROUND = SynchedEntityData.defineId(Ant.class, EntityDataSerializers.BOOLEAN);
-    private static final EntityDataAccessor<Boolean> IS_COMPETENT = SynchedEntityData.defineId(Ant.class, EntityDataSerializers.BOOLEAN);
-    private static final EntityDataAccessor<Boolean> IS_IN_TRANSITION = SynchedEntityData.defineId(Ant.class, EntityDataSerializers.BOOLEAN);
+    private final ArrayList<BlockPos> cookedExcavationPosList;
+    private final ArrayList<BlockPos> goUndergroundList;
+    private final ArrayList<PosSpherePair> rawExcavationList;
+
+
     private static final EntityDataAccessor<Boolean> IS_MINING_ANIMATION = SynchedEntityData.defineId(Ant.class, EntityDataSerializers.BOOLEAN);
-    private static final EntityDataAccessor<Integer> HUNGER_LEVEL = SynchedEntityData.defineId(Ant.class, EntityDataSerializers.INT);
-    private static final EntityDataAccessor<Integer> COLONY_ID = SynchedEntityData.defineId(Ant.class, EntityDataSerializers.INT);
+    private static final EntityDataAccessor<Boolean> SHOULD_RUN_AI = SynchedEntityData.defineId(Ant.class, EntityDataSerializers.BOOLEAN);
+
+
+    private static final EntityDataAccessor<String> ERROR_MSG = SynchedEntityData.defineId(Ant.class,EntityDataSerializers.STRING);
+    private static final EntityDataAccessor<String> ROOM_ID = SynchedEntityData.defineId(Ant.class,EntityDataSerializers.STRING);
+
+
     /**1 place is workingstage; 10 place is subclass; 100s place is for hascheckedhomepos; 1000s is latch direction for workerants**/
     private static final EntityDataAccessor<Integer> MISC_DATA = SynchedEntityData.defineId(Ant.class, EntityDataSerializers.INT);
-    private static final EntityDataAccessor<Integer> WORKING_STAGE = SynchedEntityData.defineId(Ant.class, EntityDataSerializers.INT);
+    private static final EntityDataAccessor<Integer> COLONY_ID = SynchedEntityData.defineId(Ant.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Integer> WALKING_COOLDOWN = SynchedEntityData.defineId(Ant.class, EntityDataSerializers.INT);
-    private static final EntityDataAccessor<String> MEMORY = SynchedEntityData.defineId(Ant.class,EntityDataSerializers.STRING);
+    private static final EntityDataAccessor<Integer> BLOCK_BREAKING_PROGRESS = SynchedEntityData.defineId(Ant.class, EntityDataSerializers.INT);
+    private static final EntityDataAccessor<Integer> HUNGER_LEVEL = SynchedEntityData.defineId(Ant.class, EntityDataSerializers.INT);
+    private static final EntityDataAccessor<Integer> NEARBY_ITEM_COUNT = SynchedEntityData.defineId(Ant.class, EntityDataSerializers.INT);
+    private static final EntityDataAccessor<Integer> WORKING_STAGE = SynchedEntityData.defineId(Ant.class, EntityDataSerializers.INT);
+    private static final EntityDataAccessor<Integer> BRAINCELL_STAGE = SynchedEntityData.defineId(Ant.class, EntityDataSerializers.INT);
+    private static final EntityDataAccessor<Integer> EXCAVATION_STAGE = SynchedEntityData.defineId(Ant.class,EntityDataSerializers.INT);
 
-    public double getDistTo(BlockPos pPos){return getDist(this.blockPosition(),pPos);}
+
+    private static final EntityDataAccessor<BlockPos> HOME_POS = SynchedEntityData.defineId(Ant.class, EntityDataSerializers.BLOCK_POS);
+    private static final EntityDataAccessor<BlockPos> INTEREST_POS = SynchedEntityData.defineId(Ant.class, EntityDataSerializers.BLOCK_POS);
+    private static final EntityDataAccessor<BlockPos> SURFACE_POS = SynchedEntityData.defineId(Ant.class, EntityDataSerializers.BLOCK_POS);
+    private static final EntityDataAccessor<BlockPos> FOOD_POS = SynchedEntityData.defineId(Ant.class, EntityDataSerializers.BLOCK_POS);
 
 
-    public void setInterestBlock(BlockPos pPos){memory.interestPos = pPos;}
-
-
-    public BlockPos getColonyPos(){
-        if(((ServerLevelUtil) this.getLevel()).getColonyWithID(this.getColonyID()) != null){
-            AntColony colony = getColony();
-            if(colony != null) {
-                return colony.getEntranceBottom();
-            }
-            else return null;
-        }
-        else return BlockPos.ZERO;
-    }
-
-    public AntColony getColony(){
-        return ((ServerLevelUtil) this.getLevel()).getColonyWithID(this.getColonyID());
-    }
-
-    public void setHomeContainerPos(BlockPos pPosition) {this.entityData.set(HOME_POS, pPosition);}
+    public void setHomeContainerPos(BlockPos pPos) {this.entityData.set(HOME_POS, pPos);}
     public BlockPos getHomeContainerPos() {return this.entityData.get(HOME_POS);}
-    public void setRoomID(String branchID) {this.entityData.set(ROOM_ID, branchID);}
-    public String getRoomID() {return this.entityData.get(ROOM_ID);}
-    public void setFirstSurfacePos(BlockPos pPosition) {
-        this.entityData.set(FIRST_SURFACE_POS, pPosition);
-    }
-    public BlockPos getFirstSurfacePos() {
-        return this.entityData.get(FIRST_SURFACE_POS);
-    }
-    public void setFoodLocation(BlockPos pPosition) {
-        this.entityData.set(FOOD_LOCATION, pPosition);
-    }
-    public BlockPos getFoodLocation(){return this.entityData.get(FOOD_LOCATION);}
-    public void setIsInTransition(boolean pHasEgg) {
-        this.entityData.set(IS_IN_TRANSITION, pHasEgg);
-    }
-    public boolean getIsInTransition(){return this.entityData.get(IS_IN_TRANSITION);}
-    public void setSnippingAnimation(boolean pHasEgg2) {
-        this.entityData.set(IS_MINING_ANIMATION, pHasEgg2);
-    }
-    public boolean getIsSnippingAnimation(){return this.entityData.get(IS_MINING_ANIMATION);}
-    public void setIsAboveground(boolean isUp) {
-        this.entityData.set(IS_ABOVEGROUND, isUp);
-    }
-    public boolean getIsAboveground(){return this.entityData.get(IS_ABOVEGROUND);}
-    public boolean isCompetent() {
-        return this.entityData.get(IS_COMPETENT);
-    }
-    public void setIsCompetent(boolean pHasEgg) {
-        this.entityData.set(IS_COMPETENT, pHasEgg);
-    }
-    public boolean getIsCompetent(){return this.entityData.get(IS_COMPETENT);}
-    public void setHunger(int pHunger) {
-        this.entityData.set(HUNGER_LEVEL, pHunger);
-    }
+    public void setFirstSurfacePos(BlockPos pPos) {this.entityData.set(SURFACE_POS, pPos);}
+    public BlockPos getSurfacePos(){return this.entityData.get(SURFACE_POS);}
+    public void setInterestPos(BlockPos pPos) {this.entityData.set(INTEREST_POS, pPos);}
+    public BlockPos getInterestPos(){return this.entityData.get(INTEREST_POS);}
+    public void setFoodLocation(BlockPos pPos) {this.entityData.set(FOOD_POS,pPos);}
+    public BlockPos getFoodLocation(){return this.entityData.get(FOOD_POS);}
+    public void setHunger(int pHunger) {this.entityData.set(HUNGER_LEVEL,pHunger);}
     public int getHunger(){return this.entityData.get(HUNGER_LEVEL);}
-    public void setColonyID(int pID) {
-        this.entityData.set(COLONY_ID, pID);
-    }
+    public void setColonyID(int pID) {this.entityData.set(COLONY_ID,pID);}
     public int getColonyID(){return this.entityData.get(COLONY_ID);}
-    public void setThisMiscRAW(int pMisc) {
-        this.entityData.set(MISC_DATA, pMisc);
-    }
-    public void setWorkingStage(int pStage) {
-        this.entityData.set(WORKING_STAGE, pStage);
-    }
+    public void setWorkingStage(int pStage) {this.entityData.set(WORKING_STAGE, pStage);}
     public int getWorkingStage(){return this.entityData.get(WORKING_STAGE);}
-    public void setWalkingCooldown(int pStage) {
-        this.entityData.set(WALKING_COOLDOWN, pStage);
-    }
+    public void setBreakingProgress(int pTicks) {this.entityData.set(BLOCK_BREAKING_PROGRESS, pTicks);}
+    public int getBreakingProgress(){return this.entityData.get(BLOCK_BREAKING_PROGRESS);}
+    public void setErrorMessage(String msg){this.entityData.set(ERROR_MSG,msg);}
+    public String getErrorMessage(){return this.entityData.get(ERROR_MSG);}
+    public void setBraincellStage(int pStage){this.entityData.set(BRAINCELL_STAGE,pStage);}
+    public int getBraincellStage(){return this.entityData.get(BRAINCELL_STAGE);}
+    public void setSnippingAnimation(boolean pBool) {this.entityData.set(IS_MINING_ANIMATION, pBool);}
+    public boolean getIsSnippingAnimation(){return this.entityData.get(IS_MINING_ANIMATION);}
+    public void setNearbyItemCount(int pCount){this.entityData.set(NEARBY_ITEM_COUNT,pCount);}
+    public int getNearbyItemCount(){return this.entityData.get(NEARBY_ITEM_COUNT);}
+    public void setShouldRunBrain(boolean pBool){this.entityData.set(SHOULD_RUN_AI,pBool);}
+    public boolean getShouldRunBrain(){return this.entityData.get(SHOULD_RUN_AI);}
+    public void setWalkingCooldown(int pStage) {this.entityData.set(WALKING_COOLDOWN, pStage);}
     public int getWalkingCooldown(){return this.entityData.get(WALKING_COOLDOWN);}
+    public void setExcavationStage(int pStage){this.entityData.set(EXCAVATION_STAGE, pStage);}
+    public int getExcavationStage(){return this.entityData.get(EXCAVATION_STAGE);}
+    public void setRoomID(String id){this.entityData.set(ROOM_ID,id);}
+    public String getRoomID(){return this.entityData.get(ROOM_ID);}
+
+    public void setPassiveTarget(Entity pEntity){passiveTarget = pEntity;}
+    public Entity getPassiveTarget(){return passiveTarget;}
+    public void setThisMiscRAW(int pMisc) {this.entityData.set(MISC_DATA, pMisc);}
+
+
+    public ArrayList<BlockPos> getCookedExcavationPosList(){
+        if(this.cookedExcavationPosList != null && !this.cookedExcavationPosList.isEmpty()){
+            return this.cookedExcavationPosList;
+        }
+        else if(!this.getLevel().isClientSide()){
+            AntColony pColony = ((ServerLevelUtil) (this.getLevel())).getColonyWithID(this.getColonyID());
+            if (pColony != null) {
+                this.setExcavationStage(this.getExcavationStage()+ this.rawExcavationList.size());
+                this.rawExcavationList.clear();
+                this.rawExcavationList.addAll(pColony.getNextExcavationSteps(this.getExcavationStage()));
+
+                for (PosSpherePair sphere : rawExcavationList) {
+                    cookedExcavationPosList.removeAll(sphere.getBlockPoses(this.getLevel()));
+                    Collection<BlockPos> tempList = sphere.getBlockPoses(this.getLevel());
+                    tempList.removeIf(pos -> this.getLevel().getBlockState(pos).isAir());
+                    cookedExcavationPosList.addAll(tempList);
+                }
+            }
+        }
+        return cookedExcavationPosList;
+    }
+
+    public ArrayList<BlockPos> getGoUndergroundList(){
+        AntColony pColony = ((ServerLevelUtil) (this.getLevel())).getColonyWithID(this.getColonyID());
+        /*
+        if(pColony.hasBeenUpdated){
+            this.goUndergroundList.clear();
+            this.goUndergroundList.addAll(pColony.tunnels.getPosesToBranch(this.getRoomID()));
+        }
+        */
+
+        return pColony.tunnels.getPosesToBranch(this.getRoomID());//this.goUndergroundList;
+    }
 
     public void setThisMisc(int pValue, int digit) {
         int totalMisc = this.entityData.get(MISC_DATA);
@@ -143,17 +165,36 @@ public abstract class Ant extends PathfinderMob implements MenuProvider {
 
         this.entityData.set(MISC_DATA, newTotalMisc);
     }
-// under MISC
+    // under MISC
     public void setSubClass(int pClass){
         this.setThisMisc(pClass,2);
     }
     public int getSubClass(){return findDigit(this.entityData.get(MISC_DATA), 2);}
-// under MISC
+    // under MISC
     public int getHasCheckedHome(){return findDigit(this.entityData.get(MISC_DATA), 3);}
-// under MISC
+    // under MISC
     public void setHasCheckedHome(int oneOrTwo){this.setThisMisc(oneOrTwo,3);}
     public int getThisMisc(int value){return findDigit(this.entityData.get(MISC_DATA), value);}
     public int getThisMiscRAW(){return this.entityData.get(MISC_DATA);}
+
+    public double getDistTo(BlockPos pPos){return getDist(this.blockPosition(),pPos);}
+
+    public BlockPos getColonyPos(){
+        if(((ServerLevelUtil) this.getLevel()).getColonyWithID(this.getColonyID()) != null){
+            AntColony colony = getColony();
+            if(colony != null) {
+                return colony.getEntranceBottom();
+            }
+            else return BlockPos.ZERO;
+        }
+        else return BlockPos.ZERO;
+    }
+
+    public AntColony getColony(){
+        return ((ServerLevelUtil) this.getLevel()).getColonyWithID(this.getColonyID());
+    }
+
+
 
     public int findDigit(int input, int digit){
         int ten = (int) Math.pow(10,digit-1);
@@ -161,15 +202,26 @@ public abstract class Ant extends PathfinderMob implements MenuProvider {
         return noBigger/ten;
     }
 
+    public static Predicate<BlockPos> foodStatePredicate(Ant pAnt){
+        return pPos -> {
+            BlockState pState = pAnt.getLevel().getBlockState(pPos);
+            return pState.getRenderShape()
+                    != RenderShape.INVISIBLE && pState.getDestroySpeed(pAnt.level, pPos) < 0.1
+                    && !pState.canOcclude() && pState.getBlock().getClass() != NetherPortalBlock.class;
+        };
+    }
+
     public void walkTo(BlockPos blockPos, double speedModifier, double distanceModifier){
-        if(this.getWalkingCooldown() < 20){
+        this.getLevel().getProfiler().push("ant_navigation");
+
+        if(this.getWalkingCooldown() < 20 || blockPos == BlockPos.ZERO){
+            //AntUtils.broadcastString(this.getLevel(), "Cancelled walking due to inadequate cooldown");
             return;
         }
-        this.getLevel().getProfiler().push("ant_navigation");
-        if(this.memory != null && this.memory.navDelay <= 25){return;}
+
         if(!this.isOnGround() && !this.isInWater()){return;}
         assert blockPos != null && this.getLevel().isLoaded(blockPos) && blockPos != this.getNavigation().getPath().getEndNode().asBlockPos();
-        this.memory.navDelay = 0;
+        this.setWalkingCooldown(0);
         Path path = this.getNavigation().getPath();
         Level pLevel = this.getLevel();
         BlockPos targetPos = blockPos;
@@ -238,55 +290,58 @@ public abstract class Ant extends PathfinderMob implements MenuProvider {
     }
     
     public boolean shouldRunBrain() {
-        return this.memory != null &&
+        return !this.getEntityData().isEmpty() &&
                 this.getLevel().isLoaded(this.blockPosition()) &&
-            this.getLevel().isLoaded(this.blockPosition().north(16)) &&
-            this.getLevel().isLoaded(this.blockPosition().south(16)) &&
-            this.getLevel().isLoaded(this.blockPosition().east(16)) &&
-            this.getLevel().isLoaded(this.blockPosition().west(16));
+                this.getLevel().isLoaded(this.blockPosition().north(16)) &&
+                this.getLevel().isLoaded(this.blockPosition().south(16)) &&
+                this.getLevel().isLoaded(this.blockPosition().east(16)) &&
+                this.getLevel().isLoaded(this.blockPosition().west(16))
+                && this.getShouldRunBrain();
+                //((ServerLevelUtil)(ServerLevel)this.getLevel()).getColonyWithID(this.getColonyID()) != null
+                //&& ((ServerLevelUtil)(ServerLevel)this.getLevel()).getColonyWithID(this.getColonyID()).tunnels != null;
     }
 
 
     protected void defineSynchedData() {
         super.defineSynchedData();
-        this.entityData.define(HOME_POS, this.blockPosition());
-        this.entityData.define(ROOM_ID, "");
-        this.entityData.define(FIRST_SURFACE_POS, BlockPos.ZERO);
-        this.entityData.define(FOOD_LOCATION, BlockPos.ZERO);
-        this.entityData.define(IS_ABOVEGROUND, false);
-        this.entityData.define(IS_IN_TRANSITION, false);
         this.entityData.define(IS_MINING_ANIMATION, false);
-        this.entityData.define(IS_COMPETENT, false);
-        this.entityData.define(HUNGER_LEVEL, 70000);
-        this.entityData.define(COLONY_ID, (int) this.level.getGameTime());
         this.entityData.define(MISC_DATA, 1000000);
-        this.entityData.define(WORKING_STAGE, 0);
         this.entityData.define(WALKING_COOLDOWN, -10);
-        this.entityData.define(MEMORY, "null");
+        this.entityData.define(BRAINCELL_STAGE, 0);
+        this.entityData.define(WORKING_STAGE,0);
+        this.entityData.define(COLONY_ID,0);
+        this.entityData.define(HUNGER_LEVEL,50000);
+        this.entityData.define(ERROR_MSG,"An error occured (default msg)");
+        this.entityData.define(NEARBY_ITEM_COUNT,0);
+        this.entityData.define(BLOCK_BREAKING_PROGRESS,0);
+        this.entityData.define(SHOULD_RUN_AI, true);
+        this.entityData.define(EXCAVATION_STAGE, 0);
+        this.entityData.define(ROOM_ID, "0");
+
+        this.entityData.define(HOME_POS, BlockPos.ZERO);
+        this.entityData.define(INTEREST_POS, BlockPos.ZERO);
+        this.entityData.define(SURFACE_POS, BlockPos.ZERO);
+        this.entityData.define(FOOD_POS, BlockPos.ZERO);
     }
 
     public void addAdditionalSaveData(@NotNull CompoundTag pCompound) {
         super.addAdditionalSaveData(pCompound);
-        pCompound.putInt("HomePosX", this.getHomeContainerPos().getX());
-        pCompound.putInt("HomePosY", this.getHomeContainerPos().getY());
-        pCompound.putInt("HomePosZ", this.getHomeContainerPos().getZ());
-        pCompound.putString("RoomID", this.getRoomID());
-        pCompound.putBoolean("IsAboveground", this.getIsAboveground());
-        pCompound.putBoolean("IsInTransition", this.getIsInTransition());
-        pCompound.putBoolean("IsInTransition2", this.getIsSnippingAnimation());
-        pCompound.putBoolean("IsCompetent", this.getIsCompetent());
-        pCompound.putInt("FirstSurfaceX", this.getFirstSurfacePos().getX());
-        pCompound.putInt("FirstSurfaceY", this.getFirstSurfacePos().getY());
-        pCompound.putInt("FirstSurfaceZ", this.getFirstSurfacePos().getZ());
-        pCompound.putInt("FoodPosX", this.getFoodLocation().getX());
-        pCompound.putInt("FoodPosY", this.getFoodLocation().getY());
-        pCompound.putInt("FoodPosZ", this.getFoodLocation().getZ());
-        pCompound.putInt("ColonyID", this.getColonyID());
-        pCompound.putInt("HungerLevel", this.getHunger());
         pCompound.putInt("MiscData", this.getThisMiscRAW());
-        pCompound.putInt("WorkingStage", this.getWorkingStage());
         pCompound.putInt("WalkingCooldown", this.getWalkingCooldown());
-        pCompound.putString("Memory", (this.memory != null && !this.getLevel().isClientSide())? this.memory.saveToString() : "null");
+        pCompound.putInt("Braincell_stage", this.getBraincellStage());
+        pCompound.putInt("Working_stage", this.getWorkingStage());
+        pCompound.putInt("Colony_ID", this.getColonyID());
+        pCompound.putString("Room_ID", this.getRoomID());
+        pCompound.putInt("Hunger_level", this.getHunger());
+        pCompound.putString("Error_Alert_String", this.getErrorMessage());
+        pCompound.putInt("Nearby_item_count", this.getNearbyItemCount());
+        pCompound.putInt("Block_breaking_progress", this.getBreakingProgress());
+        pCompound.putBoolean("Should_run_AI", this.getShouldRunBrain());
+
+        pCompound.put("Interest_pos", BlockPosStringifier.getTagForPos(this.getInterestPos()));
+        pCompound.put("Home_pos", BlockPosStringifier.getTagForPos(this.getHomeContainerPos()));
+        pCompound.put("Surface_pos", BlockPosStringifier.getTagForPos(this.getSurfacePos()));
+        pCompound.put("Food_pos", BlockPosStringifier.getTagForPos(this.getFoodLocation()));
     }
 
     /**
@@ -294,39 +349,35 @@ public abstract class Ant extends PathfinderMob implements MenuProvider {
      */
     public void readAdditionalSaveData(CompoundTag pCompound) {
         this.maxUpStep = 1.13F;
-        int i = pCompound.getInt("HomePosX");
-        int j = pCompound.getInt("HomePosY");
-        int k = pCompound.getInt("HomePosZ");
-        this.setHomeContainerPos(new BlockPos(i, j, k));
-        this.setRoomID(pCompound.getString("RoomID"));
         super.readAdditionalSaveData(pCompound);
-        this.setIsAboveground(pCompound.getBoolean("IsAboveground"));
-        this.setIsInTransition(pCompound.getBoolean("IsInTransition"));
-        this.setSnippingAnimation(pCompound.getBoolean("IsInTransition2"));
-        this.setIsCompetent(pCompound.getBoolean("IsCompetent"));
-        int l = pCompound.getInt("FirstSurfaceX");
-        int i1 = pCompound.getInt("FirstSurfaceY");
-        int j1 = pCompound.getInt("FirstSurfaceZ");
-        this.setFirstSurfacePos(new BlockPos(l, i1, j1));
-        int w = pCompound.getInt("FoodPosX");
-        int m = pCompound.getInt("FoodPosY");
-        int n = pCompound.getInt("FoodPosZ");
-        this.setFoodLocation(new BlockPos(w, m, n));
-        this.setColonyID(pCompound.getInt("ColonyID"));
-        this.setHunger(pCompound.getInt("HungerLevel"));
         this.setThisMiscRAW(pCompound.getInt("MiscData"));
-        this.setWorkingStage(pCompound.getInt("WorkingStage"));
         this.setWalkingCooldown(pCompound.getInt("WalkingCooldown"));
-        if(!this.getLevel().isClientSide()) {
-            this.memory = new LeafCutterMemory(pCompound.getString("Memory"), this);
-        }
+        this.setBraincellStage(pCompound.getInt("Braincell_stage"));
+        this.setWorkingStage(pCompound.getInt("Working_stage"));
+        this.setColonyID(pCompound.getInt("Colony_ID"));
+        this.setRoomID(pCompound.getString("Room_ID"));
+        this.setHunger(pCompound.getInt("Hunger_level"));
+        this.setErrorMessage(pCompound.getString("Error_Alert_String"));
+        this.setNearbyItemCount(pCompound.getInt("Nearby_item_count"));
+        this.setBreakingProgress(pCompound.getInt("Block_breaking_progress"));
+        this.setShouldRunBrain(pCompound.getBoolean("Should_run_AI"));
+
+
+        this.setInterestPos(BlockPosStringifier.getPosForTag((CompoundTag) pCompound.get("Interest_pos")));
+        this.setHomeContainerPos(BlockPosStringifier.getPosForTag((CompoundTag) pCompound.get("Home_pos")));
+        this.setFirstSurfacePos(BlockPosStringifier.getPosForTag((CompoundTag) pCompound.get("Surface_pos")));
+        this.setFoodLocation(BlockPosStringifier.getPosForTag((CompoundTag) pCompound.get("Food_pos")));
     }
+
 
 
     protected Ant(EntityType<? extends Ant> entitytype, Level pLevel) {
         super(entitytype, pLevel);
         this.setPathfindingMalus(BlockPathTypes.DANGER_FIRE, 16.0F);
         this.setPathfindingMalus(BlockPathTypes.DAMAGE_FIRE, -1.0F);
+        this.cookedExcavationPosList = new ArrayList<>();
+        this.rawExcavationList = new ArrayList<>();
+        this.goUndergroundList = new ArrayList<>();
     }
 
     protected void customServerAiStep() {
@@ -338,17 +389,6 @@ public abstract class Ant extends PathfinderMob implements MenuProvider {
         super.aiStep();
         this.getLevel().getProfiler().push("ant_ai");
 
-        //sets first aboveground position and moderates the aboveground status
-        if (this.isAlive()) {
-            /*boolean flag = this.level.canSeeSky(this.blockPosition());
-            if (flag) {
-                if (this.getFirstSurfacePos()==BlockPos.ZERO) {
-                    this.setFirstSurfacePos(this.getOnPos());
-                    this.setIsAboveground(true);
-                }
-                setIsAboveground(true);
-            }*/
-        }
         //ticks down hunger if players are nearby
         if(this.level.getNearestPlayer(this,100)!=null){
             this.setHunger(this.getHunger()-1);
@@ -416,10 +456,14 @@ public abstract class Ant extends PathfinderMob implements MenuProvider {
      */
     public boolean isFood(ItemStack pStack) {return pStack.is(ModItems.ANT_FOOD.get());}
 
-    public InteractionResult mobInteract(Player pPlayer, InteractionHand pHand) {
+    @Override
+    public InteractionResult interactAt(Player pPlayer, Vec3 pVec, InteractionHand pHand) {
         ItemStack itemstack = pPlayer.getItemInHand(pHand);
         Level pLevel = pPlayer.getLevel();
         if(!pLevel.isClientSide()){
+            if(pPlayer.getMainHandItem().getItem() == Items.BONE){
+                this.setShouldRunBrain(!this.getShouldRunBrain());
+            }
             //NetworkHooks.openGui(((ServerPlayer) pPlayer), (MenuProvider) this, this.blockPosition());
         }
         return super.mobInteract(pPlayer, pHand);

@@ -2,6 +2,7 @@ package com.daringworm.antmod.entity.custom;
 
 import com.daringworm.antmod.block.ModBlocks;
 import com.daringworm.antmod.entity.Ant;
+import com.daringworm.antmod.entity.brains.memories.LeafCutterMemory;
 import com.daringworm.antmod.entity.brains.parts.WorkingStages;
 import com.daringworm.antmod.goals.AntUtils;
 import net.minecraft.core.BlockPos;
@@ -76,9 +77,9 @@ public class AntScentCloud extends Entity implements IAnimatable {
             if (timer == 0 && hasDataToStart()) {
                 List<WorkerAnt> antsInVicinity = this.getLevel().getEntitiesOfClass(WorkerAnt.class, this.getBoundingBox().inflate(24,6,24));
                 for (Ant ant : antsInVicinity) {
-                    int antCurrentStage = ant.memory.workingStage;
+                    int antCurrentStage = ant.getWorkingStage();
                     if (this.WORKING_STAGE >= antCurrentStage) {
-                        ant.memory.workingStage = this.WORKING_STAGE;
+                        ant.setWorkingStage(this.WORKING_STAGE);
                         updateAntInterest(ant);
                     }
                 }
@@ -93,30 +94,29 @@ public class AntScentCloud extends Entity implements IAnimatable {
 
     public void updateAntInterest(Ant pAnt){
         if((pAnt.getTarget() == null || !pAnt.getTarget().isAlive()) &&
-                this.hasDataToStart() && this.WORKING_STAGE >= pAnt.memory.workingStage){
+                this.hasDataToStart() && this.WORKING_STAGE >= pAnt.getWorkingStage()){
 
             int stg = this.WORKING_STAGE;
 
             if(stg == WorkingStages.FORAGING && !this.interestPosSet.isEmpty()){
-                if (pAnt.getMainHandItem().isEmpty() && (!AntUtils.shouldSnip(pAnt.memory.interestPos, this.getLevel()) || pAnt.memory.interestPos == BlockPos.ZERO) &&
+                if (pAnt.getMainHandItem().isEmpty() && (!AntUtils.shouldSnip(pAnt.getInterestPos(), this.getLevel()) || pAnt.getInterestPos() == BlockPos.ZERO) &&
                         (Math.abs(this.getY()-pAnt.getY()) < 8)) {
                     BlockPos targetPos = AntUtils.findNearestBlockPos(pAnt,new ArrayList<>(List.copyOf(interestPosSet)));
-                    pAnt.memory.interestPos = targetPos;
+                    pAnt.setInterestPos(targetPos);
                     this.interestPosSet.remove(targetPos);
                     pAnt.setWorkingStage(WorkingStages.FORAGING);
-                    pAnt.memory.workingStage = WorkingStages.FORAGING;
                     //pAnt.addEffect(new MobEffectInstance(MobEffects.GLOWING, 200));
                 }
             }
             else if(stg == WorkingStages.FARMING){
-                pAnt.memory.fungusPosSet = this.interestPosSet;
-                pAnt.memory.containerPosSet = new ArrayList<>(this.containerPosSet);
+                //mem.fungusPosSet = this.interestPosSet;
+                //mem.containerPosSet = this.containerPosSet;
             }
             else if(stg == WorkingStages.ATTACKING){
                 pAnt.setTarget(this.interestEntitySet.iterator().next());
             }
             else if(stg == WorkingStages.NURSING){
-                pAnt.memory.passiveTarget = this.interestEntitySet.iterator().next();
+                pAnt.setPassiveTarget(this.interestEntitySet.iterator().next());
             }
         }
     }

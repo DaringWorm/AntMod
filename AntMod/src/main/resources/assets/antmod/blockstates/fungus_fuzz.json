@@ -38,7 +38,7 @@
       "apply":
       {
         "model": "antmod:block/fungus_fuzz_down",
-        "x": 90
+        "x": 270
       }
     },
     {
@@ -48,7 +48,7 @@
       "apply":
       {
         "model": "antmod:block/fungus_fuzz_down",
-        "x": 270
+        "x": 90
       }
     },
     {
@@ -58,7 +58,7 @@
       "apply":
       {
         "model": "antmod:block/fungus_fuzz_down",
-        "y": 90,
+        "y": 270,
         "x": 90
       }
     },
@@ -69,7 +69,7 @@
       "apply":
       {
         "model": "antmod:block/fungus_fuzz_down",
-        "y": 90,
+        "y": 270,
         "x": 270
       }
     }

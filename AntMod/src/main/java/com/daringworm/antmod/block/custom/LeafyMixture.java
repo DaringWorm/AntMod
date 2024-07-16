@@ -46,6 +46,7 @@ public class LeafyMixture extends Block {
     }
 
     public static final IntegerProperty CONSUMPTION = BlockStateProperties.RESPAWN_ANCHOR_CHARGES;
+
     public LeafyMixture(Properties properties) {
         super(properties);
         this.registerDefaultState(this.stateDefinition.any().setValue(CONSUMPTION, 0));

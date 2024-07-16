@@ -14,7 +14,7 @@ import net.minecraft.world.phys.shapes.VoxelShape;
 
 import java.util.Set;
 
-public class PosPair implements AntUtils {
+public class PosPair {
     public BlockPos top;
     public BlockPos bottom;
     static final double maxDistanceAllowed = 300d;

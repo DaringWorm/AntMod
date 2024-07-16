@@ -15,7 +15,9 @@ import javax.annotation.Nullable;
 import java.util.EnumSet;
 import java.util.List;
 
-public class AggroManagerGoal extends Goal implements AntUtils {
+import static com.daringworm.antmod.goals.AntUtils.findNearbyEnemyAnts;
+
+public class AggroManagerGoal extends Goal {
     private final WorkerAnt ant;
     private final int getFollowDistance;
 

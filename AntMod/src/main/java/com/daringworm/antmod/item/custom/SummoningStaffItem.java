@@ -1,11 +1,16 @@
 package com.daringworm.antmod.item.custom;
 
 import com.daringworm.antmod.block.ModBlocks;
+import com.daringworm.antmod.block.custom.MoldyLeaves;
 import com.daringworm.antmod.colony.misc.PosSpherePair;
+import com.daringworm.antmod.entity.brains.BrainTrees;
+import com.daringworm.antmod.entity.brains.LeafCutterWorkerBrain;
+import com.daringworm.antmod.entity.custom.WorkerAnt;
 import com.daringworm.antmod.goals.AntUtils;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.Multimap;
 import net.minecraft.core.BlockPos;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
@@ -46,80 +51,21 @@ public class SummoningStaffItem extends Item {
 
     @Override
     public void releaseUsing(@NotNull ItemStack pStack, Level pLevel, @NotNull LivingEntity pEntity, int pTimeLeft) {
-        if(pLevel instanceof ServerLevel level) {
-            /*AntColony colony = ((ServerLevelUtil)pLevel).getClosestColony(pEntity.blockPosition());
-
-            if(colony != null){
-                ColonyBranch tunnels = colony.tunnels;
-                if(tunnels != null){
-                    String branchID = tunnels.getNearestBranchID(pEntity.blockPosition());
-                    BlockPos branchPos = AntUtils.findNearestBlockPos(pEntity.blockPosition(), tunnels.listBranchPoses());
-                    ArrayList<BlockPos> posList = tunnels.getPosesToBranch(tunnels.getNearestBranchID(pEntity.blockPosition()));
-                    AntUtils.broadcastString(level, "Nearest colony's ID is " +
-                            colony.colonyID +
-                            ". The nearest room within that colony is " +
-                            branchID +
-                            ", which is located at " +
-                            BlockPosStringifier.jsonFromPos(branchPos) +
-                            '.');
-
-
-                    if(posList.isEmpty()){AntUtils.broadcastString(level,"list is empty");}
-                    else{AntUtils.broadcastString(level," which is " + posList.size() + " long.");}
-                    for(BlockPos tempPos : posList){
-                        AntUtils.broadcastString(level,"" + BlockPosStringifier.jsonFromPos(tempPos));
-                    }
-
-                    AntUtils.broadcastString(level, "The colony has " +
-                            colony.tunnels.listBranchPoses().size() +
-                            " branch positions, and " +
-                            colony.tunnels.listBranchIDs().size() +
-                            " branch IDs.");
-                }
-                else{
-                    AntUtils.broadcastString(level, "Nearest colony has no branches.");
-                }
-            }
-            else{
-                AntUtils.broadcastString(level, "No colony was found.");
-            }*/
-            /*
+        if(pLevel instanceof ServerLevel) {
             WorkerAnt ant = pLevel.getEntitiesOfClass(WorkerAnt.class, pEntity.getBoundingBox().inflate(2d,2d,2d)).get(0);
-            if(ant != null){
-                AntUtils.broadcastString(pLevel,"" + BlockPosStringifier.jsonFromPos(ant.memory.interestPos));
-                AntUtils.broadcastString(ant.getLevel(),ant.memory.cellToRun.KEY);
+            if(ant != null) {
+                AntUtils.broadcastString(pLevel, ant.saveWithoutId(new CompoundTag()).getAsString());
+                AntUtils.broadcastString(pLevel, BrainTrees.getNextCell(ant).KEY + ' ' + ant.getBraincellStage());
             }
-            AntScentCloud cloud = pLevel.getEntitiesOfClass(AntScentCloud.class, pEntity.getBoundingBox().inflate(8d,8d,8d)).get(0);
-            if(cloud != null){
-                AntUtils.broadcastString(pLevel, "This cloud has " + cloud.getInterestPosesSize() + " positions.");
-            }*/
-            int size = 16;
-            double sphereOffset = 3.4d;
-            double sphereRadius = 2d;
-            BlockPos ep = pEntity.blockPosition();
-            ArrayList<BlockPos> airPoses = new ArrayList<>();
-            for(int x = size; x > -size; --x){
-                for(int y = size; y > -size; --y){
-                    for(int z = size; z > -size; --z){
-                        BlockPos pos = new BlockPos(x,y,z).offset(ep.getX(),ep.getY(),ep.getZ());
-                        if(AntUtils.getDist(pos, ep) < size) {
-                            level.setBlock(pos, (level.getRandom().nextInt(5) == 1)? ModBlocks.FUNGUS_GARDEN.get().defaultBlockState() : ModBlocks.FUNGUS_BLOCK.get().defaultBlockState(), 2);
-                        }
 
-                        if(level.getRandom().nextBoolean() &&
-                                AntUtils.getDist(AntUtils.findNearestBlockPos(pos,airPoses), pos) > sphereOffset){
-                            airPoses.add(pos);
-                        }
-                    }
+            if(pEntity.isCrouching()){
+                ArrayList<WorkerAnt> ants = new ArrayList<>(pLevel.getEntitiesOfClass(WorkerAnt.class,pEntity.getBoundingBox().inflate(1000,1000,1000)));
+
+                for(WorkerAnt tempAnt : ants){
+                    tempAnt.setShouldRunBrain(!tempAnt.getShouldRunBrain());
                 }
             }
-
-            for(BlockPos pos : airPoses){
-                new PosSpherePair(pos,sphereRadius).setSphere(level, Blocks.AIR, Blocks.AIR, 0);
-            }
-
         }
-
     }
 
     public InteractionResultHolder<ItemStack> use(Level pLevel, Player pPlayer, InteractionHand pHand) {

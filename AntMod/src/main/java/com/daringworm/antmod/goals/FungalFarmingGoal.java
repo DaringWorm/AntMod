@@ -19,7 +19,7 @@ import java.util.List;
 
 import static com.daringworm.antmod.block.custom.FungusCarpet.AGE;
 
-public class FungalFarmingGoal<T extends LivingEntity> extends Goal implements AntUtils {
+public class FungalFarmingGoal<T extends LivingEntity> extends Goal {
     public FungalFarmingGoal(Ant pAnt) {
         this.ant = pAnt;
         this.setFlags(EnumSet.of(Goal.Flag.MOVE, Goal.Flag.LOOK));
@@ -148,10 +148,10 @@ public class FungalFarmingGoal<T extends LivingEntity> extends Goal implements A
 
             if(containerPosList.isEmpty() || advancedCheckTimer>5) {
                 containerPosList = AntUtils.findAllBlockPos(ModBlocks.LEAFY_CONTAINER_BLOCK.get(), ant.blockPosition(), 10, 6, ant.level);
-                containerFullness = checkContainersFullness(containerPosList, ant.level, true);
+                containerFullness = AntUtils.checkContainersFullness(containerPosList, ant.level, true);
                 if(usableContainerPosList.isEmpty()){
                     for(BlockPos tempPos : containerPosList){
-                        if(canReach(ant,tempPos)){
+                        if(AntUtils.canReach(ant,tempPos)){
                             usableContainerPosList.add(tempPos);
                         }
                     }
@@ -166,7 +166,7 @@ public class FungalFarmingGoal<T extends LivingEntity> extends Goal implements A
 
             if(fungusAdjacentPosList.isEmpty() && !fungusPosList.isEmpty()){
                 for(BlockPos tempPos : fungusPosList){
-                    List<BlockPos> tempList = findBlocksAdjacentTo(RenderShape.INVISIBLE,tempPos,ant.level,true);
+                    List<BlockPos> tempList = AntUtils.findBlocksAdjacentTo(RenderShape.INVISIBLE,tempPos,ant.level,true);
                     for(BlockPos tempPos2: tempList){
                         if(!fungusAdjacentPosList.contains(tempPos2)){
                             fungusAdjacentPosList.add(tempPos2);
@@ -179,7 +179,7 @@ public class FungalFarmingGoal<T extends LivingEntity> extends Goal implements A
                     if(ant.level.getBlockState(tempPos).getRenderShape() != RenderShape.INVISIBLE){
                         cPosTemp.add(tempPos);
                     }
-                    if(!isAdjacentTo(ant.level,tempPos,ModBlocks.FUNGUS_CARPET.get(),true)){
+                    if(!AntUtils.isAdjacentTo(ant.level,tempPos,ModBlocks.FUNGUS_CARPET.get(),true)){
                         cPosTemp.add(tempPos);
                     }
                     if(AntUtils.getDist(tempPos,homePos)>10){
@@ -193,9 +193,9 @@ public class FungalFarmingGoal<T extends LivingEntity> extends Goal implements A
             }
 
 
-            edibleContainerFullness = checkContainersFullness(usableContainerPosList,ant.level,true);
-            containerFullness = checkContainersFullness(usableContainerPosList,ant.level,false);
-            BlockPos ediblesInThisContainer = findNearestContainerToExtract(ant,usableContainerPosList);
+            edibleContainerFullness = AntUtils.checkContainersFullness(usableContainerPosList,ant.level,true);
+            containerFullness = AntUtils.checkContainersFullness(usableContainerPosList,ant.level,false);
+            BlockPos ediblesInThisContainer = AntUtils.findNearestContainerToExtract(ant,usableContainerPosList);
 
             if(advancedCheckTimer>5){advancedCheckTimer=0;}
 
@@ -209,7 +209,7 @@ public class FungalFarmingGoal<T extends LivingEntity> extends Goal implements A
                     if (ant.getMainHandItem().isEmpty()) {
                         ant.walkTo(ediblesInThisContainer, 1, 1d);
                         if (AntUtils.getDist(antPos, ediblesInThisContainer) < distToInteract) {
-                            extractLeafyMixture(ant, (FungalContainerBlockEntity) ant.level.getBlockEntity(ediblesInThisContainer));
+                            AntUtils.extractLeafyMixture(ant, (FungalContainerBlockEntity) ant.level.getBlockEntity(ediblesInThisContainer));
                         }
                     }
                 }
@@ -241,12 +241,12 @@ public class FungalFarmingGoal<T extends LivingEntity> extends Goal implements A
             heldItem = ant.getMainHandItem();
             if((heldItem.isEmpty() || (!isHandFungusFood || fungusAdjacentPosList.isEmpty()))){
                 if(!ant.getMainHandItem().isEmpty()){
-                    BlockPos dumpPos = findNearestUsableContainer(ant,containerPosList);
+                    BlockPos dumpPos = AntUtils.findNearestUsableContainer(ant,containerPosList);
                     if(dumpPos != BlockPos.ZERO) {
                         ant.walkTo(dumpPos, 1,1d);
                         if (AntUtils.getDist(antPos, dumpPos) < distToInteract) {
                             if (ant.level.getBlockState(dumpPos).getBlock() == ModBlocks.LEAFY_CONTAINER_BLOCK.get()) {
-                                antAddItem(ant, ant.level.getBlockEntity(dumpPos), ant.getMainHandItem());
+                                AntUtils.antAddItem(ant, ant.level.getBlockEntity(dumpPos), ant.getMainHandItem());
                             } else {
                                 usableContainerPosList.remove(dumpPos);
                             }
@@ -260,7 +260,7 @@ public class FungalFarmingGoal<T extends LivingEntity> extends Goal implements A
                             ant.setCanPickUpLoot(true);
                             ItemEntity tempEntity = itemList.get(0);
                             for (ItemEntity ent : itemList) {
-                                if (canReach(ant, ent.blockPosition()) && AntUtils.getDist(antPos, ent.blockPosition()) < AntUtils.getDist(antPos, tempEntity.blockPosition())) {
+                                if (AntUtils.canReach(ant, ent.blockPosition()) && AntUtils.getDist(antPos, ent.blockPosition()) < AntUtils.getDist(antPos, tempEntity.blockPosition())) {
                                     tempEntity = ent;
                                 }
                             }
@@ -307,14 +307,14 @@ public class FungalFarmingGoal<T extends LivingEntity> extends Goal implements A
             //decides to enter foraging mode
             if((ediblesInThisContainer == BlockPos.ZERO && containerFullness < 1f && ant.getHunger() > minAllowedHunger)
             || (fungusAdjacentPosList.isEmpty() && !fungusPosList.isEmpty())){
-                if(ant.getFirstSurfacePos() != BlockPos.ZERO && ant instanceof WorkerAnt) {
+                if(ant.getSurfacePos() != BlockPos.ZERO && ant instanceof WorkerAnt) {
                     ant.setWorkingStage(2);
                 }
                 else{
                     AntUtils.wanderRandomly(ant);
                 }
             }
-            if(ant.getIsAboveground() && dist2home > 15 && ant instanceof WorkerAnt){
+            /*if(ant.getIsAboveground() && dist2home > 15 && ant instanceof WorkerAnt){
                 ant.setWorkingStage(2);
             }
             if(ant.getHunger()<minAllowedHunger && !ant.getIsAboveground() && dist2home>15){
@@ -322,7 +322,7 @@ public class FungalFarmingGoal<T extends LivingEntity> extends Goal implements A
             }
             if((fungusPosList.isEmpty() || usableContainerPosList.isEmpty()) && ant.getHunger() < minAllowedHunger && dist2home>10){
                 ant.walkTo(homePos,1,1d);
-            }
+            }*/
         }
     }
 }

@@ -4,6 +4,7 @@ import com.daringworm.antmod.block.ModBlocks;
 import com.daringworm.antmod.block.custom.FungalContainer;
 import com.daringworm.antmod.block.custom.FungusCarpet;
 import com.daringworm.antmod.block.entity.ModBlockEntities;
+import com.daringworm.antmod.colony.AntColony;
 import com.daringworm.antmod.entity.Ant;
 import com.daringworm.antmod.entity.ModEntityTypes;
 import com.daringworm.antmod.entity.brains.parts.WorkingStages;
@@ -181,7 +182,6 @@ public class FungalContainerBlockEntity extends BlockEntity implements MenuProvi
                                 itemsLeft = 0;
                                 pAnt.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
                                 pAnt.setHomeContainerPos(this.worldPosition);
-                                pAnt.memory.containerPos = this.worldPosition;
                             }
                             else{
                                 tempStack.setCount(tempStack.getMaxStackSize());
@@ -192,6 +192,7 @@ public class FungalContainerBlockEntity extends BlockEntity implements MenuProvi
                     }
                 }
             }
+            pAnt.setWorkingStage(WorkingStages.SCOUTING);
             this.setChanged();
         }
         else if(this.getLevel() != null){
@@ -212,11 +213,13 @@ public class FungalContainerBlockEntity extends BlockEntity implements MenuProvi
         if(!pLevel.isClientSide() && !pLevel.getBlockState(pPos).getValue(FungalContainer.FULL)){
             for(Ant pAnt : pLevel.getEntitiesOfClass(Ant.class, new AABB(pPos.getX()-5, pPos.getY()-3, pPos.getZ()-5,pPos.getX()+5, pPos.getY()+3, pPos.getZ()+5))){
                 BlockState antHomeState = pLevel.getBlockState(pAnt.getHomeContainerPos());
-                boolean distanceFlag = AntUtils.getDist(pAnt.getHomeContainerPos(), pPos) > AntUtils.getDist(pAnt.getColony().tunnels.getSubBranch(pAnt.getRoomID()).getPos(), pPos);
-                if(antHomeState.getBlock() != ModBlocks.LEAFY_CONTAINER_BLOCK.get() || !antHomeState.getValue(FungalContainer.FULL) || distanceFlag){
+                if(antHomeState.getBlock() != ModBlocks.LEAFY_CONTAINER_BLOCK.get() /*|| !antHomeState.getValue(FungalContainer.FULL)*/){
                     pAnt.setHomeContainerPos(pPos);
-                    pAnt.memory.containerPos = pPos;
-                    pAnt.addEffect(new MobEffectInstance(MobEffects.GLOWING, 200));
+                    pAnt.addEffect(new MobEffectInstance(MobEffects.GLOWING, 100));
+                    AntColony colony = pAnt.getColony();
+                    if(colony != null && colony.tunnels != null) {
+                        pAnt.setRoomID(colony.tunnels.getNearestBranchID(pPos));
+                    }
                 }
             }
         }

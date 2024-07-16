@@ -6,10 +6,11 @@ import com.daringworm.antmod.entity.brains.parts.Braincell;
 import com.daringworm.antmod.entity.brains.parts.WorkerBrainCells;
 import com.daringworm.antmod.entity.custom.WorkerAnt;
 
+import java.util.ArrayList;
+
 public final class BrainTrees {
-    private static final BrainFork workerAntMainFork = WorkerBrainCells.MASTER_FORK;
 
     public static Braincell getNextCell(WorkerAnt pAnt){
-        return workerAntMainFork.testForNext(pAnt);
+        return WorkerBrainCells.MAIN_FORK.testForNext(pAnt);
     }
 }

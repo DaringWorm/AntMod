@@ -10,6 +10,7 @@ import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.material.Material;
 import net.minecraft.world.level.material.MaterialColor;
@@ -43,16 +44,13 @@ public class ModBlocks {
             () -> new Block(BlockBehaviour.Properties.of(Material.SPONGE).lightLevel((p_50872_) -> {return 8;}).strength(0.8f)
                     .requiresCorrectToolForDrops()), ModCreativeModeTab.ANT_MOD_CTAB);
 
-    public static final RegistryObject<Block> FUNGUS_GARDEN = registerBlock("fungus_garden",
+    /*public static final RegistryObject<Block> FUNGUS_GARDEN = registerBlock("fungus_garden",
             () -> new FungusGarden(BlockBehaviour.Properties.of(Material.SPONGE).lightLevel((p_50872_) -> {return 3;}).strength(0.8f)
-                    .requiresCorrectToolForDrops()), ModCreativeModeTab.ANT_MOD_CTAB);
+                    .requiresCorrectToolForDrops()), ModCreativeModeTab.ANT_MOD_CTAB);*/
 
-    public static final RegistryObject<Block> FUNGUS_BLOCK = registerBlock("fungus_block",
-            () -> new Block(BlockBehaviour.Properties.of(Material.SPONGE).lightLevel((p_50872_) -> {return 3;}).strength(0.8f)
-                    .requiresCorrectToolForDrops()), ModCreativeModeTab.ANT_MOD_CTAB);
 
     public static final RegistryObject<Block> FUNGUS_FUZZ = registerBlock("fungus_fuzz",
-            () -> new FungusFuzz(BlockBehaviour.Properties.of(Material.LEAVES)
+            () -> new FungusFuzz(BlockBehaviour.Properties.of(Material.LEAVES).sound(SoundType.MOSS)
                     .requiresCorrectToolForDrops().noOcclusion().noCollission().instabreak()), ModCreativeModeTab.ANT_MOD_CTAB);
 
 
@@ -68,12 +66,20 @@ public class ModBlocks {
             () -> new FertileAir(BlockBehaviour.Properties.copy(Blocks.AIR).noOcclusion()),
             ModCreativeModeTab.ANT_MOD_CTAB);
 
+    public static final RegistryObject<Block> MOLDY_LEAVES = registerBlock("moldy_leaves",
+            () -> new MoldyLeaves(BlockBehaviour.Properties.of(Material.LEAVES).sound(SoundType.NYLIUM)),
+            ModCreativeModeTab.ANT_MOD_CTAB);
+
+    public static final RegistryObject<Block> FUNGAL_NODULE = registerBlock("fungus_nodule",
+            () -> new Block(BlockBehaviour.Properties.of(Material.LEAVES).sound(SoundType.NETHER_WART)),
+            ModCreativeModeTab.ANT_MOD_CTAB);
+
     public static final RegistryObject<Block> FUNGUS_CARPET = registerBlock("fungus_carpet",
-            () -> new FungusCarpet(BlockBehaviour.Properties.of(Material.LEAVES).strength(0.2f).lightLevel((p_50872_) ->
+            () -> new FungusCarpet(BlockBehaviour.Properties.of(Material.LEAVES).sound(SoundType.NYLIUM).strength(0.2f).lightLevel((p_50872_) ->
                     12).strength(0.8f).requiresCorrectToolForDrops().noOcclusion()), ModCreativeModeTab.ANT_MOD_CTAB);
 
     public static final RegistryObject<Block> LEAFY_MIXTURE = registerBlock("leafy_mixture",
-            () -> new LeafyMixture(BlockBehaviour.Properties.of(Material.LEAVES).strength(0.2f).
+            () -> new LeafyMixture(BlockBehaviour.Properties.of(Material.LEAVES).sound(SoundType.NYLIUM).strength(0.2f).
                     strength(0.8f).requiresCorrectToolForDrops().noOcclusion()), ModCreativeModeTab.ANT_MOD_CTAB);
 
     public static final RegistryObject<Block> WING_DEBRIS = registerBlock("wing_debris",

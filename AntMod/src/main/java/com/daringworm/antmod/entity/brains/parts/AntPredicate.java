@@ -14,8 +14,11 @@ public class AntPredicate {
 
     }
     public AntPredicate opposite(){
-        this.predicate = this.predicate.negate();
-        return this;
+        return new AntPredicate(this.predicate.negate());
+    }
+
+    public AntPredicate and(AntPredicate other){
+        return new AntPredicate(this.predicate.and(other.predicate));
     }
 
     public boolean test(Ant pAnt) {

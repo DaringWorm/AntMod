@@ -12,7 +12,7 @@ import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
 
-public class ForagingManagerGoal extends Goal implements AntUtils {
+public class ForagingManagerGoal extends Goal {
 
 
 
@@ -82,7 +82,7 @@ private static final int minAllowedHunger = 33000;
      */
 
     public void tick() {
-        double random = Math.random();
+        /*double random = Math.random();
         wanderWait++;
         aiTimer = aiTimer + random;
         advancedCheckTimer++;
@@ -172,7 +172,7 @@ private static final int minAllowedHunger = 33000;
                     ant.setIsAboveground(true);
                     ant.getNavigation().isDone();
                     if (foodPosList.isEmpty()) {
-                        foodPosList = findAllSnippableBlockPos(ant.blockPosition(), 15, 10, ant);
+                        foodPosList = AntUtils.findAllSnippableBlockPos(ant.blockPosition(), 15, 10, ant);
                     } else {
                         for (BlockPos tempPos : foodPosList) {
                             if (AntUtils.shouldSnip(tempPos, ant.getLevel())) {
@@ -195,7 +195,7 @@ private static final int minAllowedHunger = 33000;
                 BlockPos containerPos = BlockPos.ZERO;
                 for (BlockPos pPos : containerPosList) {
                     boolean closerThan = AntUtils.getDist(pPos, ant.blockPosition()) < AntUtils.getDist(containerPos, ant.blockPosition());
-                    if (canReach(ant, pPos) && closerThan && canAddItem(ant.getMainHandItem(), ant.level.getBlockEntity(pPos))) {
+                    if (AntUtils.canReach(ant, pPos) && closerThan && AntUtils.canAddItem(ant.getMainHandItem(), ant.level.getBlockEntity(pPos))) {
                         containerPos = pPos;
                     } else {
                         if (containerPosList.isEmpty()) {
@@ -208,7 +208,7 @@ private static final int minAllowedHunger = 33000;
                 if(containerPos != BlockPos.ZERO) {
                     ant.getNavigation().moveTo(containerPos.getX(), containerPos.getY(), containerPos.getZ(), 1);
                     if (AntUtils.getDist(ant.blockPosition(), containerPos) < interactionDist) {
-                        antAddItem((WorkerAnt) ant, ant.level.getBlockEntity(containerPos), ant.getMainHandItem());
+                        AntUtils.antAddItem((WorkerAnt) ant, ant.level.getBlockEntity(containerPos), ant.getMainHandItem());
                         ant.setHasCheckedHome(0);
                         ant.setHomeContainerPos(containerPos);
                     }
@@ -216,7 +216,7 @@ private static final int minAllowedHunger = 33000;
             }
 
 
-            /**manages aboveground stuff, like foraging**/
+            ////manages aboveground stuff, like foraging
 
             //checks for items, for later decisions
             List<ItemEntity> itemList = ant.level.getEntitiesOfClass(ItemEntity.class, ant.getBoundingBox().inflate(8.0D, 6.0D, 8.0D));
@@ -224,14 +224,14 @@ private static final int minAllowedHunger = 33000;
             if (handItem.isEmpty() && isAboveground) {
                 if(!AntUtils.shouldSnip(foodPos,ant.getLevel())){
                     foodPosList.remove(foodPos);
-                    ant.setFoodLocation(findNearestBlockPos(ant,foodPosList, true));
+                    ant.setFoodLocation(AntUtils.findNearestBlockPos(ant,foodPosList, true));
                 }
 
                 //finds breakables and sets it as food position
                 if (foodPosList.isEmpty() || foodPos == BlockPos.ZERO) {
                     foodPosList.clear();
-                    foodPosList = findAllSnippableBlockPos(ant.blockPosition(), 5, 5, ant);
-                    ant.setFoodLocation(findNearestBlockPos(ant, foodPosList, true));
+                    foodPosList = AntUtils.findAllSnippableBlockPos(ant.blockPosition(), 5, 5, ant);
+                    ant.setFoodLocation(AntUtils.findNearestBlockPos(ant, foodPosList, true));
                 }
                 // ik it can set to 0, that is intentional for wandering
 
@@ -289,7 +289,7 @@ private static final int minAllowedHunger = 33000;
                 WorkerAnt ant1 = null;
 
                 for(WorkerAnt ant2 : antList) {
-                    /*&& ant1.getThisColonyID() == ant.getThisColonyID()*/
+                    //&& ant1.getThisColonyID() == ant.getThisColonyID()
                     if (ant2.getIsCompetent()) {
                         double d1 = ant.distanceToSqr(ant2);
                         if (d1 < 254) {
@@ -314,7 +314,7 @@ private static final int minAllowedHunger = 33000;
         if(ant.getHunger() < minAllowedHunger && AntUtils.getDist(ant.blockPosition(),ant.getHomeContainerPos())<15){
             ant.setWorkingStage(0);
             super.stop();
-        }
+        }*/
     }
 }
 

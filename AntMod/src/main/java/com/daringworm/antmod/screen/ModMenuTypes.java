@@ -17,9 +17,9 @@ public class ModMenuTypes {
     public static final RegistryObject<MenuType<LeafyContainerMenu>> LEAFY_CONTAINER_MENU =
             registerMenuType(LeafyContainerMenu::new, "leafy_container_menu");
 
-    public static final RegistryObject<MenuType<AntTradingMenu>> ANT_TRADING_MENU =
+    /*public static final RegistryObject<MenuType<AntTradingMenu>> ANT_TRADING_MENU =
             registerMenuType(AntTradingMenu::new, "ant_trading_menu");
-
+*/
     private static <T extends AbstractContainerMenu>RegistryObject<MenuType<T>> registerMenuType(IContainerFactory<T> factory, String name) {
         return MENUS.register(name, () -> IForgeMenuType.create(factory));
     }

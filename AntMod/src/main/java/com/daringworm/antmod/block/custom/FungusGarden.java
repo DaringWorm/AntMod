@@ -31,6 +31,6 @@ public class FungusGarden extends Block {
     }
 
     public void randomTick(BlockState pState, ServerLevel pLevel, BlockPos pPos, Random pRandom) {
-        pLevel.setBlock(pPos, ModBlocks.FUNGUS_GARDEN.get().defaultBlockState().setValue(IS_GREEN, false), 2);
+        //pLevel.setBlock(pPos, ModBlocks.FUNGUS_GARDEN.get().defaultBlockState().setValue(IS_GREEN, false), 2);
     }
 }

@@ -14,9 +14,9 @@ public class AntTradingMenu extends AbstractContainerMenu {
 
     Ant ant;
 
-    public AntTradingMenu(int pContainerId, Inventory inv, FriendlyByteBuf extraData) {
-        this(pContainerId, inv, inv.player.level.getEntitiesOfClass(Ant.class, inv.player.getBoundingBox().inflate(7d)).stream().filter(a -> Arrays.stream(a.memory.tradingWith).anyMatch(p -> p.getId() == inv.player.getId())).findFirst().orElse(null));
-    }
+   /* public AntTradingMenu(int pContainerId, Inventory inv, FriendlyByteBuf extraData) {
+        this(pContainerId, inv, inv.player.level.getEntitiesOfClass(Ant.class, inv.player.getBoundingBox().inflate(7d)).stream().filter(a -> Arrays.stream().anyMatch(p -> p.getId() == inv.player.getId())).findFirst().orElse(null));
+    }*/
 
     public AntTradingMenu(int pContainerId, Inventory inv, Ant ant) {
         super(ModMenuTypes.LEAFY_CONTAINER_MENU.get(), pContainerId);

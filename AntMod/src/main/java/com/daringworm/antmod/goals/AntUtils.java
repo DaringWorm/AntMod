@@ -35,9 +35,9 @@ import java.util.List;
 import java.util.Random;
 import java.util.Set;
 
-public interface AntUtils {
+public class AntUtils {
 
-    default public Ant findNearbyEnemyAnts(Ant pAnt){
+    public static Ant findNearbyEnemyAnts(Ant pAnt){
         final TargetingConditions attackTargeting = TargetingConditions.forCombat().range(64.0D);
         Ant target = null;
         AABB aabb = pAnt.getBoundingBox().inflate(10.0D, 8.0D, 10.0D);
@@ -62,7 +62,7 @@ public interface AntUtils {
         return noBigger/ten;
     }
 
-    static boolean shouldSnip(BlockPos pPos, Level pLevel) {
+    public static boolean shouldSnip(BlockPos pPos, Level pLevel) {
 
         if(pPos == null || pPos == BlockPos.ZERO){return false;}
         BlockState pState = pLevel.getBlockState(pPos);
@@ -86,7 +86,7 @@ public interface AntUtils {
         return null;
     }
 
-    default List<BlockPos> findAllSnippableBlockPos(BlockPos middlePos, int pHorizontal, int pVertical, Ant pAnt){
+    public static List<BlockPos> findAllSnippableBlockPos(BlockPos middlePos, int pHorizontal, int pVertical, Ant pAnt){
         List<BlockPos> list = new ArrayList<BlockPos> ();
         for (int x = -(pHorizontal); x <= (pHorizontal); ++x) {
             for (int y = -(pVertical); y <= (pVertical); ++y) {
@@ -132,7 +132,7 @@ public interface AntUtils {
                 level.getBlockState(pos.below()).isFaceSturdy(level,pos.below(), Direction.UP, SupportType.RIGID);
     }
 
-    default List<BlockPos> findBlocksAdjacentTo(Block pBlock, BlockPos middlePos, LevelReader pLevel){
+    public static List<BlockPos> findBlocksAdjacentTo(Block pBlock, BlockPos middlePos, LevelReader pLevel){
         List<BlockPos> returnList = new ArrayList<>();
         for(int x = -1; x < 2; x++){
             for(int y = -1; y < 2; y++){
@@ -148,7 +148,7 @@ public interface AntUtils {
         return returnList;
     }
 
-    default List<BlockPos> findBlocksAdjacentTo(RenderShape pShape, BlockPos middlePos, LevelReader pLevel, boolean checkunder){
+    public static List<BlockPos> findBlocksAdjacentTo(RenderShape pShape, BlockPos middlePos, LevelReader pLevel, boolean checkunder){
         List<BlockPos> returnList = new ArrayList<>();
         boolean hasChecked = checkunder;
         for(int x = -1; x < 2; x++){
@@ -178,7 +178,7 @@ public interface AntUtils {
 
     public static void wanderRandomly(Ant pAnt){
         Vec3 vec3 = DefaultRandomPos.getPos(pAnt, 20, 7);
-        boolean isAboveground = pAnt.getIsAboveground();
+        boolean isAboveground = true;
         if(vec3 !=null) {
             double wantedX = vec3.x;
             double wantedY = vec3.y;
@@ -234,7 +234,7 @@ public interface AntUtils {
         }
     }
 
-    default BlockPos findNearestContainerToExtract(Ant pAnt, List<BlockPos> posList){
+    public static BlockPos findNearestContainerToExtract(Ant pAnt, List<BlockPos> posList){
         BlockPos antPos = pAnt.blockPosition();
         BlockPos returnPos = BlockPos.ZERO;
         List<FungalContainerBlockEntity> pList = new ArrayList<>();
@@ -277,7 +277,7 @@ public interface AntUtils {
         return returnPos;
     }
 
-    default void extractLeafyMixture(Ant pAnt, FungalContainerBlockEntity pContainerEntity){
+    public static void extractLeafyMixture(Ant pAnt, FungalContainerBlockEntity pContainerEntity){
         boolean hasTaken = false;
         if(pAnt.getMainHandItem().isEmpty()){
             ItemStackHandler container = pContainerEntity.itemHandler;
@@ -344,7 +344,7 @@ public interface AntUtils {
         }
     }
 
-    default boolean isAdjacentTo(LevelReader pLevel, BlockPos pPos, Block pBlock, boolean includeDiagonally){
+    public static boolean isAdjacentTo(LevelReader pLevel, BlockPos pPos, Block pBlock, boolean includeDiagonally){
         if(!includeDiagonally){
             if(pLevel.getBlockState(pPos.north()).getBlock() == pBlock){
                 return true;
@@ -383,7 +383,7 @@ public interface AntUtils {
     }
 
 
-    default  boolean isFungusEdible(ItemStack pStack) {
+    public static boolean isFungusEdible(ItemStack pStack) {
         return pStack.is(Items.WHEAT_SEEDS) ||
                 pStack.is(Items.BEETROOT_SEEDS) ||
                 pStack.is(Items.PUMPKIN_SEEDS) ||
@@ -431,7 +431,7 @@ public interface AntUtils {
                 pStack.isEdible();
     }
 
-    default  void antRemoveItem(Ant ant, FungalContainerBlockEntity pOrigin, boolean validItem){
+    public static void antRemoveItem(Ant ant, FungalContainerBlockEntity pOrigin, boolean validItem){
         int usableSlot = -1;
         if (ant.getMainHandItem() == ItemStack.EMPTY) {
             for (int slot = 0; slot < pOrigin.itemHandler.getSlots(); slot++){
@@ -476,7 +476,7 @@ public interface AntUtils {
         return list;
     }
 
-    default BlockPos findNearestBlockPos(Ant pAnt, Block pBlock, int pHorizontal, int pVertical, boolean shouldReach){
+    public static BlockPos findNearestBlockPos(Ant pAnt, Block pBlock, int pHorizontal, int pVertical, boolean shouldReach){
         BlockPos pPos = pAnt.blockPosition();
         List<BlockPos> list = findAllBlockPos(pBlock, pPos, pHorizontal, pVertical, pAnt.getLevel());
         BlockPos returnPos = BlockPos.ZERO;
@@ -532,7 +532,7 @@ public interface AntUtils {
         return returnPos;
     }
 
-    default BlockPos findNearestBlockPos(Ant pAnt, List<BlockPos> pList, boolean shouldReach){
+    public static BlockPos findNearestBlockPos(Ant pAnt, List<BlockPos> pList, boolean shouldReach){
         BlockPos pPos = pAnt.blockPosition();
         BlockPos returnPos = BlockPos.ZERO;
         for(BlockPos pos : pList) {
@@ -550,7 +550,7 @@ public interface AntUtils {
 
 
 
-    default boolean canReach(Ant pAnt, BlockPos targetPos) {
+    public static boolean canReach(Ant pAnt, BlockPos targetPos) {
         if(getDist(pAnt.blockPosition(), targetPos) < 20) {
             Path tempPath = pAnt.getNavigation().createPath(targetPos, 1);
             if (tempPath != null) {
@@ -568,7 +568,7 @@ public interface AntUtils {
         return false;
     }
 
-    default boolean canAddItem(ItemStack pStack, BlockEntity pContainer){
+    public static boolean canAddItem(ItemStack pStack, BlockEntity pContainer){
         boolean returnval = false;
         if (pContainer instanceof FungalContainerBlockEntity) {
             ItemStackHandler inventory = ((FungalContainerBlockEntity) pContainer).itemHandler;
@@ -588,7 +588,7 @@ public interface AntUtils {
         }
         return returnval;
     }
-    default boolean canCompressContainers(List<BlockPos> pList, LevelReader pLevel, List<BlockPos> blockPoses, List<Integer> whatSlots){
+    public static boolean canCompressContainers(List<BlockPos> pList, LevelReader pLevel, List<BlockPos> blockPoses, List<Integer> whatSlots){
         List<FungalContainerBlockEntity> containerList = new ArrayList<>();
         blockPoses.clear();
         whatSlots.clear();
@@ -627,7 +627,7 @@ public interface AntUtils {
         return !blockPoses.isEmpty();
     }
 
-    default float checkContainersFullness(List<BlockPos> posList, LevelReader pLevel, boolean checkEdible){
+    public static float checkContainersFullness(List<BlockPos> posList, LevelReader pLevel, boolean checkEdible){
         List<FungalContainerBlockEntity> entityList = new ArrayList<>();
         int fullSlots = 0;
         boolean edible = checkEdible;
@@ -663,7 +663,7 @@ public interface AntUtils {
     
  
 
-    default  void antAddItem(Ant holder, BlockEntity pDestination, ItemStack holderStack){
+    public static void antAddItem(Ant holder, BlockEntity pDestination, ItemStack holderStack){
         if (pDestination instanceof FungalContainerBlockEntity) {
             ItemStackHandler inventory = ((FungalContainerBlockEntity) pDestination).itemHandler;
             int slots = 9;
@@ -729,12 +729,12 @@ public interface AntUtils {
         return pos.getX() <= cMaxX && pos.getX() >= cMinX && pos.getZ() <= cMaxZ && pos.getZ() >= cMinZ;
     }
 
-    default boolean isCopper(BlockState pState){
+    public static boolean isCopper(BlockState pState){
         Block pBlock = pState.getBlock();
         return pBlock.getSoundType(pState) == SoundType.COPPER || pBlock == Blocks.COPPER_ORE || pBlock == Blocks.DEEPSLATE_COPPER_ORE;
     }
 
-    default BlockPos findNearestUsableContainer(Ant pAnt, List<BlockPos> pList){
+    public static BlockPos findNearestUsableContainer(Ant pAnt, List<BlockPos> pList){
         BlockPos returnPos = BlockPos.ZERO;
         for(BlockPos tempPos : pList){
             FungalContainerBlockEntity tempEntity = (FungalContainerBlockEntity) pAnt.getLevel().getBlockEntity(tempPos);

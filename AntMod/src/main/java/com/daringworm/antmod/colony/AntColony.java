@@ -45,6 +45,7 @@ public class AntColony implements AutoCloseable{
     private final int UNDERGOUND_PASSAGE_LENGTH = 20;
     public static final int UNDERGOUND_ROOM_SIZE = 24;
     public boolean hasSpawnedAnts;
+    public boolean hasBeenUpdated = false;
 
     public AntColony(Level pLevel, int pColonyID, BlockPos pStartPos){
         this.level = pLevel;
@@ -258,10 +259,8 @@ public class AntColony implements AutoCloseable{
             pAnt.setColonyID(this.colonyID);
             pAnt.setWorkingStage(WorkingStages.SCOUTING);
             pAnt.setHomeContainerPos(roomPos);
-            pAnt.memory.workingStage = WorkingStages.SCOUTING;
-            level.addFreshEntity(pAnt);
-            pAnt.memory.surfacePos = this.startPos;
             pAnt.setFirstSurfacePos(this.startPos);
+            level.addFreshEntity(pAnt);
         }
 
         this.hasSpawnedAnts = true;
@@ -288,13 +287,15 @@ public class AntColony implements AutoCloseable{
     }
 
     public ArrayList<PosSpherePair> getNextExcavationSteps(int stepAt){
+        final int maxNumberOfSpheresToGive = 1;
+
         ArrayList<PosSpherePair> returnList = new ArrayList<>();
 
         if(excavationSpheres.isEmpty()){excavationSpheres = generateNewColonyBlueprint();}
 
         if(!excavationSpheres.isEmpty()){
             excavationStage = stepAt;
-            int numberOfSpheres = Math.min(excavationSpheres.size() - excavationStage-1, 10);
+            int numberOfSpheres = Math.min(excavationSpheres.size() - excavationStage-1, maxNumberOfSpheresToGive);
             if(numberOfSpheres > 0) {
                 for (int i = stepAt; i < stepAt + numberOfSpheres; i++) {
                     returnList.add(excavationSpheres.get(i));

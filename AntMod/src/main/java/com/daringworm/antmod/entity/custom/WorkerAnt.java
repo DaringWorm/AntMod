@@ -7,6 +7,7 @@ import com.daringworm.antmod.entity.Ant;
 import com.daringworm.antmod.entity.brains.memories.LeafCutterMemory;
 import com.daringworm.antmod.entity.brains.parts.Actions;
 import com.daringworm.antmod.entity.brains.parts.WorkingStages;
+import com.daringworm.antmod.goals.AntUtils;
 import com.daringworm.antmod.item.ModItems;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
@@ -139,9 +140,6 @@ public class WorkerAnt extends Ant implements IAnimatable {
         this.setLatchDirection(findDigit((int)this.level.getGameTime(),1));
         this.setSubClass(findDigit((int)this.level.getGameTime(),1));
         this.maxUpStep = 1.13F;
-        if(!this.getLevel().isClientSide()){
-            memory = new LeafCutterMemory(this);
-        }
         return super.finalizeSpawn(pLevel, pDifficulty, pReason, pSpawnData, pDataTag);
     }
 
@@ -188,13 +186,15 @@ public class WorkerAnt extends Ant implements IAnimatable {
 
     @Override
     public InteractionResult interactAt(Player pPlayer, Vec3 pVec, InteractionHand pHand) {
+        super.interactAt(pPlayer,pVec,pHand);
+
         if(pPlayer.getMainHandItem().getItem() == ModItems.WORKER_ANT_SPAWN_EGG.get() && !this.getLevel().isClientSide()){
             WorkerAnt newAnt = new WorkerAnt(ModEntityTypes.WORKERANT.get(), this.level);
-            newAnt.setColonyID(this.getColonyID());
             newAnt.setPos(this.position());
-            newAnt.setWorkingStage(WorkingStages.SCOUTING);
             this.level.addFreshEntity(newAnt);
-            newAnt.memory = new LeafCutterMemory(newAnt);
+        }
+        else if(pPlayer.getMainHandItem().getItem() == Items.BONE && !this.getLevel().isClientSide()){
+            this.setShouldRunBrain(!this.getShouldRunBrain());
         }
         return InteractionResult.PASS;
     }
@@ -250,18 +250,11 @@ public class WorkerAnt extends Ant implements IAnimatable {
             this.getLevel().getProfiler().push("brain");
             LeafCutterWorkerBrain.run(this);
             this.getLevel().getProfiler().pop();
-            if(this.memory != null && this.memory.braincellStage == 3){this.memory.braincellStage = 1;}
-        }
-        else{
-
-        }
-        if(this.memory == null){
-            Actions.ERROR_MSG_ACTION.run(this);
         }
         if(this.getWorkingStage() == WorkingStages.LATCHING){
             if (this.getTarget() != null && this.level.isClientSide){
                 this.lookAt(this.getTarget(),360,360);
-                Actions.LATCH_ON.run(this);
+                //Actions.LATCH_ON.run(this);
             }
         }
         this.getLevel().getProfiler().pop();

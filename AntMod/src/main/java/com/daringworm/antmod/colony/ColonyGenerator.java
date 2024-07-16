@@ -22,7 +22,7 @@ import net.minecraft.world.phys.Vec3;
 import java.util.ArrayList;
 import java.util.Random;
 
-public class ColonyGenerator implements AntUtils {
+public class ColonyGenerator {
 /*
 
  private BlockPos findPosForDir(BlockPos startPos, int distanceFromCenter, Direction direction, Random rand){
@@ -307,9 +307,8 @@ public class ColonyGenerator implements AntUtils {
             pAnt.setColonyID(colony.colonyID);
             pAnt.setWorkingStage(WorkingStages.SCOUTING);
             pAnt.setHomeContainerPos(roomPos);
-            pAnt.memory.workingStage = WorkingStages.SCOUTING;
+            pAnt.setWorkingStage(WorkingStages.SCOUTING);
             level.addFreshEntity(pAnt);
-            pAnt.memory.surfacePos = pPos;
             pAnt.setFirstSurfacePos(pPos);
         }
 
@@ -336,9 +335,7 @@ public class ColonyGenerator implements AntUtils {
             pAnt.setColonyID(colony.colonyID);
             pAnt.setWorkingStage(WorkingStages.SCOUTING);
             pAnt.setHomeContainerPos(roomPos);
-            pAnt.memory.workingStage = WorkingStages.SCOUTING;
             level.addFreshEntity(pAnt);
-            pAnt.memory.surfacePos = colony.startPos;
             pAnt.setFirstSurfacePos(colony.startPos);
         }
         AntUtils.broadcastString(level,"Successfully generated colony. Carver placed " + sphereArray.size() + " spheres.");
