@@ -1,0 +1,22 @@
+{
+  "variants": {
+    "age=0": {
+      "model": "antmod:block/fungus_block1"
+    },
+    "age=1": {
+      "model": "antmod:block/fungus_block2"
+    },
+    "age=2": {
+      "model": "antmod:block/fungus_block3"
+    },
+    "age=3": {
+      "model": "antmod:block/fungus_block4"
+    },
+    "age=4": {
+      "model": "antmod:block/fungus_block5"
+    },
+    "age=5": {
+      "model": "antmod:block/fungus_block6"
+    }
+  }
+}

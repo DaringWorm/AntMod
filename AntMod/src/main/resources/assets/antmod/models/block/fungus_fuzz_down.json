@@ -1,0 +1,6 @@
+{
+  "parent": "antmod:block/fungus_fuzz_template",
+  "textures": {
+    "fuzz": "antmod:block/fungus_fuzz"
+  }
+}

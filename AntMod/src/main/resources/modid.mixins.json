@@ -1,0 +1,15 @@
+{
+  "required": true,
+  "package": "com.daringworm.antmod.mixin.mixins",
+  "compatibilityLevel": "JAVA_8",
+  "refmap": "mixins.modid.refmap.json",
+  "mixins": [
+    "EntityClassMixins",
+    "ItemClassMixins",
+    "LocalPlayerClassMixins",
+    "ServerClassMixins"
+  ],
+  "client": [
+  ],
+  "minVersion": "0.8"
+}

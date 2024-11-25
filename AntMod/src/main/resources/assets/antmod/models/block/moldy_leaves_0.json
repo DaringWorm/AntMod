@@ -1,0 +1,6 @@
+{
+  "parent":"block/cube_all",
+  "textures":{
+    "all":"antmod:block/moldy_leaves_0"
+  }
+}
