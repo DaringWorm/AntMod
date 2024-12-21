@@ -2,6 +2,8 @@ package com.daringworm.antmod.entity.brains.parts;
 
 import com.daringworm.antmod.block.ModBlocks;
 import com.daringworm.antmod.block.entity.custom.FungalContainerBlockEntity;
+import com.daringworm.antmod.colony.AntColony;
+import com.daringworm.antmod.colony.misc.ColonyBranch;
 import com.daringworm.antmod.entity.Ant;
 import com.daringworm.antmod.entity.ModEntityTypes;
 import com.daringworm.antmod.entity.custom.AntScentCloud;
@@ -273,6 +275,8 @@ public class Actions {
                 pAnt.getPassiveTarget().remove(Entity.RemovalReason.DISCARDED);
                 pAnt.setPassiveTarget(null);
             }
+
+            pAnt.getNavigation().stop();
             
         }
     };
@@ -505,7 +509,18 @@ public class Actions {
                     }
                 }
                 else{
-                    pAnt.walkTo(pAnt.getSurfacePos(),1, 5d);
+                    AntColony colony = pAnt.getColony();
+                    if(colony != null) {
+                        ColonyBranch tunnels = colony.tunnels;
+                        if(tunnels != null) {
+                            ArrayList<BlockPos> posesToBottom = tunnels.getPosesToBranch(tunnels.getNearestBranchID(pAnt.blockPosition()));
+                            ArrayList<BlockPos> posesToTop = new ArrayList<>();
+                            for(int i = posesToBottom.size()-1; i >= 0; i --){
+                                posesToTop.add(posesToBottom.get(i));
+                            }
+                            pAnt.walkAlongList(posesToTop, 1, 4d);
+                        }
+                    }
                 }
             }
             

@@ -1,6 +1,7 @@
 package com.daringworm.antmod.entity.custom;
 
 import com.daringworm.antmod.block.ModBlocks;
+import com.daringworm.antmod.block.entity.custom.FungalContainerBlockEntity;
 import com.daringworm.antmod.entity.Ant;
 import com.daringworm.antmod.entity.brains.memories.LeafCutterMemory;
 import com.daringworm.antmod.entity.brains.parts.WorkingStages;
@@ -256,7 +257,7 @@ public class AntScentCloud extends Entity implements IAnimatable {
             Block pBlockBelow = pLevel.getBlockState(pPos.below()).getBlock();
             if (pBlockBelow == ModBlocks.FUNGUS.get() || pBlockBelow == ModBlocks.FUNGAL_CORE.get()) {
                 interestPosSet.add(pPos);
-            } else if (pBlock == ModBlocks.LEAFY_CONTAINER_BLOCK.get()) {
+            } else if (pBlock == ModBlocks.LEAFY_CONTAINER_BLOCK.get() && ((FungalContainerBlockEntity)pLevel.getBlockEntity(pPos)).canGiveLeaves()) {
                 containerPosSet.add(pPos);
             }
 
