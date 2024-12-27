@@ -1,5 +1,7 @@
 package com.daringworm.antmod.entity.brains;
 
+import com.daringworm.antmod.colony.misc.BlockPosStringifier;
+import com.daringworm.antmod.entity.brains.parts.WorkingStages;
 import com.daringworm.antmod.entity.custom.WorkerAnt;
 import net.minecraft.network.chat.TextComponent;
 import net.minecraft.server.level.ServerPlayer;
@@ -18,9 +20,9 @@ public final class LeafCutterWorkerBrain extends LeafCutterBrain{
             pAnt.setBraincellStage(1);
 
             for (ServerPlayer player : pAnt.getLevel().getServer().getPlayerList().getPlayers()) {
-                if (player.getMainHandItem().getItem() == Items.BLAZE_POWDER) {
-                    player.sendMessage(new TextComponent(pAnt.getBrainPath()), player.getUUID());
-                    player.sendMessage(pAnt.getLevel().getBlockState(player.blockPosition()).getBlock().getName(), player.getUUID());
+                if (player.getMainHandItem().getItem() == Items.BLAZE_POWDER && pAnt.distanceToSqr(player) < 4d) {
+                    player.sendMessage(new TextComponent(BlockPosStringifier.jsonFromPos(pAnt.blockPosition()) + " " + pAnt.getBrainPath()), player.getUUID());
+                    //player.sendMessage(new TextComponent(""+BlockPosStringifier.jsonFromPos(player.blockPosition())), player.getUUID());
                 }
             }
         }

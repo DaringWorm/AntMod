@@ -3,6 +3,7 @@ package com.daringworm.antmod.item.custom;
 import com.daringworm.antmod.colony.AntColony;
 import com.daringworm.antmod.colony.misc.BlockPosStringifier;
 import com.daringworm.antmod.entity.brains.BrainTrees;
+import com.daringworm.antmod.entity.brains.parts.WorkingStages;
 import com.daringworm.antmod.entity.custom.WorkerAnt;
 import com.daringworm.antmod.goals.AntUtils;
 import com.google.common.collect.ImmutableMultimap;
@@ -51,68 +52,11 @@ public class SummoningStaffItem extends Item {
     @Override
     public void releaseUsing(@NotNull ItemStack pStack, Level pLevel, @NotNull LivingEntity pEntity, int pTimeLeft) {
         if(pLevel instanceof ServerLevel) {
+            ArrayList<WorkerAnt> antList = (ArrayList<WorkerAnt>) pLevel.getEntitiesOfClass(WorkerAnt.class, pEntity.getBoundingBox().inflate(16));
 
-            /*int areaSize = 12;
-            int tileSizeXZ = 5;
-            int halfTileXZ = tileSizeXZ/2;
-            int tileSizeY = 3;
-
-            BlockPos basePos = pEntity.blockPosition().offset(areaSize/2 +1, 0, 0);
-
-            int baseX = basePos.getX();
-            int baseY = basePos.getY();
-            int baseZ = basePos.getZ();
-
-            int xOff = (baseX % tileSizeXZ);
-            int yOff = (baseY % tileSizeY);
-            int zOff = (baseZ % tileSizeXZ);
-
-            xOff = (xOff < 0)? xOff + halfTileXZ : xOff - halfTileXZ;
-            zOff = (zOff < 0)? zOff + halfTileXZ : zOff - halfTileXZ;
-
-            BlockPos modBasePos = new BlockPos(xOff,yOff,zOff);
-
-            for(int x = areaSize/2; x >= -areaSize/2; x--){
-                for(int y = areaSize/2; y >= -areaSize/2; y--){
-                    for(int z = areaSize/2; z >= -areaSize/2; z--){
-                        BlockPos tempPos = basePos.offset(x,y,z);
-
-                        int modX = (x%tileSizeXZ)+xOff;
-                        int modZ = (z%tileSizeXZ)+zOff;
-                        int modY = ((y+1+areaSize)%tileSizeY) + yOff;
-
-                        //creates the main "t" shaped hallways
-                        if(((modX==xOff) || (modZ==zOff)) &&  (modY==yOff || modY==yOff+1)){
-                            pLevel.setBlock(tempPos, Blocks.GLASS.defaultBlockState(), 2);
-                        }
-                        //creates the middle stairs
-                        else if((modX == xOff+halfTileXZ || modX == xOff-halfTileXZ)
-                                && (modZ == zOff+halfTileXZ || modZ == zOff-halfTileXZ)
-                                && modY != yOff+1){
-                            pLevel.setBlock(tempPos, Blocks.YELLOW_STAINED_GLASS.defaultBlockState(), 2);
-                        }
-                        //creates the bottom stairs
-                        else if((modX == xOff+halfTileXZ || modX == xOff-halfTileXZ)
-                                && (modZ == zOff+halfTileXZ-1 || modZ == zOff-halfTileXZ+1)
-                                && modY != yOff){
-                            pLevel.setBlock(tempPos, Blocks.LIME_STAINED_GLASS.defaultBlockState(), 2);
-                        }
-                        //creates the top stairs
-                        else if((modX == xOff+halfTileXZ-1 || modX == xOff-halfTileXZ+1)
-                                && (modZ == zOff+halfTileXZ || modZ == zOff-halfTileXZ)
-                                && modY != yOff+2){
-                            pLevel.setBlock(tempPos, Blocks.ORANGE_STAINED_GLASS.defaultBlockState(), 2);
-                        }
-                    }
-                }
-            }*/
-
-            AntColony colony = new AntColony(pLevel, pLevel.getRandom().nextInt(), pEntity.blockPosition());
-            colony.hasSpawnedAnts = true;
-            colony.generateNewColonyBlueprint();
-            colony.generateTunnels();
-            colony.updateToServer();
-
+            for(WorkerAnt pAnt : antList){
+                pAnt.setWorkingStage(WorkingStages.FORAGING);
+            }
         }
     }
 

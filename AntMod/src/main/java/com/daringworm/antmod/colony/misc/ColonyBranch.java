@@ -1,6 +1,7 @@
 package com.daringworm.antmod.colony.misc;
 
 import com.daringworm.antmod.goals.AntUtils;
+import com.google.common.collect.Lists;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -9,6 +10,7 @@ import net.minecraft.world.level.Level;
 import org.checkerframework.checker.units.qual.A;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import java.util.Random;
 
@@ -178,6 +180,7 @@ public class ColonyBranch {
         return (min+random.nextInt((Math.abs(max-min))));
     }
 
+    /****/
     public ArrayList<PosSpherePair> generateLimitedBlueprint(double passageWidth, double roomHeight, int roomSize, int steps, boolean wontReplaceAir){
         ArrayList<PosSpherePair> returnList = new ArrayList<>();
 
@@ -247,12 +250,44 @@ public class ColonyBranch {
         return this.listBranchIDs().get(index);
     }
 
+    /**Only works if the branch ID points to this branch or a valid child.**/
     public ArrayList<BlockPos> getPosesToBranch(String branchID){
         ArrayList<BlockPos> returnList = new ArrayList<>();
+
+        if(!this.listBranchIDs().contains(branchID)){
+            return returnList;
+        }
 
         for(int i = 1; i <= branchID.length(); i++){
             returnList.add(this.getSubBranch(branchID.substring(0,i)).getPos());
         }
+
+        return returnList;
+    }
+
+    /**Gets the list of positions leading from any child branch to any other child branch.
+     * Starts at the first branch, given by its ID, goes back to the common ancestor with the second branch, also given by its ID,
+     * and then goes to the second branch.**/
+    public ArrayList<BlockPos> getPosesFromBranchToBranch(String startID, String endID){
+
+        if(startID.equals(endID)){return (ArrayList<BlockPos>) List.of(getSubBranch(startID).getPos());}
+
+        ArrayList<BlockPos> startPosList = getPosesToBranch(startID);
+        ArrayList<BlockPos> endPosList = getPosesToBranch(endID);
+
+        //It needs to check the next one down the list so that the parent is preserved.
+        while(endPosList.size() > 1 && startPosList.get(1) == endPosList.get(1)){
+            startPosList.remove(0);
+            endPosList.remove(0);
+        }
+        startPosList.remove(0);
+
+        ArrayList<BlockPos> returnList = new ArrayList<>();
+
+        for(int i = startPosList.size()-1; i > -1; i--){
+            returnList.add(startPosList.get(i));
+        }
+        returnList.addAll(endPosList);
 
         return returnList;
     }

@@ -13,6 +13,8 @@ import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientboundAddEntityPacket;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.ItemStack;
@@ -58,7 +60,7 @@ public class AntScentCloud extends Entity implements IAnimatable {
     private final HashSet<BlockPos> containerPosSet = new HashSet<>();
     // the number of times the cycle was repeated
     private final int maxAllowedSearchArea = 800;
-    private int maxAllowedAreaPerStep = 45;
+    private final int maxAllowedAreaPerStep = 45;
 
     @Override
     public void baseTick() {
@@ -76,10 +78,10 @@ public class AntScentCloud extends Entity implements IAnimatable {
             if(this.AGE > 4000){this.remove(RemovalReason.DISCARDED);}
 
             if (timer == 0 && hasDataToStart()) {
-                List<WorkerAnt> antsInVicinity = this.getLevel().getEntitiesOfClass(WorkerAnt.class, this.getBoundingBox().inflate(24,6,24));
+                List<WorkerAnt> antsInVicinity = this.getLevel().getEntitiesOfClass(WorkerAnt.class, this.getBoundingBox().inflate(24,4,24));
                 for (Ant ant : antsInVicinity) {
                     int antCurrentStage = ant.getWorkingStage();
-                    if (this.WORKING_STAGE >= antCurrentStage) {
+                    if (this.WORKING_STAGE >= antCurrentStage && shouldUpdateStage(ant)) {
                         ant.setWorkingStage(this.WORKING_STAGE);
                         updateAntInterest(ant);
                     }
@@ -92,6 +94,24 @@ public class AntScentCloud extends Entity implements IAnimatable {
     }
 
     public int getInterestPosesSize(){return this.interestPosSet.size();}
+
+    public boolean shouldUpdateStage(Ant ant){
+        if(this.WORKING_STAGE == WorkingStages.FARMING){
+            if(this.getLevel().canSeeSky(ant.blockPosition())){
+                return false;
+            }
+            else if(!ant.getMainHandItem().isEmpty()){
+                return false;
+            }
+            else if(this.interestPosSet.isEmpty() || this.containerPosSet.isEmpty()){
+                return false;
+            }
+            return true;
+        }
+        else {
+            return true;
+        }
+    }
 
     public void updateAntInterest(Ant pAnt){
         if((pAnt.getTarget() == null || !pAnt.getTarget().isAlive()) &&
@@ -106,12 +126,15 @@ public class AntScentCloud extends Entity implements IAnimatable {
                     pAnt.setInterestPos(targetPos);
                     this.interestPosSet.remove(targetPos);
                     pAnt.setWorkingStage(WorkingStages.FORAGING);
-                    //pAnt.addEffect(new MobEffectInstance(MobEffects.GLOWING, 200));
                 }
             }
-            else if(stg == WorkingStages.FARMING){
-                //mem.fungusPosSet = this.interestPosSet;
-                //mem.containerPosSet = this.containerPosSet;
+            if(stg == WorkingStages.FARMING){
+                BlockPos containerPos = AntUtils.findNearestBlockPos(pAnt,new ArrayList<>(List.copyOf(containerPosSet)));
+                containerPosSet.remove(containerPos);
+                pAnt.setInterestPos(containerPos);
+                BlockPos fungusPos = AntUtils.findNearestBlockPos(pAnt,new ArrayList<>(List.copyOf(interestPosSet)));
+                interestPosSet.remove(fungusPos);
+                pAnt.setFungusLocation(fungusPos);
             }
             else if(stg == WorkingStages.ATTACKING){
                 pAnt.setTarget(this.interestEntitySet.iterator().next());
@@ -119,6 +142,7 @@ public class AntScentCloud extends Entity implements IAnimatable {
             else if(stg == WorkingStages.NURSING){
                 pAnt.setPassiveTarget(this.interestEntitySet.iterator().next());
             }
+            pAnt.addEffect(new MobEffectInstance(MobEffects.GLOWING, 200));
         }
     }
 
@@ -175,9 +199,6 @@ public class AntScentCloud extends Entity implements IAnimatable {
         }
         if(stg == WorkingStages.FARMING){
             this.expandSearchArea();
-            if(this.getLevel().getGameTime() % 40 == 0) {
-                AntUtils.broadcastString(this.getLevel(), "Test. There are " + interestPosSet.size() + " interest poses, and " + containerPosSet.size() + " containers.");
-            }
         }
         if(stg == WorkingStages.NURSING){
             this.interestEntitySet.clear();
@@ -255,12 +276,26 @@ public class AntScentCloud extends Entity implements IAnimatable {
         else if(this.WORKING_STAGE == WorkingStages.FARMING){
             Block pBlock = pLevel.getBlockState(pPos).getBlock();
             Block pBlockBelow = pLevel.getBlockState(pPos.below()).getBlock();
+
             if (pBlockBelow == ModBlocks.FUNGUS.get() || pBlockBelow == ModBlocks.FUNGAL_CORE.get()) {
                 interestPosSet.add(pPos);
-            } else if (pBlock == ModBlocks.LEAFY_CONTAINER_BLOCK.get() && ((FungalContainerBlockEntity)pLevel.getBlockEntity(pPos)).canGiveLeaves()) {
+            }
+            if (pBlock == ModBlocks.LEAFY_CONTAINER_BLOCK.get() && ((FungalContainerBlockEntity) pLevel.getBlockEntity(pPos)).canGiveLeaves()) {
                 containerPosSet.add(pPos);
             }
 
+            for(Direction dir : Direction.values()) {
+                BlockPos tempPos = pPos.relative(dir);
+                pBlock = pLevel.getBlockState(tempPos).getBlock();
+                pBlockBelow = pLevel.getBlockState(tempPos.below()).getBlock();
+
+                if (pBlockBelow == ModBlocks.FUNGUS.get() || pBlockBelow == ModBlocks.FUNGAL_CORE.get()) {
+                    interestPosSet.add(tempPos);
+                }
+                if (pBlock == ModBlocks.LEAFY_CONTAINER_BLOCK.get() && ((FungalContainerBlockEntity) pLevel.getBlockEntity(tempPos)).canGiveLeaves()) {
+                    containerPosSet.add(tempPos);
+                }
+            }
         }
     }
 

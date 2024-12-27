@@ -3,6 +3,7 @@ package com.daringworm.antmod.entity.brains.parts;
 import com.daringworm.antmod.block.ModBlocks;
 import com.daringworm.antmod.block.entity.custom.FungalContainerBlockEntity;
 import com.daringworm.antmod.colony.AntColony;
+import com.daringworm.antmod.colony.misc.BlockPosStringifier;
 import com.daringworm.antmod.colony.misc.ColonyBranch;
 import com.daringworm.antmod.entity.Ant;
 import com.daringworm.antmod.entity.ModEntityTypes;
@@ -22,6 +23,7 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.targeting.TargetingConditions;
 import net.minecraft.world.entity.animal.Animal;
 import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
@@ -126,8 +128,18 @@ public class Actions {
         public void run(Ant pAnt) {
 
             BlockPos pPos = pAnt.getInterestPos();
+            AntColony pColony = pAnt.getColony();
+
             if(pPos != BlockPos.ZERO/* && (pAnt.getNavigation().isDone() || pAnt.getNavigation().isStuck())*/) {
-                pAnt.walkTo(pPos, 1, 2d);
+                if(pAnt.getWorkingStage() == WorkingStages.FARMING && !AntPredicates.IN_RANGE_OF_INTEREST_BLOCK.test(pAnt) && pColony != null){
+                    ColonyBranch tunnels = pColony.tunnels;
+                    ArrayList<BlockPos> walkList = tunnels.getPosesFromBranchToBranch(tunnels.getNearestBranchID(pAnt.blockPosition()), tunnels.getNearestBranchID(pPos));
+                    walkList.add(pPos);
+                    pAnt.walkAlongList(walkList, 1, 5d);
+                }
+                else {
+                    pAnt.walkTo(pPos, 1, 2d);
+                }
             }
             
         }
@@ -240,6 +252,24 @@ public class Actions {
             }
         }
     };
+    public static final Action PLACE_HELD_BLOCK_AT_INTEREST = new Action(){
+        @Override
+        public void run(Ant pAnt) {
+            BlockPos pPos = pAnt.getInterestPos();
+            ServerLevel pLevel = (ServerLevel) pAnt.getLevel();
+            ItemStack handStack = pAnt.getMainHandItem();
+
+            if(pPos != BlockPos.ZERO && handStack.getItem() instanceof BlockItem){
+                if(pLevel.getBlockState(pPos).isAir()){
+
+                    pLevel.setBlock(pPos, ((BlockItem)handStack.getItem()).getBlock().defaultBlockState(), 2);
+
+                    handStack.shrink(1);
+                    pAnt.setItemInHand(InteractionHand.MAIN_HAND, handStack);
+                }
+            }
+        }
+    };
     public static final Action FIND_INTEREST_BLOCK = new Action(){
         @Override
         public void run(Ant pAnt) {
@@ -278,6 +308,12 @@ public class Actions {
 
             pAnt.getNavigation().stop();
             
+        }
+    };
+    public static final Action SET_INTEREST_TO_FUNGUS_POS = new Action(){
+        @Override
+        public void run(Ant pAnt) {
+            pAnt.setInterestPos(pAnt.getFungusLocation());
         }
     };
     public static final Action SET_CONTAINER_TO_INTEREST = new Action(){
@@ -546,7 +582,10 @@ public class Actions {
             if(tempEntity instanceof FungalContainerBlockEntity){
                 FungalContainerBlockEntity containerBlockEntity = (FungalContainerBlockEntity) tempEntity;
 
-                //if(containerBlockEntity.)
+                if(containerBlockEntity.giveFungusLeaves(pAnt)){
+                    AntUtils.broadcastString(pAnt.getLevel(),"Ant got leaves at " + BlockPosStringifier.jsonFromPos(containerPos));
+                    pAnt.addEffect(new MobEffectInstance(MobEffects.GLOWING, 200));
+                }
             }
         }
     };
