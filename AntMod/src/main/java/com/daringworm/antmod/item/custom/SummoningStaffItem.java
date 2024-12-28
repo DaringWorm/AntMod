@@ -56,6 +56,7 @@ public class SummoningStaffItem extends Item {
 
             for(WorkerAnt pAnt : antList){
                 pAnt.setWorkingStage(WorkingStages.FORAGING);
+                pAnt.maxUpStep = 1.13f;
             }
         }
     }

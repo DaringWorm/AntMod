@@ -65,8 +65,6 @@ public class AntColony implements AutoCloseable{
         this.generateNewColonyBlueprint();
     }
 
-    
-
     public AntColony(File colonyStorageFolder, String fileName, ServerLevel pLevel) {
         this.level = pLevel;
         this.saveFolder = colonyStorageFolder.getAbsoluteFile();

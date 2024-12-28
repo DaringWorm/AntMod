@@ -123,6 +123,53 @@ public class FungalContainerBlockEntity extends BlockEntity implements MenuProvi
 
     }
 
+    public static boolean isFood(ItemStack pStack) {
+        return pStack.getItem().isEdible() ||
+                pStack.is(Items.WHEAT_SEEDS) ||
+                pStack.is(Items.BEETROOT_SEEDS) ||
+                pStack.is(Items.PUMPKIN_SEEDS) ||
+                pStack.is(Items.MELON_SEEDS) ||
+                pStack.is(Items.CARVED_PUMPKIN) ||
+                pStack.is(Items.WHEAT) ||
+                pStack.is(Items.CACTUS) ||
+                pStack.is(Items.GRASS) ||
+                pStack.is(Items.SEAGRASS) ||
+                pStack.is(Items.KELP) ||
+                pStack.is(Items.DRIED_KELP) ||
+                pStack.is(Items.LEATHER) ||
+                pStack.is(Items.FEATHER) ||
+                pStack.is(Items.BONE) ||
+                pStack.is(Items.FERN) ||
+                pStack.is(Items.FERMENTED_SPIDER_EYE) ||
+                pStack.is(Items.OAK_SAPLING) ||
+                pStack.is(Items.DARK_OAK_SAPLING) ||
+                pStack.is(Items.BIRCH_SAPLING) ||
+                pStack.is(Items.ACACIA_SAPLING) ||
+                pStack.is(Items.JUNGLE_SAPLING) ||
+                pStack.is(Items.POPPY) ||
+                pStack.is(Items.DANDELION) ||
+                pStack.is(Items.CORNFLOWER) ||
+                pStack.is(Items.BLUE_ORCHID) ||
+                pStack.is(Items.AZURE_BLUET) ||
+                pStack.is(Items.LILY_OF_THE_VALLEY) ||
+                pStack.is(Items.OXEYE_DAISY) ||
+                pStack.is(Items.ALLIUM) ||
+                pStack.is(Items.RED_TULIP) ||
+                pStack.is(Items.ORANGE_TULIP) ||
+                pStack.is(Items.WHITE_TULIP) ||
+                pStack.is(Items.PINK_TULIP) ||
+                pStack.is(Items.SUNFLOWER) ||
+                pStack.is(Items.ROSE_BUSH) ||
+                pStack.is(Items.LILAC) ||
+                pStack.is(Items.PEONY) ||
+                pStack.is(Items.VINE) ||
+                pStack.is(Items.LILY_PAD) ||
+                pStack.is(Items.TALL_GRASS) ||
+                pStack.is(Items.LARGE_FERN) ||
+                pStack.is(Items.SEA_PICKLE) ||
+                pStack.is(Items.NAUTILUS_SHELL);
+    }
+
     public boolean canAcceptHandItem(LivingEntity pEntity){
         ItemStack inStack = pEntity.getItemInHand(InteractionHand.MAIN_HAND);
         int itemsLeft = inStack.getCount();
@@ -151,7 +198,7 @@ public class FungalContainerBlockEntity extends BlockEntity implements MenuProvi
         int numberOfEdibleSlots = 0;
         for(int i = 0; i < itemHandler.getSlots(); i++){
             ItemStack tempStack = itemHandler.getStackInSlot(i);
-            if(!tempStack.isEmpty() && FungusCarpet.isFood(tempStack)){
+            if(!tempStack.isEmpty() && isFood(tempStack)){
                 ++numberOfEdibleSlots;
             }
         }
@@ -161,9 +208,9 @@ public class FungalContainerBlockEntity extends BlockEntity implements MenuProvi
     public boolean canGiveLeaves(){
         int edibleItemCount = 0;
 
-        for(int i = itemHandler.getSlots()-1; i > 0; i--){
+        for(int i = itemHandler.getSlots()-1; i >= 0; i--){
             ItemStack tempStack = itemHandler.getStackInSlot(i);
-            if((!tempStack.hasTag() || !tempStack.isEmpty()) && FungusCarpet.isFood(tempStack)){
+            if((!tempStack.hasTag() || !tempStack.isEmpty()) && isFood(tempStack)){
                 edibleItemCount += tempStack.getCount() * (64/tempStack.getMaxStackSize());
             }
         }
@@ -177,9 +224,9 @@ public class FungalContainerBlockEntity extends BlockEntity implements MenuProvi
 
         if(this.canGiveLeaves()){
             int itemsNeeded = ITEMS_PER_LEAF;
-            for(int i = itemHandler.getSlots()-1; i > 0; i--){
+            for(int i = itemHandler.getSlots()-1; i >= 0; i--){
                 ItemStack tempStack = itemHandler.getStackInSlot(i);
-                if((!tempStack.hasTag() || !tempStack.isEmpty()) && FungusCarpet.isFood(tempStack)){
+                if((!tempStack.hasTag() || !tempStack.isEmpty()) && isFood(tempStack)){
                     int tempCount = tempStack.getCount()* (64/tempStack.getMaxStackSize());
 
                     if(tempCount <= itemsNeeded){

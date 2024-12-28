@@ -21,8 +21,8 @@ public final class ColonyGenUtils {
         posList.add(center);
 
         for(int i = size; i>0; i--){
-            int xOff = rand.nextInt((int)(height*1.5));
-            int zOff = rand.nextInt((int)(height*1.5));
+            int xOff = rand.nextInt((int)(height*size/8));
+            int zOff = rand.nextInt((int)(height*size/8));
             xOff = (rand.nextBoolean()) ? xOff : -xOff;
             zOff = (rand.nextBoolean()) ? zOff : -zOff;
 

@@ -34,7 +34,7 @@ public final class WorkerBrainCells {
 
     private static final Braincell SWITCH_TO_FORAGING = new Braincell("Revert to foraging", AntPredicates.TRUE, new Action[]{Actions.SET_WORKING_STAGE_FORAGE});
     private static final Braincell EXTRACT_LEAVES = new Braincell("Extract leaves", AntPredicates.HAS_CONTAINER_AS_INTEREST.and(AntPredicates.HAS_ITEM.opposite()), new Action[]{Actions.EXTRACT_LEAVES, Actions.SET_INTEREST_TO_FUNGUS_POS});
-    private static final Braincell PLACE_LEAVES = new Braincell("Has leaves", AntPredicates.IN_RANGE_OF_INTEREST_BLOCK, new Action[]{Actions.PLACE_HELD_BLOCK_AT_INTEREST});
+    private static final Braincell PLACE_LEAVES = new Braincell("Place leaves", AntPredicates.IN_RANGE_OF_INTEREST_BLOCK, new Action[]{Actions.PLACE_HELD_BLOCK_AT_INTEREST});
     private static final Braincell HAS_LEAVES = new Braincell("Has leaves", AntPredicates.HAS_CONTAINER_AS_INTEREST.opposite().and(AntPredicates.IS_HOLDING_LEAVES), new Braincell[]{PLACE_LEAVES}, new Action[]{Actions.WALK_TO_BLOCK});
 
 

@@ -142,7 +142,7 @@ public class AntScentCloud extends Entity implements IAnimatable {
             else if(stg == WorkingStages.NURSING){
                 pAnt.setPassiveTarget(this.interestEntitySet.iterator().next());
             }
-            pAnt.addEffect(new MobEffectInstance(MobEffects.GLOWING, 200));
+           // pAnt.addEffect(new MobEffectInstance(MobEffects.GLOWING, 200));
         }
     }
 

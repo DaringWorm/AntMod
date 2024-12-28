@@ -20,7 +20,7 @@ public final class LeafCutterWorkerBrain extends LeafCutterBrain{
             pAnt.setBraincellStage(1);
 
             for (ServerPlayer player : pAnt.getLevel().getServer().getPlayerList().getPlayers()) {
-                if (player.getMainHandItem().getItem() == Items.BLAZE_POWDER && pAnt.distanceToSqr(player) < 4d) {
+                if (player.getOffhandItem().getItem() == Items.DEBUG_STICK && pAnt.distanceToSqr(player) < 4d) {
                     player.sendMessage(new TextComponent(BlockPosStringifier.jsonFromPos(pAnt.blockPosition()) + " " + pAnt.getBrainPath()), player.getUUID());
                     //player.sendMessage(new TextComponent(""+BlockPosStringifier.jsonFromPos(player.blockPosition())), player.getUUID());
                 }

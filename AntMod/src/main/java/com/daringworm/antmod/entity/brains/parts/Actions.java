@@ -135,6 +135,7 @@ public class Actions {
                     ColonyBranch tunnels = pColony.tunnels;
                     ArrayList<BlockPos> walkList = tunnels.getPosesFromBranchToBranch(tunnels.getNearestBranchID(pAnt.blockPosition()), tunnels.getNearestBranchID(pPos));
                     walkList.add(pPos);
+
                     pAnt.walkAlongList(walkList, 1, 5d);
                 }
                 else {
@@ -260,9 +261,12 @@ public class Actions {
             ItemStack handStack = pAnt.getMainHandItem();
 
             if(pPos != BlockPos.ZERO && handStack.getItem() instanceof BlockItem){
-                if(pLevel.getBlockState(pPos).isAir()){
+                if(!pLevel.getBlockState(pPos).isAir()){
+                    pPos = BlockPos.findClosestMatch(pPos, 5,2, p -> pLevel.getBlockState(p).isAir()).orElse(BlockPos.ZERO);
+                }
 
-                    pLevel.setBlock(pPos, ((BlockItem)handStack.getItem()).getBlock().defaultBlockState(), 2);
+                if(pPos != BlockPos.ZERO) {
+                    pLevel.setBlock(pPos, ((BlockItem) handStack.getItem()).getBlock().defaultBlockState(), 2);
 
                     handStack.shrink(1);
                     pAnt.setItemInHand(InteractionHand.MAIN_HAND, handStack);

@@ -188,7 +188,7 @@ public class ColonyBranch {
             returnList.addAll(ColonyGenUtils.generatePassageBlueprint(new PosPair(this.getPos(),branch.getPos()),passageWidth, wontReplaceAir));
 
             if(branch.hasRoom){
-                returnList.addAll(ColonyGenUtils.generateRoomBlueprint(roomHeight,roomSize,branch.getPos(),AntUtils.randFromPos(this.getPos())));
+                returnList.addAll(ColonyGenUtils.generateRoomBlueprint(branch.roomSize/2f,branch.roomSize,branch.getPos(),AntUtils.randFromPos(this.getPos())));
             }
             if(steps > 0) {
                 returnList.addAll(branch.generateLimitedBlueprint(passageWidth, roomHeight, roomSize, steps - 1, wontReplaceAir));
@@ -270,13 +270,13 @@ public class ColonyBranch {
      * and then goes to the second branch.**/
     public ArrayList<BlockPos> getPosesFromBranchToBranch(String startID, String endID){
 
-        if(startID.equals(endID)){return (ArrayList<BlockPos>) List.of(getSubBranch(startID).getPos());}
+        if(startID.equals(endID)){return new ArrayList<>(List.of(getSubBranch(startID).getPos()));}
 
         ArrayList<BlockPos> startPosList = getPosesToBranch(startID);
         ArrayList<BlockPos> endPosList = getPosesToBranch(endID);
 
         //It needs to check the next one down the list so that the parent is preserved.
-        while(endPosList.size() > 1 && startPosList.get(1) == endPosList.get(1)){
+        while(startPosList.size() > 1 && endPosList.size() > 1 && startPosList.get(1) == endPosList.get(1)){
             startPosList.remove(0);
             endPosList.remove(0);
         }

@@ -24,6 +24,7 @@ import java.util.Random;
 public class MoldyLeaves extends Block {
 
     public static final IntegerProperty MOLD_LEVEL = BlockStateProperties.AGE_5;
+    private static final int MAX_DISTANCE_FROM_CORE = 7;
 
     protected void createBlockStateDefinition (StateDefinition.Builder < Block, BlockState> pBuilder){
         pBuilder.add(MOLD_LEVEL);
@@ -79,7 +80,7 @@ public class MoldyLeaves extends Block {
         ArrayList<BlockPos> airPoses = new ArrayList<>();
         currentPoses.add(selfPos);
 
-        int searchSize = 6;
+        int searchSize = MAX_DISTANCE_FROM_CORE;
 
         for(; searchSize >= 0; searchSize--) {
             for (BlockPos tempPos : currentPoses) {
@@ -192,7 +193,7 @@ public class MoldyLeaves extends Block {
         BlockPos growthPos = blockToSpreadTo(fungalMatrixReferencePos, pPos, pLevel);
 
         //grows!
-        if(growthPos != BlockPos.ZERO) {
+        if(growthPos != BlockPos.ZERO && AntUtils.getDist(growthPos,fungalMatrixReferencePos) <= (float)MAX_DISTANCE_FROM_CORE) {
             pLevel.setBlock(growthPos, ModBlocks.FUNGUS.get().defaultBlockState(), 2);
             rot(pLevel,pPos);
         }
