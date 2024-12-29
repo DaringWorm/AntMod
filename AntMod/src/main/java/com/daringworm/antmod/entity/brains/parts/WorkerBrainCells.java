@@ -36,6 +36,8 @@ public final class WorkerBrainCells {
     private static final Braincell EXTRACT_LEAVES = new Braincell("Extract leaves", AntPredicates.HAS_CONTAINER_AS_INTEREST.and(AntPredicates.HAS_ITEM.opposite()), new Action[]{Actions.EXTRACT_LEAVES, Actions.SET_INTEREST_TO_FUNGUS_POS});
     private static final Braincell PLACE_LEAVES = new Braincell("Place leaves", AntPredicates.IN_RANGE_OF_INTEREST_BLOCK, new Action[]{Actions.PLACE_HELD_BLOCK_AT_INTEREST});
     private static final Braincell HAS_LEAVES = new Braincell("Has leaves", AntPredicates.HAS_CONTAINER_AS_INTEREST.opposite().and(AntPredicates.IS_HOLDING_LEAVES), new Braincell[]{PLACE_LEAVES}, new Action[]{Actions.WALK_TO_BLOCK});
+    private static final Braincell EAT_FUNGUS = new Braincell("Eat fungus", AntPredicates.IN_RANGE_OF_FUNGUS_POS, new Action[]{Actions.EAT_FUNGUS});
+    private static final Braincell HUNGRY_FOR_FUNGUS = new Braincell("Walk to fungus", AntPredicates.IS_HUNGRY.and(AntPredicates.HAS_FUNGUS_POS), new Braincell[]{EAT_FUNGUS}, new Action[]{Actions.SET_INTEREST_TO_FUNGUS_POS ,Actions.WALK_TO_BLOCK});
 
 
                                           //MAIN\\
@@ -43,7 +45,7 @@ public final class WorkerBrainCells {
     public static final Braincell WANDERING_FORK = new Braincell("Wandering", AntPredicates.IS_WANDERING, new Action[]{Actions.WANDER});
     public static final Braincell SCOUTING_FORK = new Braincell("Scouting", AntPredicates.IS_SCOUTING, new Braincell[]{SEES_ITEM, SEES_ENTITY, SCOUTING_UNDERGROUND, SCOUTING_ABOVE_GROUND});
     public static final Braincell FORAGING_FORK = new Braincell("Foraging", AntPredicates.IS_FORAGING, new Braincell[]{HAS_ITEM, HAS_PASSIVE_TARGET, HAS_SNIPPABLE_INTEREST, FORAGING_HAS_NOTHING});
-    public static final Braincell FARMING_FORK = new Braincell("Farming", AntPredicates.IS_FARMING, new Braincell[]{EXTRACT_LEAVES, HAS_LEAVES, SWITCH_TO_FORAGING});
+    public static final Braincell FARMING_FORK = new Braincell("Farming", AntPredicates.IS_FARMING, new Braincell[]{EXTRACT_LEAVES, HAS_LEAVES, HUNGRY_FOR_FUNGUS, SWITCH_TO_FORAGING});
     public static final Braincell NURSING_FORK = new Braincell("Nursing", AntPredicates.IS_NURSING);
     public static final Braincell TIDYING_FORK = new Braincell("Tidying", AntPredicates.IS_TIDYING);
     public static final Braincell EXCAVATING_FORK = new Braincell("Excavating", AntPredicates.IS_EXCAVATING);

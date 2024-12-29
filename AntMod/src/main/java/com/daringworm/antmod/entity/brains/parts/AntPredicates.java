@@ -22,7 +22,7 @@ public class AntPredicates {
     public static final AntPredicate NAV_DONE = new AntPredicate(a -> a.getNavigation().isDone() || a.getNavigation().isStuck());
     public static final AntPredicate FOUND_INTEREST_BLOCK = new AntPredicate(a -> a.getInterestPos() != BlockPos.ZERO);
     public static final AntPredicate IN_RANGE_OF_INTEREST_BLOCK = new AntPredicate(a -> a.getDistTo(a.getInterestPos())<12d);
-    public static final AntPredicate IN_RANGE_OF_FUNGUS_POS = new AntPredicate(a -> a.getDistTo(a.getFungusLocation())<12d);
+    public static final AntPredicate IN_RANGE_OF_FUNGUS_POS = new AntPredicate(a -> a.getDistTo(a.getFungusLocation())<12d && a.getFungusLocation() != BlockPos.ZERO);
     public static final AntPredicate IS_HOLDING_LEAVES = new AntPredicate(a -> a.getMainHandItem().getItem() == ModBlocks.MOLDY_LEAVES.get().asItem());
     public static final AntPredicate WAS_HURT = new AntPredicate(a-> a.getLastHurtByMob() != null && a.getLastHurtByMob().isAlive());
     public static final AntPredicate HAS_PASSIVE_TARGET = new AntPredicate(a -> a.getPassiveTarget() != null && a.getPassiveTarget().isAlive());
@@ -35,7 +35,8 @@ public class AntPredicates {
     public static final AntPredicate HAS_COLONY = new AntPredicate(a-> ((ServerLevelUtil)a.getLevel()).getColonyWithID(a.getColonyID()) != null);
     public static final AntPredicate NEAR_HOMEPOS = new AntPredicate(a-> a.getDistTo(a.getHomeContainerPos()) < 12f);
     public static final AntPredicate HAS_CONTAINER_AS_INTEREST = new AntPredicate(a -> a.getLevel().getBlockState(a.getInterestPos()).getBlock() == ModBlocks.LEAFY_CONTAINER_BLOCK.get());
-
+    public static final AntPredicate IS_HUNGRY = new AntPredicate(a -> a.getHunger() < 40000);
+    public static final AntPredicate HAS_FUNGUS_POS = new AntPredicate(a -> a.getFungusLocation() != BlockPos.ZERO);
 
     public static final AntPredicate IS_WANDERING = new AntPredicate(a -> a.getWorkingStage() == (WorkingStages.WANDERING));
     public static final AntPredicate IS_SCOUTING = new AntPredicate(a -> a.getWorkingStage() == (WorkingStages.SCOUTING));

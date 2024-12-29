@@ -66,11 +66,11 @@ public class ModBlocks {
             ModCreativeModeTab.ANT_MOD_CTAB);
 
     public static final RegistryObject<Block> MOLDY_LEAVES = registerBlock("moldy_leaves",
-            () -> new MoldyLeaves(BlockBehaviour.Properties.of(Material.LEAVES).sound(SoundType.NETHER_WART)),
+            () -> new MoldyLeaves(BlockBehaviour.Properties.of(Material.LEAVES).sound(SoundType.NETHER_WART).isSuffocating((a, b, c) -> false)),
             ModCreativeModeTab.ANT_MOD_CTAB);
 
     public static final RegistryObject<Block> FUNGAL_NODULE = registerBlock("fungus_nodule",
-            () -> new Block(BlockBehaviour.Properties.of(Material.LEAVES).sound(SoundType.NETHER_WART)),
+            () -> new Block(BlockBehaviour.Properties.of(Material.LEAVES).sound(SoundType.NETHER_WART).isSuffocating((a, b, c) -> false)),
             ModCreativeModeTab.ANT_MOD_CTAB);
 
     public static final RegistryObject<Block> FUNGAL_CORE = registerBlock("fungal_core",

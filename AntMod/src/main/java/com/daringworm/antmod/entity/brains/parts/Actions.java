@@ -1,6 +1,7 @@
 package com.daringworm.antmod.entity.brains.parts;
 
 import com.daringworm.antmod.block.ModBlocks;
+import com.daringworm.antmod.block.custom.MoldyLeaves;
 import com.daringworm.antmod.block.entity.custom.FungalContainerBlockEntity;
 import com.daringworm.antmod.colony.AntColony;
 import com.daringworm.antmod.colony.misc.BlockPosStringifier;
@@ -13,6 +14,8 @@ import com.daringworm.antmod.goals.AntUtils;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.effect.MobEffectInstance;
@@ -36,6 +39,7 @@ import net.minecraft.world.phys.Vec3;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Predicate;
 
 public class Actions {
     public static final Action ATTACK_HOSTILE_TARGET = new Action(){
@@ -569,7 +573,47 @@ public class Actions {
     public static final Action EAT_FUNGUS = new Action(){
         @Override
         public void run(Ant pAnt) {
-            
+            Level pLevel = pAnt.getLevel();
+            Predicate<BlockPos> isEdible = p -> {Block predBlock = (pLevel.getBlockState(p).getBlock());
+                return predBlock == ModBlocks.FUNGAL_NODULE.get() || predBlock == ModBlocks.FUNGUS.get();
+            };
+
+            BlockPos fungusPos = BlockPos.findClosestMatch(pAnt.blockPosition(), 3, 2, isEdible).orElse(BlockPos.ZERO);
+
+            if(fungusPos == BlockPos.ZERO){
+                fungusPos = pAnt.getFungusLocation();
+            }
+            else{
+                pAnt.setFungusLocation(fungusPos);
+            }
+
+            if(fungusPos != BlockPos.ZERO){
+                if(!isEdible.test(fungusPos)) {
+                    fungusPos = BlockPos.findClosestMatch(fungusPos, 3, 3, isEdible).orElse(BlockPos.ZERO);
+                    pAnt.setFungusLocation(fungusPos);
+                    pAnt.setInterestPos(fungusPos);
+                }
+                if(fungusPos != BlockPos.ZERO){
+                    //AntUtils.broadcastString(pLevel,"Ant eating fungus at " +BlockPosStringifier.jsonFromPos(fungusPos));
+                    Block oldBlock = pLevel.getBlockState(fungusPos).getBlock();
+                    BREAK_INTEREST_BLOCK.run(pAnt);
+
+                    // Basically, use the break_interest_block action for the animation and such,
+                    // but detect the block breaking from it and replace with the correct block as designated by the oldBlock var
+                    if(!isEdible.test(fungusPos)) {
+                        if (oldBlock == ModBlocks.FUNGAL_NODULE.get()) {
+                            pAnt.setHunger(pAnt.getHunger() + 60000);
+                            pLevel.setBlock(fungusPos, ModBlocks.FUNGUS.get().defaultBlockState(), 2);
+                            pLevel.playLocalSound(fungusPos.getX(), fungusPos.getY(), fungusPos.getZ(), SoundEvents.GENERIC_EAT, SoundSource.NEUTRAL, 5f, 1f, false);
+                        } else if (oldBlock == ModBlocks.FUNGUS.get()) {
+                            pAnt.setHunger(pAnt.getHunger() + 40000);
+                            pLevel.setBlock(fungusPos, ModBlocks.ANT_AIR.get().defaultBlockState(), 2);
+                            pLevel.playLocalSound(fungusPos.getX(), fungusPos.getY(), fungusPos.getZ(), SoundEvents.GENERIC_EAT, SoundSource.NEUTRAL, 5f, 1f, false);
+                        }
+                        AntUtils.broadcastString(pLevel,"Ant ate fungus at " + BlockPosStringifier.jsonFromPos(fungusPos) + ". Its hunger is now " + pAnt.getHunger());
+                    }
+                }
+            }
         }
     };
     /**Draws from interest pos first**/

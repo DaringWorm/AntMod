@@ -293,7 +293,7 @@ public class FungalContainerBlockEntity extends BlockEntity implements MenuProvi
         }
         if(this.shouldTriggerFarming()){
             spawnScentCloud(pAnt.getLevel());
-            pAnt.setWorkingStage(WorkingStages.FARMING);
+            pAnt.setHomeContainerPos(BlockPos.ZERO);
         }
     }
 

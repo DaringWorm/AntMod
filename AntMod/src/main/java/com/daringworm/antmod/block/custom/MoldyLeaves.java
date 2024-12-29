@@ -60,7 +60,7 @@ public class MoldyLeaves extends Block {
         }
     }
 
-    private boolean isFungus(Block block){
+    private static boolean isFungus(Block block){
         return block == ModBlocks.FUNGAL_CORE.get() ||
                 //block == ModBlocks.FUNGUS_CARPET.get() ||
                 block == ModBlocks.FUNGAL_NODULE.get() ||
@@ -195,15 +195,14 @@ public class MoldyLeaves extends Block {
         //grows!
         if(growthPos != BlockPos.ZERO && AntUtils.getDist(growthPos,fungalMatrixReferencePos) <= (float)MAX_DISTANCE_FROM_CORE) {
             pLevel.setBlock(growthPos, ModBlocks.FUNGUS.get().defaultBlockState(), 2);
-            rot(pLevel,pPos);
         }
         else{
             BlockPos nodulePos = BlockPos.findClosestMatch(pPos,5,5, p -> pLevel.getBlockState(p).getBlock() == ModBlocks.FUNGUS.get()).orElse(BlockPos.ZERO);
             if(nodulePos != BlockPos.ZERO){
                 pLevel.setBlock(nodulePos,ModBlocks.FUNGAL_NODULE.get().defaultBlockState(), 2);
-                rot(pLevel, pPos);
             }
         }
+        rot(pLevel, pPos);
 
         //AntUtils.broadcastString(pLevel, "Fungus growth tick. Placed at " + BlockPosStringifier.getTagForPos(growthPos));
 
