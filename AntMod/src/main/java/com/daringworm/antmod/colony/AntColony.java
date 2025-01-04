@@ -242,14 +242,15 @@ public class AntColony implements AutoCloseable{
             }
         }
 
-        //also places decoration and fungus at the moment.
+        //also places decoration and fungus at the moment. <- commented out atm
 
         for (BlockPos roomPos : this.tunnels.listRoomPoses()) {
 
-            ColonyGenerator.sprinkleArea(roomPos, 8, 4, 10, ModBlocks.LEAFY_CONTAINER_BLOCK.get(), this.random, level);
+            /*ColonyGenerator.sprinkleArea(roomPos, 8, 4, 10, ModBlocks.LEAFY_CONTAINER_BLOCK.get(), this.random, level);
             ColonyGenerator.carpetArea(roomPos, 8, 4, ColonyGenerator.getAllFungusStates(), this.random, level);
-
+*/
             WorkerAnt pAnt = new WorkerAnt(ModEntityTypes.WORKERANT.get(), level);
+            pAnt.maxUpStep = 1.13f;
             pAnt.moveTo(Vec3.atCenterOf(roomPos));
             pAnt.setColonyID(this.colonyID);
             pAnt.setWorkingStage(WorkingStages.SCOUTING);

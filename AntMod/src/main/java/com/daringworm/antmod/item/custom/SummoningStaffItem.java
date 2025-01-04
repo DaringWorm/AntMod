@@ -6,6 +6,7 @@ import com.daringworm.antmod.entity.brains.BrainTrees;
 import com.daringworm.antmod.entity.brains.parts.WorkingStages;
 import com.daringworm.antmod.entity.custom.WorkerAnt;
 import com.daringworm.antmod.goals.AntUtils;
+import com.daringworm.antmod.mixin.tomixin.ServerLevelUtil;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.Multimap;
 import net.minecraft.core.BlockPos;
@@ -52,12 +53,13 @@ public class SummoningStaffItem extends Item {
     @Override
     public void releaseUsing(@NotNull ItemStack pStack, Level pLevel, @NotNull LivingEntity pEntity, int pTimeLeft) {
         if(pLevel instanceof ServerLevel) {
-            ArrayList<WorkerAnt> antList = (ArrayList<WorkerAnt>) pLevel.getEntitiesOfClass(WorkerAnt.class, pEntity.getBoundingBox().inflate(16));
+            ArrayList<WorkerAnt> antList = (ArrayList<WorkerAnt>) pLevel.getEntitiesOfClass(WorkerAnt.class, pEntity.getBoundingBox().inflate(160));
 
             for(WorkerAnt pAnt : antList){
-                pAnt.setWorkingStage(WorkingStages.FORAGING);
+                //pAnt.setWorkingStage(WorkingStages.FORAGING);
                 pAnt.maxUpStep = 1.13f;
             }
+            ((ServerLevelUtil)pLevel).getClosestColony(pEntity.blockPosition()).hasSpawnedAnts = false;
         }
     }
 

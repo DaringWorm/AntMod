@@ -2,6 +2,7 @@ package com.daringworm.antmod;
 
 import com.daringworm.antmod.block.ModBlocks;
 import com.daringworm.antmod.block.entity.ModBlockEntities;
+import com.daringworm.antmod.effect.ModEffects;
 import com.daringworm.antmod.entity.ModEntityTypes;
 import com.daringworm.antmod.entity.client.*;
 import com.daringworm.antmod.item.ModItems;
@@ -57,6 +58,8 @@ public class AntMod
         PlacedAntFeaturesReg.register(eventBus);
 
         AntCarversReg.register(eventBus);
+
+        ModEffects.register(eventBus);
 
 
         eventBus.addListener(this::setup);
