@@ -24,6 +24,8 @@ public final class LevelColonies<T extends AntColony> {
         colonies.add(newColony);
     }
 
+    public void remove(T toRemove){colonies.remove(toRemove);}
+
     public void clear(){colonies.clear();}
 
 

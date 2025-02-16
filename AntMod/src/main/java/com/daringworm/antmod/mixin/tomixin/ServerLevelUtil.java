@@ -12,4 +12,6 @@ public interface ServerLevelUtil {
     void addColonyList(Set<AntColony> pSet);
     void refreshColonyForID(AntColony pColony);
     void addColonyToList(AntColony pColony);
+    void removeColonyFromList(AntColony pColony);
+    int getNumberOfColonies();
 }

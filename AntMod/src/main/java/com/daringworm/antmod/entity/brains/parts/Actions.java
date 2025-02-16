@@ -580,7 +580,6 @@ public class Actions {
                     }
                 }
             }
-            
         }
     };
     public static final Action EAT_FUNGUS = new Action(){

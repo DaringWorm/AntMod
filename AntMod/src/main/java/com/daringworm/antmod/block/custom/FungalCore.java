@@ -157,7 +157,7 @@ public class FungalCore extends Block {
                 else{
                     growthPoses.remove(growthPos);
                     amount ++;
-                    AntUtils.broadcastString(pLevel, "BlockPos Zero or repeat pos used in fungus logic");
+                    //AntUtils.broadcastString(pLevel, "BlockPos Zero or repeat pos used in fungus logic");
                 }
             }
         }
@@ -178,6 +178,6 @@ public class FungalCore extends Block {
                 grow(pLevel,pPos,amount);
             }
         }
-        AntUtils.broadcastString(pLevel,"Fungus placed: " + fungusPlaced);
+        //AntUtils.broadcastString(pLevel,"Fungus placed: " + fungusPlaced);
     }
 }

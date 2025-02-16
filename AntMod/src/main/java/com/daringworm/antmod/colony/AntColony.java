@@ -155,6 +155,15 @@ public class AntColony implements AutoCloseable{
 
     }
 
+    public void delete(){
+        try {
+            File saveFile = new File(saveFolder, this.colonyID + ".json");
+            FileUtils.delete(saveFile);
+        } catch (IOException ioexception) {
+            LOGGER.error("Couldn't delete colony", ioexception);
+        }
+    }
+
     protected String toJson() {
 
         JsonArray playerPopularityJ = new JsonArray();
