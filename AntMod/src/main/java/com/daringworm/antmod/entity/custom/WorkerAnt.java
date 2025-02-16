@@ -4,10 +4,7 @@ import com.daringworm.antmod.entity.ModEntityTypes;
 import com.daringworm.antmod.entity.brains.LeafCutterWorkerBrain;
 import com.daringworm.antmod.entity.Ant;
 
-import com.daringworm.antmod.entity.brains.memories.LeafCutterMemory;
-import com.daringworm.antmod.entity.brains.parts.Actions;
 import com.daringworm.antmod.entity.brains.parts.WorkingStages;
-import com.daringworm.antmod.goals.AntUtils;
 import com.daringworm.antmod.item.ModItems;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
@@ -72,14 +69,15 @@ public class WorkerAnt extends Ant implements IAnimatable {
         super.defineSynchedData();
         this.entityData.define(LATCH_DIRECTION, this.getLatchDirection());
     }
+
+    //TODO: if the worker ants are broken it's because I removes the super calls in these two functions
     public void addAdditionalSaveData(@NotNull CompoundTag pCompound) {
         super.addAdditionalSaveData(pCompound);
         pCompound.putInt("LatchDirection", this.getLatchDirection());
     }
-
     public void readAdditionalSaveData(CompoundTag pCompound) {
-        this.setLatchDirection(pCompound.getInt("LatchDirection"));
         super.readAdditionalSaveData(pCompound);
+        this.setLatchDirection(pCompound.getInt("LatchDirection"));
     }
 
 
@@ -138,7 +136,7 @@ public class WorkerAnt extends Ant implements IAnimatable {
         this.setHomeContainerPos(this.blockPosition());
         this.setFoodLocation(BlockPos.ZERO);
         this.setLatchDirection(findDigit((int)this.level.getGameTime(),1));
-        this.setSubClass(findDigit((int)this.level.getGameTime(),1));
+        this.setSubClass(findDigit((int) (this.level.random.nextInt(11)),1));
         this.maxUpStep = 1.13F;
         return super.finalizeSpawn(pLevel, pDifficulty, pReason, pSpawnData, pDataTag);
     }
@@ -249,7 +247,6 @@ public class WorkerAnt extends Ant implements IAnimatable {
     public void aiStep() {
         super.aiStep();
 
-        this.getLevel().getProfiler().push("worker_ant_ai");
         if(!this.level.isClientSide) {
             this.getLevel().getProfiler().push("brain");
             LeafCutterWorkerBrain.run(this);
@@ -261,7 +258,6 @@ public class WorkerAnt extends Ant implements IAnimatable {
                 //Actions.LATCH_ON.run(this);
             }
         }
-        this.getLevel().getProfiler().pop();
     }
 
     protected void customServerAiStep() {

@@ -1,4 +1,4 @@
-package com.daringworm.antmod.goals;
+package com.daringworm.antmod.util;
 
 import com.daringworm.antmod.block.ModBlocks;
 import com.daringworm.antmod.block.entity.custom.FungalContainerBlockEntity;
@@ -544,6 +544,19 @@ public class AntUtils {
             }
         }
         return returnPos;
+    }
+
+
+    public static boolean isColonyBlock(BlockState pState){
+        Block block = pState.getBlock();
+        return block == ModBlocks.ANT_AIR.get() ||
+                block == ModBlocks.LEAFY_CONTAINER_BLOCK.get() ||
+                block == ModBlocks.MOLDY_LEAVES.get() ||
+                block == ModBlocks.FUNGAL_CORE.get() ||
+                block == ModBlocks.FUNGUS_FUZZ.get() ||
+                block == ModBlocks.FUNGUS.get() ||
+                block == ModBlocks.FUNGAL_NODULE.get() ||
+                block == ModBlocks.WING_DEBRIS.get();
     }
 
 

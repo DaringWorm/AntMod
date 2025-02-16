@@ -42,7 +42,7 @@ public class LayEggGoal extends Goal {
         super.tick();
         int ticksBetweenEggs = SECONDS_BETWEEN_EGGS *20;
 
-
+/*
 
         if(this.queenAnt.isAlive() && this.queenAnt.getHunger() >= 30 && this.queenAnt.getThisEggTimer() >= ticksBetweenEggs) {
             AntEgg egg = ModEntityTypes.ANTEGG.get().create(this.queenAnt.level);
@@ -54,6 +54,6 @@ public class LayEggGoal extends Goal {
             this.queenAnt.setHunger(this.queenAnt.getHunger()-HUNGER_LOSS_PER_EGG);
         }
 
-        this.queenAnt.setThisEggTimer(1+this.queenAnt.getThisEggTimer());
+        this.queenAnt.setThisEggTimer(1+this.queenAnt.getThisEggTimer());*/
     }
 }

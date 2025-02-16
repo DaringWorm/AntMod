@@ -1,16 +1,12 @@
 package com.daringworm.antmod.item.custom;
 
-import com.daringworm.antmod.colony.AntColony;
-import com.daringworm.antmod.colony.misc.BlockPosStringifier;
-import com.daringworm.antmod.entity.brains.BrainTrees;
-import com.daringworm.antmod.entity.brains.parts.WorkingStages;
+import com.daringworm.antmod.block.ModBlocks;
+import com.daringworm.antmod.block.custom.FungalCore;
 import com.daringworm.antmod.entity.custom.WorkerAnt;
-import com.daringworm.antmod.goals.AntUtils;
 import com.daringworm.antmod.mixin.tomixin.ServerLevelUtil;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.Multimap;
 import net.minecraft.core.BlockPos;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
@@ -23,8 +19,6 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.UseAnim;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.Blocks;
-import net.minecraftforge.common.Tags;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -52,14 +46,17 @@ public class SummoningStaffItem extends Item {
 
     @Override
     public void releaseUsing(@NotNull ItemStack pStack, Level pLevel, @NotNull LivingEntity pEntity, int pTimeLeft) {
-        if(pLevel instanceof ServerLevel) {
-            ArrayList<WorkerAnt> antList = (ArrayList<WorkerAnt>) pLevel.getEntitiesOfClass(WorkerAnt.class, pEntity.getBoundingBox().inflate(160));
+        if(pLevel instanceof ServerLevel pSLevel) {
+            ArrayList<WorkerAnt> antList = (ArrayList<WorkerAnt>) pLevel.getEntitiesOfClass(WorkerAnt.class, pEntity.getBoundingBox().inflate(240));
 
             for(WorkerAnt pAnt : antList){
                 //pAnt.setWorkingStage(WorkingStages.FORAGING);
                 pAnt.maxUpStep = 1.13f;
+                pAnt.setSubClass(pLevel.getRandom().nextInt(10));
+                pAnt.setShouldRunBrain(false);
             }
-            ((ServerLevelUtil)pLevel).getClosestColony(pEntity.blockPosition()).hasSpawnedAnts = false;
+
+            //((ServerLevelUtil)pLevel).getClosestColony(pEntity.blockPosition()).hasSpawnedAnts = false;
         }
     }
 

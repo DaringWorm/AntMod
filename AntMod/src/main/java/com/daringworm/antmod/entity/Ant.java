@@ -6,9 +6,9 @@ import com.daringworm.antmod.block.ModBlocks;
 import com.daringworm.antmod.colony.AntColony;
 import com.daringworm.antmod.colony.misc.BlockPosStringifier;
 import com.daringworm.antmod.colony.misc.PosSpherePair;
-import com.daringworm.antmod.entity.brains.memories.LeafCutterMemory;
+import com.daringworm.antmod.effect.ModEffects;
 import com.daringworm.antmod.colony.misc.PosPair;
-import com.daringworm.antmod.goals.AntUtils;
+import com.daringworm.antmod.util.AntUtils;
 import com.daringworm.antmod.item.ModItems;
 import com.daringworm.antmod.mixin.tomixin.ServerLevelUtil;
 import net.minecraft.core.BlockPos;
@@ -18,12 +18,14 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.MenuProvider;
 import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.animal.Animal;
 import net.minecraft.world.entity.item.ItemEntity;
@@ -47,7 +49,7 @@ import javax.annotation.Nullable;
 import java.util.*;
 import java.util.function.Predicate;
 
-import static com.daringworm.antmod.goals.AntUtils.getDist;
+import static com.daringworm.antmod.util.AntUtils.getDist;
 
 
 public abstract class Ant extends PathfinderMob implements MenuProvider {
@@ -56,7 +58,6 @@ public abstract class Ant extends PathfinderMob implements MenuProvider {
     private Entity passiveTarget;
 
     private final ArrayList<BlockPos> cookedExcavationPosList;
-    private final ArrayList<BlockPos> goUndergroundList;
     private final ArrayList<PosSpherePair> rawExcavationList;
 
 
@@ -129,7 +130,8 @@ public abstract class Ant extends PathfinderMob implements MenuProvider {
 
     public void setNearbyItemCount(int pCount){this.entityData.set(NEARBY_ITEM_COUNT,pCount);}
     public int getNearbyItemCount(){
-        this.setNearbyItemCount(this.getLevel().getEntitiesOfClass(ItemEntity.class,this.getBoundingBox().inflate(2)).size());
+        ArrayList<ItemEntity> items = (ArrayList<ItemEntity>) this.getLevel().getEntitiesOfClass(ItemEntity.class,this.getBoundingBox().inflate(5));
+        this.setNearbyItemCount((int) items.stream().filter(Entity::isOnGround).count());
         return this.entityData.get(NEARBY_ITEM_COUNT);
     }
 
@@ -151,6 +153,9 @@ public abstract class Ant extends PathfinderMob implements MenuProvider {
                     tempList.removeIf(pos -> this.getLevel().getBlockState(pos).isAir());
                     cookedExcavationPosList.addAll(tempList);
                 }
+            }
+            else{
+                ((ServerLevelUtil) (this.getLevel())).addColonyToList(new AntColony((ServerLevel) this.getLevel(),this.getColonyID(),this.blockPosition()));
             }
         }
         return cookedExcavationPosList;
@@ -238,28 +243,18 @@ public abstract class Ant extends PathfinderMob implements MenuProvider {
         BlockPos targetPos = blockPos;
 
         if(!pLevel.getBlockState(targetPos).isPathfindable(pLevel,targetPos, PathComputationType.LAND)) {
-            boolean isTargetUpdated = false;
             for (Direction dir : Direction.values()) {
                 BlockPos tempPos = targetPos.relative(dir);
                 BlockState tempState = pLevel.getBlockState(tempPos);
                 if(tempState.isPathfindable(pLevel,tempPos,PathComputationType.LAND)){
-                    if (isTargetUpdated){
-                        if(AntUtils.getDist(tempPos, this.blockPosition()) < AntUtils.getDist(targetPos, this.blockPosition())){
-                            targetPos = tempPos;
-                            break;
-                        }
-                    }
-                    else{
-                        targetPos = tempPos;
-                    }
+                    targetPos = tempPos;
                 }
             }
         }
 
-        if(path == null || (path != null && path.getTarget() != targetPos)) {
+        if(path == null || path.getTarget() != targetPos) {
             this.getNavigation().setMaxVisitedNodesMultiplier((float)distanceModifier);
             this.getNavigation().moveTo(targetPos.getX(), targetPos.getY(), targetPos.getZ(), speedModifier);
-            path = this.getNavigation().getPath();
         }
         this.setWalkingCooldown(0);
         this.getLevel().getProfiler().pop();
@@ -363,7 +358,6 @@ public abstract class Ant extends PathfinderMob implements MenuProvider {
      * (abstract) Protected helper method to read subclass entity data from NBT.
      */
     public void readAdditionalSaveData(CompoundTag pCompound) {
-        this.maxUpStep = 1.13F;
         super.readAdditionalSaveData(pCompound);
         this.setThisMiscRAW(pCompound.getInt("MiscData"));
         this.setWalkingCooldown(pCompound.getInt("WalkingCooldown"));
@@ -394,7 +388,6 @@ public abstract class Ant extends PathfinderMob implements MenuProvider {
         this.setPathfindingMalus(BlockPathTypes.DAMAGE_FIRE, -1.0F);
         this.cookedExcavationPosList = new ArrayList<>();
         this.rawExcavationList = new ArrayList<>();
-        this.goUndergroundList = new ArrayList<>();
     }
 
     protected void customServerAiStep() {
@@ -415,10 +408,19 @@ public abstract class Ant extends PathfinderMob implements MenuProvider {
     }
 
 
+    @Override
     public boolean hurt(DamageSource pSource, float pAmount) {
         if (this.isInvulnerableTo(pSource)) {
             return false;
         } else {
+
+            Entity damageSource = pSource.getDirectEntity();
+            if(damageSource != null && !damageSource.isInvulnerableTo(DamageSource.GENERIC) && damageSource instanceof LivingEntity){
+                ((LivingEntity) damageSource).addEffect(new MobEffectInstance(ModEffects.HATRED_OF_THE_HIVE.get(),20,0));
+                if(this.getLevel() instanceof ServerLevel){
+                    AntUtils.broadcastString(this.getLevel(),"Attacked an ant");
+                }
+            }
             return super.hurt(pSource, pAmount);
         }
     }

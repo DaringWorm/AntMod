@@ -1,7 +1,6 @@
 package com.daringworm.antmod.entity.brains.parts;
 
 import com.daringworm.antmod.block.ModBlocks;
-import com.daringworm.antmod.block.custom.MoldyLeaves;
 import com.daringworm.antmod.block.entity.custom.FungalContainerBlockEntity;
 import com.daringworm.antmod.colony.AntColony;
 import com.daringworm.antmod.colony.misc.BlockPosStringifier;
@@ -10,7 +9,7 @@ import com.daringworm.antmod.entity.Ant;
 import com.daringworm.antmod.entity.ModEntityTypes;
 import com.daringworm.antmod.entity.custom.AntScentCloud;
 import com.daringworm.antmod.entity.custom.WorkerAnt;
-import com.daringworm.antmod.goals.AntUtils;
+import com.daringworm.antmod.util.AntUtils;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
@@ -23,7 +22,6 @@ import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.Attributes;
-import net.minecraft.world.entity.ai.targeting.TargetingConditions;
 import net.minecraft.world.entity.animal.Animal;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.BlockItem;
@@ -302,7 +300,7 @@ public class Actions {
         public void run(Ant pAnt) {
 
             if(pAnt.getPassiveTarget() == null || !pAnt.getPassiveTarget().isAlive()){
-                ArrayList<ItemEntity> itemList = (ArrayList<ItemEntity>) pAnt.getLevel().getEntitiesOfClass(ItemEntity.class,pAnt.getBoundingBox().inflate(2d));
+                ArrayList<ItemEntity> itemList = (ArrayList<ItemEntity>) pAnt.getLevel().getEntitiesOfClass(ItemEntity.class,pAnt.getBoundingBox().inflate(6d));
                 if(!itemList.isEmpty()) {
                     pAnt.setPassiveTarget(itemList.get(0));
                 }
@@ -316,6 +314,16 @@ public class Actions {
 
             pAnt.getNavigation().stop();
             
+        }
+    };
+    public static final Action DROP_ITEM = new Action(){
+        @Override
+        public void run(Ant pAnt) {
+            ItemStack heldItem = pAnt.getMainHandItem();
+            if(!heldItem.isEmpty()){
+                pAnt.getLevel().addFreshEntity(new ItemEntity(pAnt.getLevel(),pAnt.getX(), pAnt.getY(), pAnt.getZ(),heldItem));
+                pAnt.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
+            }
         }
     };
     public static final Action SET_INTEREST_TO_FUNGUS_POS = new Action(){
@@ -382,23 +390,23 @@ public class Actions {
         public void run(Ant pAnt) {
 
 
-            if(!pAnt.getCookedExcavationPosList().isEmpty() && !pAnt.getCookedExcavationPosList().contains(pAnt.getInterestPos())){
+            if(!pAnt.getCookedExcavationPosList().isEmpty() && (pAnt.getInterestPos() == null || pAnt.getInterestPos() == BlockPos.ZERO || pAnt.getLevel().getBlockState(pAnt.getInterestPos()).isAir())){
                 pAnt.setInterestPos(AntUtils.findNearestBlockPos(pAnt,pAnt.getCookedExcavationPosList()));
+                pAnt.setBreakingProgress(0);
 
-                if(pAnt.getLevel().getBlockState(pAnt.getInterestPos()).getBlock() == ModBlocks.ANT_AIR.get()){
+                if(AntUtils.isColonyBlock(pAnt.getLevel().getBlockState(pAnt.getInterestPos()))){
                     for(int i = pAnt.getCookedExcavationPosList().size()-1; i >=0; i--){
                         BlockPos tempPos = pAnt.getCookedExcavationPosList().get(i);
                         BlockState tempState = pAnt.getLevel().getBlockState(tempPos);
-                        if(tempState.getBlock() == ModBlocks.ANT_AIR.get() || (tempState.getBlock() == Blocks.AIR && pAnt.getLevel().canSeeSky(tempPos))){
+                        if(AntUtils.isColonyBlock(tempState) || (tempState.getBlock() == Blocks.AIR && pAnt.getLevel().canSeeSky(tempPos))){
                             pAnt.getCookedExcavationPosList().remove(i);
                         }
                     }
                 }
-                if(!pAnt.getCookedExcavationPosList().isEmpty()) {
+                else if(!pAnt.getCookedExcavationPosList().isEmpty()) {
                     pAnt.setInterestPos(AntUtils.findNearestBlockPos(pAnt, pAnt.getCookedExcavationPosList()));
                 }
             }
-            
         }
     };
     public static final Action EXCAVATE_INTEREST_POS = new Action(){
@@ -406,6 +414,7 @@ public class Actions {
         public void run(Ant pAnt) {
 
             BlockPos pPos = pAnt.getInterestPos();
+            pAnt.lookAt(new ItemEntity(pAnt.getLevel(),pPos.getX(),pPos.getY(), pPos.getZ(), ItemStack.EMPTY), 0.5f, 0.5f);
             int breakingProgress = pAnt.getBreakingProgress();
             float blockToughness = Math.max(16, (pAnt.level.getBlockState(pPos).getDestroySpeed(pAnt.level, pPos)*32));
             int destroyProgress = (int)((breakingProgress/blockToughness)*10);
@@ -417,8 +426,8 @@ public class Actions {
                     for(Direction dir : Direction.values()){
                         BlockPos tempPos = pAnt.getInterestPos().relative(dir,1);
                         BlockState tempState = pAnt.getLevel().getBlockState(tempPos);
-                        if(!pAnt.getLevel().getFluidState(tempPos).isEmpty() || (!pAnt.getLevel().canSeeSky(tempPos) && tempState.getBlock() == Blocks.AIR)){
-                            pAnt.getLevel().setBlock(tempPos, ModBlocks.GLOWING_DEBRIS.get().defaultBlockState(),2);
+                        if(!pAnt.getCookedExcavationPosList().contains(tempPos) && !AntUtils.isColonyBlock(tempState) && !pAnt.getLevel().canSeeSky(tempPos)){
+                            pAnt.getLevel().setBlock(tempPos, ModBlocks.ANT_DIRT.get().defaultBlockState(),2);
                         }
                     }
                     pAnt.getCookedExcavationPosList().remove(pAnt.getInterestPos());
@@ -431,6 +440,10 @@ public class Actions {
                     pAnt.setSnippingAnimation(true);
                     pAnt.setBreakingProgress(pAnt.getBreakingProgress()+1);
                     pAnt.getLevel().destroyBlockProgress(pAnt.getId(),pPos,destroyProgress);
+                }
+
+                if(pAnt.getLevel().getBlockState(pPos).isAir()){
+                    pAnt.getLevel().setBlock(pPos,ModBlocks.ANT_AIR.get().defaultBlockState(), 2);
                 }
             }
             else{

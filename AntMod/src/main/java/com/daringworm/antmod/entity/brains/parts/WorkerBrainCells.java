@@ -39,6 +39,19 @@ public final class WorkerBrainCells {
     private static final Braincell EAT_FUNGUS = new Braincell("Eat fungus", AntPredicates.IN_RANGE_OF_FUNGUS_POS, new Action[]{Actions.EAT_FUNGUS});
     private static final Braincell HUNGRY_FOR_FUNGUS = new Braincell("Walk to fungus", AntPredicates.IS_HUNGRY.and(AntPredicates.HAS_FUNGUS_POS), new Braincell[]{EAT_FUNGUS}, new Action[]{Actions.SET_INTEREST_TO_FUNGUS_POS ,Actions.WALK_TO_BLOCK});
 
+                                         //ATTACK\\
+
+    private static final Braincell DAMAGE_TARGET = new Braincell("Damage target", AntPredicates.CAN_REACH_TARGET, new Action[]{Actions.DROP_ITEM, Actions.ATTACK_HOSTILE_TARGET});
+    private static final Braincell WALK_TO_TARGET = new Braincell("Walk to target", AntPredicates.TARGET_EXISTS, new Braincell[]{DAMAGE_TARGET}, new Action[]{Actions.DROP_ITEM, Actions.WALK_TO_HOSTILE_TARGET});
+
+
+
+
+                                        //EXCAVATE\\
+
+    public static final Braincell EXCAVATE_BLOCK = new Braincell("Excavate block", AntPredicates.FOUND_INTEREST_BLOCK, new Action[]{Actions.DROP_ITEM, Actions.EXCAVATE_INTEREST_POS, Actions.WALK_TO_BLOCK});
+
+
 
                                           //MAIN\\
 
@@ -48,8 +61,8 @@ public final class WorkerBrainCells {
     public static final Braincell FARMING_FORK = new Braincell("Farming", AntPredicates.IS_FARMING, new Braincell[]{EXTRACT_LEAVES, HAS_LEAVES, HUNGRY_FOR_FUNGUS, SWITCH_TO_FORAGING});
     public static final Braincell NURSING_FORK = new Braincell("Nursing", AntPredicates.IS_NURSING);
     public static final Braincell TIDYING_FORK = new Braincell("Tidying", AntPredicates.IS_TIDYING);
-    public static final Braincell EXCAVATING_FORK = new Braincell("Excavating", AntPredicates.IS_EXCAVATING);
-    public static final Braincell ATTACKING_FORK = new Braincell("Attacking", AntPredicates.IS_ATTACKING);
+    public static final Braincell EXCAVATING_FORK = new Braincell("Excavating", AntPredicates.IS_EXCAVATING, new Braincell[]{EXCAVATE_BLOCK, SWITCH_TO_FORAGING}, new Action[]{Actions.SET_EXCAVATION_POS_TO_INTEREST});
+    public static final Braincell ATTACKING_FORK = new Braincell("Attacking", AntPredicates.IS_ATTACKING, new Braincell[]{WALK_TO_TARGET, SWITCH_TO_FORAGING});
     public static final Braincell LATCHING_FORK = new Braincell("Latching", AntPredicates.IS_LATCHING);
 
 

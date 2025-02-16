@@ -2,19 +2,17 @@ package com.daringworm.antmod.entity.brains.parts;
 
 import com.daringworm.antmod.block.ModBlocks;
 import com.daringworm.antmod.entity.Ant;
-import com.daringworm.antmod.goals.AntUtils;
+import com.daringworm.antmod.util.AntUtils;
 import com.daringworm.antmod.mixin.tomixin.ServerLevelUtil;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.animal.Animal;
 
-import java.util.ArrayList;
-
 public class AntPredicates {
     public static final AntPredicate TRUE = new AntPredicate(a -> true);
     public static final AntPredicate FALSE = new AntPredicate(a -> false);
     public static final AntPredicate IS_ALIVE = new AntPredicate(LivingEntity::isAlive);
-    public static final AntPredicate TARGET_EXISTS = new AntPredicate(a -> (a.getTarget() != null && a.getTarget().isAlive() && a.canAttack(a.getTarget())) || a.getLastHurtByMob() != null);
+    public static final AntPredicate TARGET_EXISTS = new AntPredicate(a -> (a.getTarget() != null && a.getTarget().isAlive() && a.canAttack(a.getTarget())));
     public static final AntPredicate HAS_SELECTED_TARGET = new AntPredicate(a -> a.getTarget() != null && a.getTarget().isAlive());
     public static final AntPredicate CAN_REACH_TARGET = new AntPredicate(a -> a.getTarget() != null && a.distanceToSqr(a.getTarget()) < 2.25d);
     public static final AntPredicate SEES_ITEMS  = new AntPredicate(a -> a.getNearbyItemCount() > 0);
@@ -37,6 +35,7 @@ public class AntPredicates {
     public static final AntPredicate HAS_CONTAINER_AS_INTEREST = new AntPredicate(a -> a.getLevel().getBlockState(a.getInterestPos()).getBlock() == ModBlocks.LEAFY_CONTAINER_BLOCK.get());
     public static final AntPredicate IS_HUNGRY = new AntPredicate(a -> a.getHunger() < 40000);
     public static final AntPredicate HAS_FUNGUS_POS = new AntPredicate(a -> a.getFungusLocation() != BlockPos.ZERO);
+    //public static final AntPredicate COLONY_REQUIRES_EXCAVATION = new AntPredicate(a -> a.getColony() != null && a.getColony().);
 
     public static final AntPredicate IS_WANDERING = new AntPredicate(a -> a.getWorkingStage() == (WorkingStages.WANDERING));
     public static final AntPredicate IS_SCOUTING = new AntPredicate(a -> a.getWorkingStage() == (WorkingStages.SCOUTING));

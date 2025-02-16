@@ -1,13 +1,23 @@
 package com.daringworm.antmod.colony.misc;
 
-import com.daringworm.antmod.colony.ColonyGenerator;
-import com.daringworm.antmod.goals.AntUtils;
+import com.daringworm.antmod.block.ModBlocks;
+import com.daringworm.antmod.colony.AntColony;
+import com.daringworm.antmod.util.AntUtils;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.RenderShape;
+import net.minecraft.world.level.block.SupportType;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.material.FluidState;
 
 import java.util.ArrayList;
 import java.util.Random;
+
+import static com.daringworm.antmod.colony.AntColony.BLOCK1;
+import static com.daringworm.antmod.colony.AntColony.BLOCK2;
 
 public final class ColonyGenUtils {
 
@@ -80,5 +90,78 @@ public final class ColonyGenUtils {
         int total = yes+no;
         int chosen = (total>0)? rand.nextInt(total) : 0;
         return chosen <= yes;
+    }
+
+    public static void carpetArea(BlockPos center, int distance, int vertical, ArrayList<BlockState> stateArrayList, Random rand, Level pLevel){
+        for(int x = distance/2; x >= -distance/2; x--){
+            for(int z = distance/2; z >= -distance/2; z--){
+                for(int y = vertical/2; y >= -vertical/2; y--){
+                    BlockPos tempPos = center.offset(x,y,z);
+                    BlockState tempState = pLevel.getBlockState(tempPos);
+                    if(tempState.getRenderShape() == RenderShape.INVISIBLE && tempState.getFluidState().getAmount() != FluidState.AMOUNT_FULL) {
+                        BlockState underTempPos = pLevel.getBlockState(tempPos.below());
+                        if(underTempPos.isFaceSturdy(pLevel,tempPos.below(),Direction.UP, SupportType.FULL)){
+                            int listSize = stateArrayList.size();
+                            BlockState stateToSet = stateArrayList.get(rand.nextInt(listSize));
+                            pLevel.setBlock(tempPos,stateToSet,2);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    public static void sprinkleArea(BlockPos center, int distance, int vertical, int chancePercent, Block pBlock, Random rand, Level pLevel){
+        for(int x = distance/2; x >= -distance/2; x--){
+            for(int z = distance/2; z >= -distance/2; z--){
+                for(int y = vertical/2; y >= -vertical/2; y--){
+                    BlockPos tempPos = center.offset(x,y,z);
+                    BlockState tempState = pLevel.getBlockState(tempPos);
+                    if(tempState.getRenderShape() == RenderShape.INVISIBLE && tempState.getFluidState().getAmount() != FluidState.AMOUNT_FULL) {
+                        BlockState underTempPos = pLevel.getBlockState(tempPos.below());
+                        boolean allow = ColonyGenUtils.nextBool(chancePercent, 100, rand);
+                        if(underTempPos.isFaceSturdy(pLevel,tempPos.below(),Direction.UP, SupportType.FULL) && allow){
+                            pLevel.setBlock(tempPos,pBlock.defaultBlockState(),2);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+
+    public static BlockPos findExitPoint(Level level, BlockPos startPos, double maxIncline, int facingDegrees){
+        if(maxIncline <= 0){return BlockPos.ZERO;}
+        if(level.canSeeSky(startPos)){return startPos;}
+
+        int i = 1;
+        while(i < 256){
+            i++;
+            BlockPos pos = ColonyBranch.nextBranchPos(startPos, facingDegrees, i, (int)(i * maxIncline));
+            if(level.canSeeSky(pos)){return pos;}
+        }
+
+        return BlockPos.ZERO;
+    }
+
+
+    public static void generateBranch(ColonyBranch branch, boolean wontReplaceAir, boolean wholeThing, int stepsIfNotWholeThing, ServerLevel pLevel) {
+        ArrayList<PosSpherePair> sphereArray = (wholeThing)?
+                branch.generateBranchBlueprint(AntColony.passageWidth,AntColony.passageWidth+1,AntColony.UNDERGOUND_ROOM_SIZE) :
+                branch.generateLimitedBlueprint(AntColony.passageWidth,AntColony.passageWidth+1,AntColony.UNDERGOUND_ROOM_SIZE, stepsIfNotWholeThing, wontReplaceAir);
+        for(PosSpherePair sphere : sphereArray){
+            sphere.setSphere((ServerLevel) pLevel,BLOCK1,BLOCK2, 2);
+        }
+
+        AntUtils.broadcastString(pLevel,"Successfully generated branch. Carver placed " + sphereArray.size() + " spheres.");
+    }
+
+
+    public static ArrayList<BlockState> getAllFungusStates(){
+        ArrayList<BlockState> fungusStateList = new ArrayList<>();
+        for(int i = 5; i >= 0; i--){
+            fungusStateList.add(ModBlocks.FUNGUS.get().defaultBlockState());
+        }
+        return fungusStateList;
     }
 }

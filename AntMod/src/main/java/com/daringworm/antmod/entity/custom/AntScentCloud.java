@@ -3,9 +3,8 @@ package com.daringworm.antmod.entity.custom;
 import com.daringworm.antmod.block.ModBlocks;
 import com.daringworm.antmod.block.entity.custom.FungalContainerBlockEntity;
 import com.daringworm.antmod.entity.Ant;
-import com.daringworm.antmod.entity.brains.memories.LeafCutterMemory;
 import com.daringworm.antmod.entity.brains.parts.WorkingStages;
-import com.daringworm.antmod.goals.AntUtils;
+import com.daringworm.antmod.util.AntUtils;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.particles.ParticleOptions;
@@ -13,11 +12,11 @@ import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientboundAddEntityPacket;
-import net.minecraft.world.effect.MobEffectInstance;
-import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
@@ -89,6 +88,17 @@ public class AntScentCloud extends Entity implements IAnimatable {
             }
         }
         this.emitParticle();
+
+        List<Player> playerList = (List<Player>) this.getLevel().players();
+        for(Player player : playerList){
+            if(AntUtils.getDist(this.blockPosition(),player.blockPosition()) < 6d && player.getMainHandItem().getItem() == Items.BLAZE_POWDER && player.getOffhandItem().getItem() == Items.DEBUG_STICK){
+                AntUtils.broadcastString(this.getLevel(),"AntScentCloud has the following data: "
+                        + "WorkingStage = " + this.WORKING_STAGE
+                        + "\nInterestPoses = " + this.interestPosSet.size()
+                + "\nContainerPoses = " + this.containerPosSet.size()
+                + "\nEntities = " + this.interestEntitySet.size());
+            }
+        }
 
 
     }

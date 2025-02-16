@@ -1,6 +1,6 @@
 package com.daringworm.antmod.colony.misc;
 
-import com.daringworm.antmod.goals.AntUtils;
+import com.daringworm.antmod.util.AntUtils;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.Level;

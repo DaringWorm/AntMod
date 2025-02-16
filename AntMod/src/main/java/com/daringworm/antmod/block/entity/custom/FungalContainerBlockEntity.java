@@ -2,14 +2,12 @@ package com.daringworm.antmod.block.entity.custom;
 
 import com.daringworm.antmod.block.ModBlocks;
 import com.daringworm.antmod.block.custom.LeafyContainer;
-import com.daringworm.antmod.block.custom.FungusCarpet;
 import com.daringworm.antmod.block.entity.ModBlockEntities;
 import com.daringworm.antmod.colony.AntColony;
 import com.daringworm.antmod.entity.Ant;
 import com.daringworm.antmod.entity.ModEntityTypes;
 import com.daringworm.antmod.entity.brains.parts.WorkingStages;
 import com.daringworm.antmod.entity.custom.AntScentCloud;
-import com.daringworm.antmod.goals.AntUtils;
 import com.daringworm.antmod.item.ModItems;
 import com.daringworm.antmod.screen.LeafyContainerMenu;
 import net.minecraft.core.BlockPos;
@@ -23,7 +21,6 @@ import net.minecraft.world.MenuProvider;
 import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
-import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
@@ -74,7 +71,8 @@ public class FungalContainerBlockEntity extends BlockEntity implements MenuProvi
     @Nullable
     @Override
     public AbstractContainerMenu createMenu(int pContainerId, Inventory pInventory, Player pPlayer) {
-        return new LeafyContainerMenu(pContainerId,pInventory,this);}
+        return new LeafyContainerMenu(pContainerId,pInventory,this);
+    }
 
 
     @Nonnull

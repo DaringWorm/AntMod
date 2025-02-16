@@ -1,12 +1,13 @@
 package com.daringworm.antmod.entity.custom;
 
+import com.daringworm.antmod.colony.AntColony;
 import com.daringworm.antmod.entity.Ant;
-import com.daringworm.antmod.colony.ColonyGenerator;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.damagesource.DamageSource;
@@ -270,8 +271,8 @@ public class AntCarver extends Ant implements IAnimatable {
 
     public void aiStep() {
         if(!this.level.isClientSide) {
-            ColonyGenerator goal = new ColonyGenerator(this.getLevel());
-            goal.createAndGenerateColony(this.blockPosition());
+            AntColony colony = new AntColony((ServerLevel) this.getLevel(), this.getLevel().getRandom().nextInt(), this.blockPosition());
+            colony.generateWholeColony();
             this.remove(RemovalReason.DISCARDED);
         }
     }

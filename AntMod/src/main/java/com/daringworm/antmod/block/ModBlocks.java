@@ -83,7 +83,7 @@ public class ModBlocks {
     */
 
     public static final RegistryObject<Block> WING_DEBRIS = registerBlock("wing_debris",
-            () -> new LeafyMixture(BlockBehaviour.Properties.of(Material.LEAVES).strength(0.2f).
+            () -> new MoldyLeaves(BlockBehaviour.Properties.of(Material.LEAVES).strength(0.2f).
                     strength(0.8f).requiresCorrectToolForDrops().noOcclusion()), ModCreativeModeTab.ANT_MOD_CTAB);
 
 

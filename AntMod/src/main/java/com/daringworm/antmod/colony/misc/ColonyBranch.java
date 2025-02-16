@@ -1,13 +1,10 @@
 package com.daringworm.antmod.colony.misc;
 
-import com.daringworm.antmod.goals.AntUtils;
-import com.google.common.collect.Lists;
+import com.daringworm.antmod.util.AntUtils;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import net.minecraft.core.BlockPos;
-import net.minecraft.world.level.Level;
-import org.checkerframework.checker.units.qual.A;
 
 import java.util.ArrayList;
 import java.util.List;

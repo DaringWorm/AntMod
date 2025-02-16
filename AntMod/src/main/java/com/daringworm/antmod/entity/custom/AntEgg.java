@@ -46,10 +46,6 @@ public class AntEgg extends Ant implements IAnimatable {
     public int getThisEggTimer(){return this.entityData.get(EGG_TIMER);}
 
 
-
-
-    public final Random qRandom = new Random();
-
     private AnimationFactory factory = new AnimationFactory(this);
 
     public AntEgg(EntityType<? extends Ant> entityType, Level level) {
@@ -63,7 +59,6 @@ public class AntEgg extends Ant implements IAnimatable {
     }
 
     public void addAdditionalSaveData(CompoundTag pCompound) {
-        super.addAdditionalSaveData(pCompound);
         pCompound.putInt("EggTimer", this.getThisEggTimer());
     }
 
@@ -110,7 +105,7 @@ public class AntEgg extends Ant implements IAnimatable {
             }
             this.setThisEggTimer(1 + this.getThisEggTimer());
             if (this.getLastHurtByMob() != null) {
-                AntColony colony = new AntColony(this.level, this.getColonyID(), BlockPos.ZERO);
+                AntColony colony = new AntColony((ServerLevel) this.level, this.getColonyID(), BlockPos.ZERO);
                 ServerLevel level = (ServerLevel) this.getLevel();
                 ((ServerLevelUtil) (level)).addColonyToList(colony);
                 colony.save();

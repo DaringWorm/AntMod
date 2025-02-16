@@ -1,18 +1,19 @@
 package com.daringworm.antmod.colony;
 
 import com.daringworm.antmod.block.ModBlocks;
+import com.daringworm.antmod.block.custom.FungalCore;
 import com.daringworm.antmod.colony.misc.*;
 import com.daringworm.antmod.entity.ModEntityTypes;
 import com.daringworm.antmod.entity.brains.parts.WorkingStages;
 import com.daringworm.antmod.entity.custom.QueenAnt;
 import com.daringworm.antmod.entity.custom.WorkerAnt;
-import com.daringworm.antmod.goals.AntUtils;
+import com.daringworm.antmod.util.AntUtils;
 import com.daringworm.antmod.mixin.tomixin.ServerLevelUtil;
 import com.google.gson.*;
 import com.mojang.logging.LogUtils;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import org.apache.commons.io.FileUtils;
@@ -37,7 +38,7 @@ public class AntColony implements AutoCloseable{
     public Random random;
     public Set<PosPair> entranceSet = new HashSet<>();
     public Set<PlayerPopularity> playerPopularities = new HashSet<>();
-    public Level level;
+    public ServerLevel level;
     private static final Logger LOGGER = LogUtils.getLogger();
     public File saveFolder;
     public static double passageWidth = 2.1d;
@@ -47,7 +48,10 @@ public class AntColony implements AutoCloseable{
     public boolean hasSpawnedAnts;
     public boolean hasBeenUpdated = false;
 
-    public AntColony(Level pLevel, int pColonyID, BlockPos pStartPos){
+    public static Block BLOCK1 = ModBlocks.ANT_AIR.get();
+    public static Block BLOCK2 = ModBlocks.ANT_DIRT.get();
+
+    public AntColony(ServerLevel pLevel, int pColonyID, BlockPos pStartPos){
         this.level = pLevel;
         this.colonyID = pColonyID;
         this.saveFolder = getSaveFile((ServerLevel) pLevel);
@@ -55,7 +59,7 @@ public class AntColony implements AutoCloseable{
         this.startPos = pStartPos;
         this.generateNewColonyBlueprint();
     }
-    public AntColony(Level pLevel, int pColonyID, ColonyBranch tunnels){
+    public AntColony(ServerLevel pLevel, int pColonyID, ColonyBranch tunnels){
         this.startPos = tunnels.getPos();
         this.level = pLevel;
         this.colonyID = pColonyID;
@@ -230,15 +234,14 @@ public class AntColony implements AutoCloseable{
             BlockPos subBranchPos = this.tunnels.branches.get(0).getPos();
             int xN = this.startPos.getX()- subBranchPos.getX();
             int zN = this.startPos.getZ()- subBranchPos.getZ();
-            BlockPos newExit = ColonyGenerator.findExitPoint(this.level,this.startPos,0.45, this.tunnels.getDegFacing()+180);
+            BlockPos newExit = ColonyGenUtils.findExitPoint(this.level,this.startPos,0.45, this.tunnels.getDegFacing()+180);
             if(newExit != BlockPos.ZERO) {
                 ColonyBranch newTrunk = new ColonyBranch(newExit, this.tunnels.getDegFacing(), false, "0");
                 newTrunk.branches.add(this.tunnels.updateID("0", ""));
                 this.tunnels = newTrunk;
                 this.startPos = newExit;
                 this.generateNewColonyBlueprint();
-                ColonyGenerator generator = new ColonyGenerator(this.level);
-                generator.generateBranch(newTrunk, false, false, 0);
+                ColonyGenUtils.generateBranch(newTrunk, false, false, 0, this.level);
             }
         }
 
@@ -303,11 +306,47 @@ public class AntColony implements AutoCloseable{
         return returnList;
     }
 
-    public void generateTunnels(){
-        ArrayList<PosSpherePair> spheres = this.getColonyBlueprint();
-
-        for(PosSpherePair tempSphere : spheres){
-            tempSphere.setSphere((ServerLevel) this.level, ModBlocks.ANT_AIR.get(),ModBlocks.ANT_DIRT.get(), 2);
+    public void generateWholeColony(){
+        this.hasSpawnedAnts = true;
+        ArrayList<PosSpherePair> sphereArray = this.getColonyBlueprint();
+        for(PosSpherePair sphere : sphereArray){
+            sphere.setSphere((ServerLevel) this.level,this.BLOCK1,this.BLOCK2, 2);
         }
+
+        ((ServerLevelUtil)(this.level)).addColonyToList(this);
+
+        //Adds the ants, decoration, and functionality blocks
+
+        for (BlockPos roomPos : this.tunnels.listRoomPoses()) {
+
+
+            if(this.tunnels.getSubBranch(this.tunnels.getNearestBranchID(roomPos)).roomSize == 24){
+                BlockPos pos = roomPos;
+                while (level.getBlockState(pos.below()).isAir()) {
+                    pos = pos.below(1);
+                }
+
+                level.setBlock(pos, ModBlocks.FUNGAL_CORE.get().defaultBlockState(), 2);
+                FungalCore.grow(level, pos, 120);
+
+            }
+            else{
+                ColonyGenUtils.sprinkleArea(roomPos, 8, 4, 10, ModBlocks.LEAFY_CONTAINER_BLOCK.get(), this.random, level);
+                //ColonyGenerator.carpetArea(roomPos, 8, 4, fungusStateList, colony.random, level);
+            }
+
+            WorkerAnt pAnt = new WorkerAnt(ModEntityTypes.WORKERANT.get(), level);
+            pAnt.maxUpStep= 1.15f;
+            pAnt.moveTo(Vec3.atCenterOf(roomPos));
+            pAnt.setColonyID(this.colonyID);
+            pAnt.setWorkingStage(WorkingStages.SCOUTING);
+            pAnt.setHomeContainerPos(roomPos);
+            pAnt.setWorkingStage(WorkingStages.SCOUTING);
+            level.addFreshEntity(pAnt);
+            pAnt.setFirstSurfacePos(this.startPos);
+        }
+
+
+        AntUtils.broadcastString(level,"Successfully generated colony. Carver placed " + sphereArray.size() + " spheres.");
     }
 }
