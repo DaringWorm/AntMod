@@ -1,28 +1,32 @@
 package com.daringworm.antmod.worldgen.feature.custom;
 
 import com.daringworm.antmod.block.ModBlocks;
+import com.daringworm.antmod.block.custom.FungalCore;
 import com.daringworm.antmod.colony.AntColony;
-import com.daringworm.antmod.colony.ColonyGenerationBuffer;
 import com.daringworm.antmod.colony.misc.ColonyBranch;
+import com.daringworm.antmod.colony.misc.ColonyGenUtils;
 import com.daringworm.antmod.colony.misc.PosSpherePair;
+import com.daringworm.antmod.mixin.tomixin.ServerLevelUtil;
 import com.daringworm.antmod.util.AntUtils;
 import com.mojang.serialization.Codec;
+import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
-import net.minecraft.util.Mth;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.CarvingMask;
 import net.minecraft.world.level.chunk.ChunkAccess;
 import net.minecraft.world.level.levelgen.Aquifer;
 import net.minecraft.world.level.levelgen.carver.CarverConfiguration;
 import net.minecraft.world.level.levelgen.carver.CarvingContext;
 import net.minecraft.world.level.levelgen.carver.WorldCarver;
+import org.checkerframework.checker.units.qual.A;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
-import java.util.Objects;
 import java.util.Random;
 import java.util.function.Function;
 
@@ -34,6 +38,7 @@ public class AntColonyCarver<C extends CarverConfiguration> extends WorldCarver<
         super(p_64711_);
     }
 
+    @Override
     public boolean isStartChunk(AntColonyConfiguration pConfig, Random pRandom) {
         return pRandom.nextFloat() <= pConfig.probability;
     }
@@ -48,92 +53,71 @@ public class AntColonyCarver<C extends CarverConfiguration> extends WorldCarver<
      * @param pChunkPos The chunk position this carver is being called from
      */
     @Override
-    public boolean carve(CarvingContext pContext, AntColonyConfiguration pConfig, ChunkAccess pChunk, Function<BlockPos, Holder<Biome>> pBiomeAccessor, Random pRandom, Aquifer pAquifer, ChunkPos pChunkPos, CarvingMask pCarvingMask) {
+    public boolean carve(@NotNull CarvingContext pContext, AntColonyConfiguration pConfig, ChunkAccess pChunk, Function<BlockPos, Holder<Biome>> pBiomeAccessor, Random pRandom, Aquifer pAquifer, ChunkPos pChunkPos, CarvingMask pCarvingMask) {
 
-        BlockPos startPosAbsolute = pChunkPos.getMiddleBlockPosition(63);
-
-        ColonyBranch branch = ColonyGenerationBuffer.getBranchForPos(startPosAbsolute);
-        if(branch == null){branch = AntColony.generateNewTunnels(startPosAbsolute);}
-
-        ArrayList<PosSpherePair> masterArray = AntColony.generateNewColonyBlueprint(branch);
-
-        for(int i = 0; i < masterArray.size(); i++){
-            PosSpherePair sphere = masterArray.get(i);
-            ChunkPos cPos = pChunk.getPos();
-            BlockPos bPos = sphere.centerPos;
-            BlockPos cbPos = cPos.getMiddleBlockPosition(bPos.getY());
-            if(AntUtils.getDist(bPos,cbPos) <= 8+sphere.radius+(WALL_THICKNESS*3)){
-                boolean replaceAir = (i >= 24);
-                sphere.setSphereCarver(pChunk, ModBlocks.ANT_AIR.get().defaultBlockState(), ModBlocks.ANT_DIRT.get().defaultBlockState(),WALL_THICKNESS, replaceAir);
-            }
+        if(pChunk.getPos().equals(pChunkPos)){
+            /*BlockPos startPos = pChunkPos.getMiddleBlockPosition(63);
+            //TODO: figure out how to make a multiplayer server work.
+            ServerLevel pLevel = Minecraft.getInstance().getSingleplayerServer().getLevel(Level.OVERWORLD);
+            ColonyBranch newBranch = AntColony.generateNewTunnels(startPos);
+            //ArrayList<PosSpherePair> spheres = newBranch.getExcavationSpheres();
+            int colonyID = Integer.parseInt(("" + startPos.getX() + "" + startPos.getY() + "" + startPos.getZ()).substring(0, 8));
+            AntColony colony = new AntColony(pLevel,colonyID,newBranch);
+            colony.hasSpawnedAnts = true;
+            colony.hasSpawnedDecoration = true;
+            colony.save();*/
+        }
+        else{
+            //pChunk.setStartForFeature();
         }
 
         /*
-        Sets the block and colony buffer to be checked by ServerLevelMixins.
-        The Mixin will check for the block at all the Buffer locations every game tick,
-        and make and save a new colony if it finds a match.
-
-        The buffer is static, so there could be a mismatch between servers or levels,
-        but I'm counting on that being extremely unlikely since the start positions of
-        both colonies would need to match perfectly.
-        */
-
-        if(Objects.equals(pChunk.getPos(), pChunkPos)) {
-            pChunk.setBlockState(startPosAbsolute, Blocks.REDSTONE_BLOCK.defaultBlockState(), false);
-        }
-
-        ColonyGenerationBuffer.tryToAdd(branch);
-
-        return true;
-    }
 
 
 
+        if(pChunk.getPos().equals(pChunkPos)){
+            AntColony colony = new AntColony(pLevel,colonyID,newBranch);
 
-
-    private void doCarve(CarvingContext pContext, AntColonyConfiguration pConfig, ChunkAccess pChunk, Function<BlockPos, Holder<Biome>> pBiomeAccessor, long pSeed, Aquifer pAquifer, double pX, double pY, double pZ, float pThickness, float pYaw, float pPitch, int pBranchIndex, int pBranchCount, double pHorizontalVerticalRatio, CarvingMask pCarvingMask) {
-        Random random = new Random(pSeed);
-        float f = 0.0F;
-        float f1 = 0.0F;
-
-        for(int i = pBranchIndex; i < pBranchCount; ++i) {
-            double d0 = 1.5D + (double)(Mth.sin((float)i * (float)Math.PI / (float)pBranchCount) * pThickness);
-            double d1 = d0 * pHorizontalVerticalRatio;
-            float f2 = Mth.cos(pPitch);
-            float f3 = Mth.sin(pPitch);
-            pX += (double)(Mth.cos(pYaw) * f2);
-            pY += (double)f3;
-            pZ += (double)(Mth.sin(pYaw) * f2);
-            pPitch *= 0.7F;
-            pPitch += f1 * 0.05F;
-            pYaw += f * 0.05F;
-            f1 *= 0.8F;
-            f *= 0.5F;
-            f1 += (random.nextFloat() - random.nextFloat()) * random.nextFloat() * 2.0F;
-            f += (random.nextFloat() - random.nextFloat()) * random.nextFloat() * 4.0F;
-            if (random.nextInt(4) != 0) {
-                if (!canReach(pChunk.getPos(), pX, pZ, i, pBranchCount, pThickness)) {
-                    return;
-                }
-
-
+            if(((ServerLevelUtil)pLevel).getColonyWithID(colonyID) == null) {
+                AntUtils.broadcastString(pLevel, "spheres: " + spheres.size());
+                colony.hasSpawnedAnts = true;
+                ((ServerLevelUtil) pLevel).addColonyToList(colony);
             }
         }
 
-    }
+        for(PosSpherePair tempSphere : spheres){
+            if(AntUtils.getDist(tempSphere.centerPos, pChunk.getPos().getMiddleBlockPosition(tempSphere.centerPos.getY())) < (16 + tempSphere.radius)) {
+                tempSphere.setSphereCarver(pChunk, ModBlocks.ANT_AIR.get().defaultBlockState(), ModBlocks.ANT_DIRT.get().defaultBlockState(), 1.8);
+            }
+        }
 
-    /**
-     * To be used in place of carveBlock in the WorldCarver supertype.
-     * This method does not mark blocks for flooding in the next world generation steps.
-     * **/
+        if(pChunkPos.getChessboardDistance(pChunk.getPos()) < 3){
+            ColonyGenUtils.generateEntrance(pChunk, startPos, ModBlocks.ANT_DIRT.get().defaultBlockState());
+        }
 
-    private boolean setBlock(ChunkAccess pChunk, BlockPos.MutableBlockPos pPos, BlockState pState) {
-        pChunk.setBlockState(pPos, pState, false);
+
+        for(ColonyBranch tempBranch : newBranch.getChildrenPassing(b -> b.hasKey("has_room") && b.getValue("has_room").equals("true") && b.getValue("room_type") != null)){
+            BlockPos tempPos = tempBranch.getPos();
+            String roomType = tempBranch.getValue("room_type");
+
+            if(AntUtils.isPosInChunk(tempPos,pChunk.getPos())){
+                pChunk.addEntity(AntColony.getNewWorker(pLevel, colonyID, tempPos, newBranch.getPos()));
+            }
+
+            if(roomType == null || roomType.equals("empty")){
+                continue;
+            }
+            boolean isQueen = roomType.equals("queen");
+
+            if(isQueen || roomType.equals("fungus")){
+                FungalCore.growWorldgen(pChunk, tempPos, 3d);
+            }
+            if(isQueen || roomType.equals("storage")){
+                ColonyGenUtils.sprinkleAreaWorldgen(tempPos, 5, 5, 12, ModBlocks.LEAFY_CONTAINER_BLOCK.get(), pRandom, pChunk);
+            }
+
+        }
+*/
         return true;
-    }
-
-
-    private boolean shouldSkip(CarvingContext pContext, float[] pWidthFactors, double pRelativeX, double pRelativeY, double pRelativeZ, int pY) {
-        return false;
     }
 }

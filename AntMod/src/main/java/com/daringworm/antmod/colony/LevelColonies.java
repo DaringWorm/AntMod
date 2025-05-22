@@ -9,15 +9,16 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Stream;
 
 public final class LevelColonies<T extends AntColony> {
 
-    private final Set<T> colonies;
+    private final CopyOnWriteArrayList<T> colonies;
     public ServerLevel sLevel;
 
     public LevelColonies(Set<T> pColonies) {
-        this.colonies = pColonies;
+        this.colonies = new CopyOnWriteArrayList<>(pColonies);
     }
 
     public void add(T newColony){

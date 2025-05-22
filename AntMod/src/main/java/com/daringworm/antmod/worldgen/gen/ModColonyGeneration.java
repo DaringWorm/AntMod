@@ -1,17 +1,16 @@
 package com.daringworm.antmod.worldgen.gen;
 
-import com.daringworm.antmod.worldgen.feature.PlaceAntFeaturesHolders;
+import com.daringworm.antmod.worldgen.feature.SpawnAntFeaturesHolders;
 import com.daringworm.antmod.worldgen.feature.registries.AntCarversReg;
-import net.minecraft.core.Holder;
+import com.daringworm.antmod.worldgen.feature.registries.AntFeaturesReg;
 import net.minecraft.core.Registry;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.level.biome.Biome;
+import net.minecraft.world.level.biome.BiomeGenerationSettings;
 import net.minecraft.world.level.levelgen.GenerationStep;
-import net.minecraft.world.level.levelgen.placement.PlacedFeature;
 import net.minecraftforge.common.BiomeDictionary;
 import net.minecraftforge.event.world.BiomeLoadingEvent;
 
-import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
@@ -26,17 +25,21 @@ public class ModColonyGeneration {
 
         }*/
 
-        if((types.contains(BiomeDictionary.Type.PLAINS) || types.contains(BiomeDictionary.Type.JUNGLE)) &&
+        if((types.contains(BiomeDictionary.Type.FOREST)
+                || types.contains(BiomeDictionary.Type.JUNGLE)
+                || types.contains(BiomeDictionary.Type.SAVANNA)) &&
                 !types.contains(BiomeDictionary.Type.HILLS) &&
                 !types.contains(BiomeDictionary.Type.PLATEAU) &&
                 !types.contains(BiomeDictionary.Type.PEAK) &&
                 !types.contains(BiomeDictionary.Type.MODIFIED) &&
                 !types.contains(BiomeDictionary.Type.BEACH) &&
                 !types.contains(BiomeDictionary.Type.OCEAN) &&
+                !types.contains(BiomeDictionary.Type.MAGICAL) &&
                 !types.contains(BiomeDictionary.Type.RIVER) &&
                 !types.contains(BiomeDictionary.Type.DENSE)
         ) {
             event.getGeneration().addCarver(GenerationStep.Carving.AIR, AntCarversReg.CONFIGURED_COLONY_REGISTER.getHolder().get());
         }
     }
+
 }

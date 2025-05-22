@@ -6,6 +6,7 @@ import com.daringworm.antmod.entity.Ant;
 
 import com.daringworm.antmod.entity.brains.parts.WorkingStages;
 import com.daringworm.antmod.item.ModItems;
+import com.daringworm.antmod.util.AntUtils;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
@@ -44,22 +45,36 @@ import software.bernie.geckolib3.core.manager.AnimationData;
 import software.bernie.geckolib3.core.manager.AnimationFactory;
 
 import javax.annotation.Nullable;
-import java.util.function.Predicate;
+import java.util.Optional;
+import java.util.UUID;
 
 
 public class WorkerAnt extends Ant implements IAnimatable {
 
     // entity data managing worker ants latching onto other entities
     private static final EntityDataAccessor<Integer> LATCH_DIRECTION = SynchedEntityData.defineId(WorkerAnt.class, EntityDataSerializers.INT);
+    private static final EntityDataAccessor<Optional<UUID>> LATCH_TARGET =  SynchedEntityData.defineId(WorkerAnt.class, EntityDataSerializers.OPTIONAL_UUID);
 
-    public void setLatchDirection(){int random = (int) Math.random()*9;this.setThisMisc(5, 4);}
+    public void setLatchDirection(int pInt){this.getEntityData().set(LATCH_DIRECTION, pInt);}
+    public int getLatchDirection(){return this.getEntityData().get(LATCH_DIRECTION);}
 
-    public void setLatchDirection(int pInt){this.setThisMisc(pInt, 4);}
-    public int getLatchDirection(){return getThisMisc(4);}
+    public boolean hasLatchTarget(){return this.entityData.get(LATCH_TARGET).isPresent();}
+    public void setLatchTarget(Entity entity){this.entityData.set(LATCH_TARGET, Optional.of(entity.getUUID()));}
+    public void setLatchTarget(UUID id){this.entityData.set(LATCH_TARGET, Optional.of(id));}
+    public void setLatchTargetNull(){this.entityData.set(LATCH_TARGET, Optional.empty());}
+    public UUID getLatchTarget(){
+        if(!this.hasLatchTarget()){
+            throw new RuntimeException("Tried to get the Latch Target for a Worker Ant with none.");
+        }
+        return this.entityData.get(LATCH_TARGET).get();
+    }
 
-    public Vec3 getLatchOffset(){
+
+    public Vec3 getLatchPos(LivingEntity forEntity){
         float addpos = this.getLatchDirection()*40;
-        Vec3 changevec= Vec3.directionFromRotation(0,addpos);
+        Vec3 changevec = Vec3.directionFromRotation(0,addpos);
+        changevec = new Vec3(changevec.x, -this.getEyeHeight(), changevec.z).add(forEntity.getEyePosition());
+        AntUtils.broadcastString(this.getLevel(), "Moved to: " + changevec);
         return changevec;
     }
 
@@ -67,40 +82,41 @@ public class WorkerAnt extends Ant implements IAnimatable {
 
     protected void defineSynchedData() {
         super.defineSynchedData();
-        this.entityData.define(LATCH_DIRECTION, this.getLatchDirection());
+        this.entityData.define(LATCH_DIRECTION, 0);
+        this.entityData.define(LATCH_TARGET, Optional.empty());
+
     }
 
-    //TODO: if the worker ants are broken it's because I removes the super calls in these two functions
     public void addAdditionalSaveData(@NotNull CompoundTag pCompound) {
         super.addAdditionalSaveData(pCompound);
         pCompound.putInt("LatchDirection", this.getLatchDirection());
+        if(this.hasLatchTarget()){
+            pCompound.putUUID("LatchTarget", this.getLatchTarget());
+        }
+        else{
+            pCompound.putString("LatchTarget", "null");
+        }
     }
     public void readAdditionalSaveData(CompoundTag pCompound) {
         super.readAdditionalSaveData(pCompound);
         this.setLatchDirection(pCompound.getInt("LatchDirection"));
+        if(pCompound.getString("LatchTarget").equals("null")){
+            this.setLatchTargetNull();
+        }
+        else{
+            this.setLatchTarget(pCompound.getUUID("LatchTarget"));
+        }
     }
 
 
-
-     // The Entities a WorkerAnt will willingly provoke
-
-    public static final Predicate<LivingEntity> VALID_TARGET_SELECTOR = (type) -> {
-        EntityType<?> entitytype = type.getType();
-        return entitytype == EntityType.SKELETON || entitytype == EntityType.COW || entitytype == EntityType.WOLF ||
-                entitytype == EntityType.CAT|| entitytype == EntityType.ZOMBIE|| entitytype == EntityType.SALMON||
-                entitytype == EntityType.RABBIT|| entitytype == EntityType.CHICKEN|| entitytype == EntityType.SHEEP||
-                entitytype == EntityType.HUSK;
-    };
+    public WorkerAnt(EntityType<? extends Ant> entityType, Level level) {
+        super(entityType, level);
+        this.maxUpStep = 1.14f;
+    }
 
 
 
     private AnimationFactory factory = new AnimationFactory(this);
-
-    public WorkerAnt(EntityType<? extends Ant> entityType, Level level) {
-        super(entityType, level);
-    }
-
-
 
     /**
      * Standard base attributes
@@ -113,7 +129,7 @@ public class WorkerAnt extends Ant implements IAnimatable {
                 .add(Attributes.ATTACK_DAMAGE, 5)
                 .add(Attributes.ATTACK_SPEED, 5)
                 .add(Attributes.ARMOR, 8)
-                .add(Attributes.FOLLOW_RANGE, 64)
+                .add(Attributes.FOLLOW_RANGE, Integer.MAX_VALUE)
                 .build();
     }
 
@@ -156,28 +172,6 @@ public class WorkerAnt extends Ant implements IAnimatable {
         if (!itemstack.isEmpty()) {
             this.spawnAtLocation(itemstack);
             this.setItemSlot(EquipmentSlot.MAINHAND, ItemStack.EMPTY);
-        }
-
-    }
-    //does NOT work
-    protected void populateDefaultEquipmentSlots(DifficultyInstance pDifficulty) {
-        if (this.random.nextFloat() < 1.0F) {
-            float f = this.random.nextFloat();
-            ItemStack itemstack;
-            if (f < 0.05F) {
-                itemstack = new ItemStack(Items.WHEAT_SEEDS);
-            } else if (f < 0.2F) {
-                itemstack = new ItemStack(Items.RABBIT_HIDE);
-            } else if (f < 0.4F) {
-                itemstack = this.random.nextBoolean() ? new ItemStack(Items.RABBIT_FOOT) : new ItemStack(Items.STICK);
-            } else if (f < 0.6F) {
-                itemstack = new ItemStack(Items.ROTTEN_FLESH);
-            } else if (f < 0.8F) {
-                itemstack = new ItemStack(Items.BONE);
-            } else {
-                itemstack = new ItemStack(Items.FEATHER);
-            }
-            this.setItemSlot(EquipmentSlot.MAINHAND, itemstack);
         }
 
     }

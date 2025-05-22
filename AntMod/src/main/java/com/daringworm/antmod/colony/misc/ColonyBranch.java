@@ -1,291 +1,521 @@
 package com.daringworm.antmod.colony.misc;
 
+import com.daringworm.antmod.block.ModBlocks;
+import com.daringworm.antmod.block.custom.FungalCore;
 import com.daringworm.antmod.util.AntUtils;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import net.minecraft.core.BlockPos;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.Vec3;
+import org.checkerframework.checker.units.qual.A;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.Random;
+import java.util.*;
+import java.util.function.Predicate;
 
+/**
+ * Current values:
+ * has_room: boolean
+ * room_size: float
+ * direction: float
+ * room_type: String -> "storage" || "fungus" || "queen" || "empty"
+ * **/
 
-public class ColonyBranch {
+public class ColonyBranch implements Branch<ColonyBranch>{
 
-    private final BlockPos originPos;
-    private final int facingDegrees;
-    public boolean hasRoom;
-    public final int roomSize;
-    public String branchID;
-    public ArrayList<ColonyBranch> branches = new ArrayList<>();
+    private BlockPos position;
+    private ColonyBranch parent;
+    private ArrayList<ColonyBranch> children;
+    private HashMap<String, String> values;
 
-    public ColonyBranch(BlockPos startPos, int facing, boolean hasRoom, String roomID){
-        this.originPos = startPos;
-        this.facingDegrees = facing;
-        this.hasRoom = hasRoom;
-        this.roomSize = 12;
-        this.branchID = roomID;
-    }
+    public static ArrayList<ColonyBranch> testing = new ArrayList<>();
 
-    public ColonyBranch(BlockPos startPos, int facing, boolean hasRoom, int roomSize, String roomID){
-        this.originPos = startPos;
-        this.facingDegrees = facing;
-        this.hasRoom = hasRoom;
-        this.roomSize = roomSize;
-        this.branchID = roomID;
-    }
-
-    public ColonyBranch(JsonObject json){
-
-        JsonObject posJ = json.getAsJsonObject("pos");
-        this.originPos = BlockPosStringifier.posFromString(posJ);
-
-        JsonObject j = json.getAsJsonObject("dir");
-        this.facingDegrees = json.get("direction").getAsInt();
-        this.hasRoom = json.get("has_room").getAsBoolean();
-        this.roomSize = json.get("room_size").getAsInt();
-        this.branchID = json.get("branch_id").getAsString();
-
-        JsonArray j1 = json.getAsJsonArray("branches");
-        for(JsonElement element : j1){
-            this.branches.add(new ColonyBranch(element.getAsJsonObject()));
+    public static ColonyBranch getNearest_testing(BlockPos pos){
+        if(testing.isEmpty()){
+            System.out.println("testing branches list is empty and was queried");
+            return null;
         }
+        ColonyBranch toReturn = testing.get(0);
+        for(ColonyBranch tempBranch : testing){
+            if(AntUtils.getDist(tempBranch.getPos(), pos) < AntUtils.getDist(toReturn.getPos(), pos)){
+                toReturn = tempBranch;
+            }
+        }
+        return toReturn;
+    }
+
+
+    public ColonyBranch(BlockPos pos, ArrayList<ColonyBranch> children, ColonyBranch parent, HashMap<String, String> values){
+        this.position = pos;
+        this.children = children;
+        this.parent = parent;
+        this.values = values;
+        testing.add(this);
+    }
+
+
+    public ColonyBranch(BlockPos pos){
+        this.position = pos;
+        this.children = new ArrayList<>();
+        this.parent = null;
+        this.values = new HashMap<>();
+        testing.add(this);
+    }
+
+    public ColonyBranch(JsonObject baseObj){
+        this.position = BlockPosStringifier.posFromString(baseObj.get("start_pos").getAsJsonObject());
+        this.values = new HashMap<>();
+        this.children = new ArrayList<>();
+
+        JsonObject valuesObj = baseObj.get("values").getAsJsonObject();
+
+        for(Map.Entry<String, JsonElement> element : valuesObj.entrySet()){
+            Map<String, String> values = this.values;
+            String val = element.getValue().getAsString();
+
+            this.values.put(element.getKey(), val);
+        }
+
+
+
+        for(JsonElement tempElement : baseObj.get("children").getAsJsonArray()){
+            ColonyBranch newChild = new ColonyBranch(tempElement.getAsJsonObject());
+            this.addChild(newChild);
+        }
+        testing.add(this);
     }
 
     public JsonObject toJson(){
-        JsonObject masterJ = new JsonObject();
+        JsonObject returnObj = new JsonObject();
+        JsonObject valuesObj = new JsonObject();
+        JsonArray childrenObj = new JsonArray();
 
-        masterJ.add("pos", BlockPosStringifier.jsonFromPos(this.originPos));
-        masterJ.addProperty("has_room", this.hasRoom);
-        masterJ.addProperty("room_size", this.roomSize);
-        masterJ.addProperty("branch_id", this.branchID);
-
-        masterJ.addProperty("direction", this.facingDegrees);
-
-        JsonArray branchesJ = new JsonArray();
-        for(ColonyBranch tempBranch : branches){
-            branchesJ.add(tempBranch.toJson());
+        for(String tempKey : this.getValues().keySet()){
+            valuesObj.addProperty(tempKey, this.getValue(tempKey));
         }
-        masterJ.add("branches", branchesJ);
 
-        return masterJ;
+        for(ColonyBranch tempBranch : this.getChildren()){
+            childrenObj.add(tempBranch.toJson());
+        }
+
+        returnObj.add("values", valuesObj);
+        returnObj.add("start_pos", BlockPosStringifier.jsonFromPos(this.getPos()));
+        returnObj.add("children", childrenObj);
+
+        return returnObj;
     }
 
-    public ColonyBranch getSubBranch(String id){
-        if(id == null || id.isEmpty()){
-            return this;
-        }
-        else{
-            ArrayList<ColonyBranch> l = getBranchesForID(id);
-            if(!l.isEmpty()){
-                return l.get(0);
+
+    public ArrayList<PosSpherePair> getExcavationSpheres(){
+        ArrayList<PosSpherePair> returnSpheres = (this.getParent() != null) ? ColonyGenUtils.generatePassageBlueprint(new PosPair(parent.getPos(), this.position), 1.7) : new ArrayList<>();
+
+        if(!(this.values.get("has_room") == null || this.values.get("has_room").equals("false"))) {
+            float roomSize = (!this.values.containsKey("room_size")) ? 2.85f : Float.parseFloat(this.values.get("room_size"));
+            BlockPos centerPos = this.getPos().above((int) roomSize - 1);
+            BlockPos tempPos = centerPos;
+            Random rand = AntUtils.randFromPos(centerPos);
+            for (int i = 0; i < roomSize; i++) {
+                returnSpheres.add(new PosSpherePair(tempPos, roomSize));
+                tempPos = centerPos.offset(rand.nextInt((int) roomSize) * (rand.nextBoolean() ? 1 : -1), 0, rand.nextInt((int) roomSize) * (rand.nextBoolean() ? 1 : -1));
             }
         }
-        return this;
+
+        for(ColonyBranch tempBranch : this.children){
+            returnSpheres.addAll(tempBranch.getExcavationSpheres());
+        }
+
+        return returnSpheres;
     }
 
-    public ArrayList<ColonyBranch> getBranchesForID(String id){
-        ArrayList<ColonyBranch> returnList = new ArrayList<>();
-        for(ColonyBranch branch : this.branches){
-            if(Objects.equals(branch.branchID, id)){
-                returnList.add(branch);
-            }
-            returnList.addAll(branch.getBranchesForID(id));
+
+    public void carve(ServerLevel pLevel){
+        ArrayList<PosSpherePair> tunnelPoses = getExcavationSpheres();
+
+        //this.newCarve(pLevel, pLevel.getRandom());
+        //AntUtils.broadcastString(pLevel, "for " + this.getAllChildren().size());
+        for(PosSpherePair tempSphere : tunnelPoses){
+            tempSphere.setSphere(pLevel, ModBlocks.ANT_AIR.get(), ModBlocks.ANT_DIRT.get(), 1.8f);
         }
+
+        for(ColonyBranch tempChild : this.children){
+            tempChild.carve(pLevel);
+        }
+
+        decorateRoom(pLevel);
+    }
+
+    public void newCarve(ServerLevel pLevel, Random rand){
+        if(this.getParent() != null) {
+            Block innerBlock = ModBlocks.ANT_AIR.get();
+            Block outerBlock = ModBlocks.ANT_DIRT.get();
+
+            BlockPos start = this.getPos();
+            BlockPos end = this.getParent().getPos();
+            final double passageRadius = 1.45d;
+            final double wallThickness = 2d;
+            final int radiusInt = (int) Math.ceil(passageRadius + wallThickness);
+            final Vec3 absVector = new Vec3(end.getX() - start.getX(), end.getY() - start.getY(), end.getZ() - start.getZ()).normalize();
+
+            PosSpherePair startSphere = new PosSpherePair(start, passageRadius);
+            startSphere.setSphere(pLevel, innerBlock, outerBlock, wallThickness);
+
+            ArrayList<BlockPos> innerList = new ArrayList<>();
+            ArrayList<BlockPos> outerList = new ArrayList<>();
+            innerList.ensureCapacity(radiusInt * radiusInt * 4);
+            outerList.ensureCapacity(radiusInt * 8);
+
+            for (BlockPos tempPos : BlockPos.betweenClosed(new BlockPos(radiusInt, radiusInt, radiusInt), new BlockPos(-radiusInt, -radiusInt, -radiusInt))) {
+                double dist = AntUtils.getDist(tempPos, BlockPos.ZERO);
+                if (Math.abs(absVector.dot(Vec3.atCenterOf(tempPos).normalize())) < (1.2d/(dist))) {
+                    if(dist <= passageRadius) {
+                        innerList.add(tempPos.immutable());
+                    }
+                    else if(dist <= passageRadius + wallThickness){
+                        outerList.add(tempPos.immutable());
+                    }
+                }
+            }
+
+            int sX = start.getX();
+            int sZ = start.getZ();
+            int eX = end.getX();
+            int eZ = end.getZ();
+
+            int steps = Math.abs(eX - sX) + Math.abs(eZ - sZ);
+            boolean xOrZ;
+            BlockPos lastPos = start.mutable();
+            int howLongX = 0;
+            int howLongZ = 0;
+            float yOffC = 0;
+
+
+            for (int s = steps; s > 0; s--) {
+                int xOff = 0;
+                int yOff = 0;
+                int zOff = 0;
+                float yFOff = (float) (end.getY() - lastPos.getY()) / (float) s;
+                yOffC = yOffC + yFOff;
+                if (Math.abs(yOffC) > 1f) {
+                    yOff = (yFOff > 0) ? 1 : -1;
+                    yOffC = (yFOff > 0) ? yOffC - 1 : yOffC + 1;
+                }
+
+                howLongX = eX - lastPos.getX();
+                howLongZ = eZ - lastPos.getZ();
+                xOrZ = ColonyGenUtils.nextBool(Math.abs(howLongX), Math.abs(howLongZ), rand);
+                if ((xOrZ && howLongX != 0) || howLongZ == 0) {
+                    xOff = (howLongX > 0) ? 1 : -1;
+                } else {
+                    zOff = (howLongZ > 0) ? 1 : -1;
+                }
+
+                lastPos = lastPos.offset(xOff, yOff, zOff);
+
+                for(BlockPos offsetPos : outerList){
+                    if(pLevel.getBlockState(lastPos.offset(offsetPos)) != innerBlock.defaultBlockState()) {
+                        pLevel.setBlock(lastPos.offset(offsetPos), outerBlock.defaultBlockState(), 2);
+                    }
+                }
+
+                for (BlockPos offsetPos : innerList) {
+                    pLevel.setBlock(lastPos.offset(offsetPos), innerBlock.defaultBlockState(), 2);
+                }
+                if(s == steps || s == 1){
+
+                }
+
+            }
+            //AntUtils.broadcastString(pLevel, "OffsetList contains " + (innerList.size() + outerList.size()) + " positions for an expected " + (int)(passageRadius*passageRadius*Math.PI + passageRadius * Math.PI) + " out of " + radiusInt * radiusInt * radiusInt * 8);
+        }
+
+        for(ColonyBranch tempBranch : this.getChildren()) {
+            tempBranch.newCarve(pLevel, rand);
+        }
+    }
+
+
+    private void decorateRoom(ServerLevel pLevel){
+        BlockPos tempPos = this.getPos();
+        Random rand = AntUtils.randFromPos(tempPos);
+
+        if(this.values.containsKey("room_type")) {
+            switch (this.values.get("room_type")) {
+                case "storage":
+                    ColonyGenUtils.sprinkleArea(this.getPos(), 6, 5, 20, ModBlocks.LEAFY_CONTAINER_BLOCK.get(), rand, pLevel);
+                    break;
+                case "fungus":
+                    while(pLevel.getBlockState(tempPos.below()).isAir() && tempPos.getY() > pLevel.getMinBuildHeight()){tempPos = tempPos.below();}
+                    pLevel.setBlock(tempPos, ModBlocks.FUNGAL_CORE.get().defaultBlockState(), 2);
+                    FungalCore.grow(pLevel, tempPos, rand.nextInt(20)+20);
+                    break;
+                case "queen":
+                    while(pLevel.getBlockState(tempPos.below()).isAir() && tempPos.getY() > pLevel.getMinBuildHeight()){tempPos = tempPos.below();}
+                    ColonyGenUtils.sprinkleArea(tempPos, 12, 3, 20, ModBlocks.LEAFY_CONTAINER_BLOCK.get(), rand, pLevel);
+                    pLevel.setBlock(tempPos, ModBlocks.FUNGAL_CORE.get().defaultBlockState(), 2);
+                    FungalCore.grow(pLevel,tempPos, rand.nextInt(40)+35);
+
+                    break;
+                default:
+                    break;
+            }
+        }
+    }
+
+    /**
+     * Returns every recursive child which passes the predicate, whether their parent passes it or not.
+     * **/
+    public ArrayList<ColonyBranch> getChildrenPassing(Predicate<ColonyBranch> predicate){
+        ArrayList<ColonyBranch> returnList = getChildrenRecursive();
+        returnList.removeIf(predicate.negate());
         return returnList;
     }
 
+    public ColonyBranch createAndReturnChild(BlockPos childPos){
+        ColonyBranch newChild = new ColonyBranch(childPos);
+        this.addChild(newChild);
+        return newChild;
+    }
 
-    public BlockPos getPos(){return this.originPos;}
+    public ColonyBranch createAndReturnChild(double directionRad, double horizontalDistance, double verticalOffset){
+        ColonyBranch newChild = new ColonyBranch(this.getPos().offset(
+                Math.sin(directionRad)*horizontalDistance,
+                verticalOffset,
+                Math.cos(directionRad)*horizontalDistance
+        ));
+        this.addChild(newChild);
+        return newChild;
+    }
 
 
-    public int getDegFacing(){return this.facingDegrees;}
+    public ColonyBranch getAbsoluteParent(){
+        ColonyBranch tempBranch = this;
 
-    public ColonyBranch updateID(String idToAddStart, String idToAddEnd){
-        this.branchID = idToAddStart + this.branchID + idToAddEnd;
-        ArrayList<ColonyBranch> newList = new ArrayList<>();
-        for(ColonyBranch branch : this.branches){
-            newList.add(branch.updateID(idToAddStart,idToAddEnd));
+        while(tempBranch.getParent() != null){
+            tempBranch = tempBranch.getParent();
         }
-        this.branches = newList;
-        return this;
+        return tempBranch;
     }
 
-    public static BlockPos nextBranchPos(BlockPos startPos, int facingDegrees, double length, int yOff){
-        int deg = facingDegrees % 360;
-        double rad = Math.toRadians(deg);
-
-        int xOff = (int)Math.round(length*Math.cos(rad));
-        int zOff = (int)Math.round(length*Math.sin(rad));
-
-        return startPos.offset(xOff, yOff, zOff);
+    public ArrayList<BlockPos> getPosesToAbsParent(){
+        ArrayList<BlockPos> returnList = new ArrayList<>();
+        ColonyBranch tempBranch = this;
+        getPosesToAbsParentHelper(returnList, tempBranch);
+        return returnList;
     }
 
-    public void generateNextBranch(int length, int yOffset, boolean hasRoom){
-        this.branches.add(new ColonyBranch(nextBranchPos(this.getPos(), this.facingDegrees,length,yOffset),this.facingDegrees, hasRoom, this.branchID + "0"));
+    private void getPosesToAbsParentHelper(ArrayList<BlockPos> list, ColonyBranch branchAt){
+        list.add(branchAt.getPos());
+        if(branchAt.parent != null){
+            getPosesToAbsParentHelper(list, branchAt.parent);
+        }
     }
 
-    public void generateNextBranch(int length, int yOffset, boolean hasRoom, int roomSize){
-        this.branches.add(new ColonyBranch(nextBranchPos(this.getPos(), this.facingDegrees,length,yOffset),this.facingDegrees, hasRoom, this.branchID + "0"));
-    }
+    /**
+     * Assesses all children of the subject's absolute parent, not only children of the subject.
+     * **/
+    public ColonyBranch getNearestBranch(BlockPos pos){
+        ColonyBranch returnBranch = this.getAbsoluteParent();
 
-    public void generateNextBranches(int numberPerStep, int degreesSpread, int steps, int minYOff, int maxYOff, double length, boolean haveRooms, int[] roomSizes){
-        Random random = AntUtils.randFromPos(this.getPos());
-        if(!this.branches.isEmpty()){
-            for (ColonyBranch branch : this.branches) {
-                branch.generateNextBranches(numberPerStep, degreesSpread, steps, minYOff, maxYOff, length, haveRooms, roomSizes);
+        for(ColonyBranch tempBranch : returnBranch.getAllChildren()){
+            if(AntUtils.getDist(tempBranch.position, pos) < AntUtils.getDist(returnBranch.position, pos)){
+                returnBranch = tempBranch;
             }
-            return;
         }
-        if(steps > 0 && numberPerStep > 0) {
-            int i = -1;
-            int accumulatedDeg = 0;
-            int numLeft = numberPerStep-1;
-            if(numberPerStep%2 == 0){
-                int newDir = this.facingDegrees+(degreesSpread/2);
-                this.branches.add(new ColonyBranch(nextBranchPos(this.getPos(), newDir, length, numberBetween(random, minYOff, maxYOff)), newDir, haveRooms, roomSizes[random.nextInt(roomSizes.length)],this.branchID+"0"));
-                while(numLeft>0){
-                    accumulatedDeg += degreesSpread;
-                    newDir = newDir + (accumulatedDeg * i);
-                    i= -i;
-                    this.branches.add(new ColonyBranch(nextBranchPos(this.getPos(), newDir, length, numberBetween(random, minYOff, maxYOff)), newDir, haveRooms, roomSizes[random.nextInt(roomSizes.length)], this.branchID + numLeft));
-                    numLeft--;
-                }
+
+        return returnBranch;
+    }
+
+    /**
+     * Does not only work for child branches: it first finds the absolute parent and then finds the path from the
+     * absolute parent to both the subject and the target, and then trims off the overlap to create a direct path.
+     * **/
+    public ArrayList<BlockPos> getPosesToNearestBranchTo(BlockPos pos){
+        ColonyBranch nearestBranch = this.getNearestBranch(pos);
+        ArrayList<BlockPos> posesThisParent = this.getPosesToAbsParent();
+        ArrayList<BlockPos> posesNearestParent = nearestBranch.getPosesToAbsParent();
+
+        while(!posesThisParent.isEmpty() &&
+                !posesNearestParent.isEmpty() &&
+                posesThisParent.get(posesThisParent.size()-1) ==
+                        posesNearestParent.get(posesNearestParent.size()-1)){
+
+            posesThisParent.remove(posesThisParent.size()-1);
+            posesNearestParent.remove(posesNearestParent.size()-1);
+        }
+
+        for(int i = posesNearestParent.size()-1; i >= 0; i--){
+            posesThisParent.add(posesNearestParent.get(i));
+        }
+
+        return posesThisParent;
+    }
+
+
+    /**
+     * Recursively returns the grandchildren if the children have children. Basically, collects the leaves of the branch node tree.
+     * **/
+    public ArrayList<ColonyBranch> getAbsoluteChildren(){
+        ArrayList<ColonyBranch> returnList = new ArrayList<>();
+        for(ColonyBranch tempBranch : this.getChildren()){
+            if(tempBranch.getChildren().isEmpty()){
+                returnList.add(tempBranch);
             }
             else{
-                this.branches.add(new ColonyBranch(nextBranchPos(this.getPos(), this.facingDegrees, length, numberBetween(random, minYOff, maxYOff)), this.facingDegrees, haveRooms, roomSizes[random.nextInt(roomSizes.length)], this.branchID+"0"));
-                int newDir = this.facingDegrees;
-                while(numLeft>0){
-                    accumulatedDeg += degreesSpread;
-                    newDir = newDir + (accumulatedDeg * i);
-                    i= -i;
-                    this.branches.add(new ColonyBranch(nextBranchPos(this.getPos(), newDir, length, numberBetween(random, minYOff, maxYOff)), newDir, haveRooms, roomSizes[random.nextInt(roomSizes.length)], this.branchID + numLeft));
-                    numLeft--;
-                }
-            }
-
-            for (ColonyBranch branch : this.branches) {
-                branch.generateNextBranches(numberPerStep, degreesSpread/numberPerStep, steps - 1, minYOff, maxYOff, length, haveRooms, roomSizes);
+                returnList.addAll(tempBranch.getAbsoluteChildren());
             }
         }
+        return returnList;
     }
 
-
-    private int numberBetween(Random random, int min, int max){
-        return (min+random.nextInt((Math.abs(max-min))));
-    }
-
-    /****/
-    public ArrayList<PosSpherePair> generateLimitedBlueprint(double passageWidth, double roomHeight, int roomSize, int steps, boolean wontReplaceAir){
-        ArrayList<PosSpherePair> returnList = new ArrayList<>();
-
-        for(ColonyBranch branch : this.branches){
-            returnList.addAll(ColonyGenUtils.generatePassageBlueprint(new PosPair(this.getPos(),branch.getPos()),passageWidth, wontReplaceAir));
-
-            if(branch.hasRoom){
-                returnList.addAll(ColonyGenUtils.generateRoomBlueprint(branch.roomSize/2f,branch.roomSize,branch.getPos(),AntUtils.randFromPos(this.getPos())));
-            }
-            if(steps > 0) {
-                returnList.addAll(branch.generateLimitedBlueprint(passageWidth, roomHeight, roomSize, steps - 1, wontReplaceAir));
+    /**
+     * Returns a list of every child and every child's child, recursively.
+     * **/
+    public ArrayList<ColonyBranch> getAllChildren(){
+        ArrayList<ColonyBranch> returnList = new ArrayList<>();
+        for(ColonyBranch tempBranch : this.getChildren()){
+            if(!returnList.contains(tempBranch)){
+                returnList.add(tempBranch);
+                returnList.addAll(tempBranch.getAllChildren());
             }
         }
+        return returnList;
+    }
+
+
+    public String getPosStr() {
+        return BlockPosStringifier.jsonFromPos(this.position).toString();
+    }
+
+    @Override
+    public BlockPos getPos() {
+        return this.position;
+    }
+
+    @Override
+    public ColonyBranch getParent(){
+        return this.parent;
+    }
+
+    @Override
+    public ArrayList<ColonyBranch> getChildren() {
+        return this.children;
+    }
+
+    /**
+     * Gets all the children and recursively grandchildren of this branch.
+     * **/
+    @Override
+    public ArrayList<ColonyBranch> getChildrenRecursive() {
+        ArrayList<ColonyBranch> returnList = new ArrayList<>();
+
+        for(ColonyBranch tempBranch : this.children){
+            returnList.add(tempBranch);
+            returnList.addAll(tempBranch.getChildrenRecursive());
+        }
 
         return returnList;
     }
 
-    /**Returns the spheres for the branch tunnel, optionally its room, and the same for all subbranches.**/
-    public ArrayList<PosSpherePair> generateBranchBlueprint(double passageWidth, double roomHeight, int roomSize){
-        ArrayList<PosSpherePair> returnList = new ArrayList<>();
+    @Override
+    public void setPos(BlockPos newPos) {
+        this.position = newPos;
+    }
 
-        for(ColonyBranch branch : this.branches){
-            returnList.addAll(ColonyGenUtils.generatePassageBlueprint(new PosPair(this.getPos(),branch.getPos()),passageWidth, false));
+    /**
+     * Sets the argument as the subject's child, and sets the argument's parent to the subject.
+     * **/
+    @Override
+    public void addChild(ColonyBranch child) {
+        this.children.add(child);
+        child.parent = this;
+    }
 
-            if(branch.hasRoom){
-                returnList.addAll(ColonyGenUtils.generateRoomBlueprint(roomHeight,branch.roomSize,branch.getPos(),AntUtils.randFromPos(this.getPos())));
+    /**
+     * Sets the argument as the subject's parent, and adds the subject to the argument's children.
+     * **/
+    @Override
+    public void setParent(ColonyBranch parent) {
+        this.parent = parent;
+        parent.children.add(this);
+    }
+
+    @Override
+    public void removeChild(ColonyBranch child) {
+        this.children.remove(child);
+        child.parent = null;
+    }
+
+    @Override
+    public void setChildren(ArrayList<ColonyBranch> newChildren) {
+        this.children = newChildren;
+        for(ColonyBranch tempBranch : newChildren){
+            tempBranch.parent = this;
+        }
+    }
+
+    @Override
+    public boolean hasChild(String string) {
+        for(ColonyBranch tempChild : this.children){
+            if(tempChild.getPosStr().equals(string)){
+                return true;
             }
-            returnList.addAll(branch.generateBranchBlueprint(passageWidth,roomHeight, roomSize));
         }
-
-        return returnList;
+        return false;
     }
 
-    public ArrayList<BlockPos> listRoomPoses(){
-        ArrayList<BlockPos> returnList = new ArrayList<>();
-        if(this.hasRoom){returnList.add(this.originPos);}
-        for(ColonyBranch branch : this.branches){
-            returnList.addAll(branch.listRoomPoses());
-        }
-        return returnList;
+    @Override
+    public boolean hasChild(ColonyBranch child) {
+        return this.children.contains(child);
     }
 
-    public ArrayList<BlockPos> listBranchPoses(){
-        ArrayList<BlockPos> returnList = new ArrayList<>();
-        returnList.add(this.originPos);
-        for(ColonyBranch branch : this.branches){
-            returnList.addAll(branch.listBranchPoses());
-        }
-        return returnList;
+    @Override
+    public void setValues(HashMap<String, String> vals) {
+        this.values = vals;
     }
 
-    public ArrayList<String> listBranchIDs(){
-        ArrayList<String> returnList = new ArrayList<>();
-        returnList.add(this.branchID);
-        for(ColonyBranch branch : this.branches){
-            returnList.addAll(branch.listBranchIDs());
-        }
-        return returnList;
+    @Override
+    public HashMap<String, String> getValues() {
+        return this.values;
     }
 
-    public String getNearestBranchID(BlockPos pos){
-        ArrayList<BlockPos> posList= this.listBranchPoses();
-
-        BlockPos closestRoomPos = AntUtils.findNearestBlockPos(pos, posList);
-        int index = posList.indexOf(closestRoomPos);
-        if(index < 0){return null;}
-        return this.listBranchIDs().get(index);
+    @Override
+    public void setValue(String key, String val) {
+        this.values.put(key, val);
     }
 
-    /**Only works if the branch ID points to this branch or a valid child.**/
-    public ArrayList<BlockPos> getPosesToBranch(String branchID){
-        ArrayList<BlockPos> returnList = new ArrayList<>();
-
-        if(!this.listBranchIDs().contains(branchID)){
-            return returnList;
-        }
-
-        for(int i = 1; i <= branchID.length(); i++){
-            returnList.add(this.getSubBranch(branchID.substring(0,i)).getPos());
-        }
-
-        return returnList;
+    @Override
+    public String getValue(String key){
+        return this.values.get(key);
     }
 
-    /**Gets the list of positions leading from any child branch to any other child branch.
-     * Starts at the first branch, given by its ID, goes back to the common ancestor with the second branch, also given by its ID,
-     * and then goes to the second branch.**/
-    public ArrayList<BlockPos> getPosesFromBranchToBranch(String startID, String endID){
+    @Override
+    public void removeKey(String key) {
+        this.values.remove(key);
+    }
 
-        if(startID.equals(endID)){return new ArrayList<>(List.of(getSubBranch(startID).getPos()));}
+    @Override
+    public boolean hasKey(String key) {
+        return this.values.containsKey(key);
+    }
 
-        ArrayList<BlockPos> startPosList = getPosesToBranch(startID);
-        ArrayList<BlockPos> endPosList = getPosesToBranch(endID);
+    @Override
+    public String toString(){
+        StringBuilder str = new StringBuilder("Branch at " + this.getPosStr() + " has values:\n");
 
-        //It needs to check the next one down the list so that the parent is preserved.
-        while(startPosList.size() > 1 && endPosList.size() > 1 && startPosList.get(1) == endPosList.get(1)){
-            startPosList.remove(0);
-            endPosList.remove(0);
+        str.append(this.values.toString());
+        if(this.parent != null) {
+            str.append("\nParent:\n");
+            str.append(this.parent.getPosStr());
         }
-        startPosList.remove(0);
-
-        ArrayList<BlockPos> returnList = new ArrayList<>();
-
-        for(int i = startPosList.size()-1; i > -1; i--){
-            returnList.add(startPosList.get(i));
+        str.append("\nChildren:\n");
+        for(ColonyBranch tempChild : this.children){
+            str.append(tempChild.getPosStr());
         }
-        returnList.addAll(endPosList);
 
-        return returnList;
+        return str.toString();
     }
 }

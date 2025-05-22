@@ -3,13 +3,14 @@ package com.daringworm.antmod.block.custom;
 import com.daringworm.antmod.block.ModBlocks;
 import com.daringworm.antmod.util.AntUtils;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.material.Fluids;
+import net.minecraft.world.level.chunk.ChunkAccess;
 
 import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
 
 import static com.daringworm.antmod.block.custom.MoldyLeaves.MAX_DISTANCE_FROM_CORE;
 import static com.daringworm.antmod.block.custom.MoldyLeaves.isFungus;
@@ -25,159 +26,146 @@ public class FungalCore extends Block {
         return false;
     }
 
+    public static final double MAX_SPREAD_DISTANCE = 6f;
+
+    private static final int tileSizeXZ = 5;
+    private static final int tileSizeY = 4;
+    private static final int halfTileXZ = 3;
 
 
-    private static ArrayList<BlockPos> blocksToSpreadTo(BlockPos nucleusPos, BlockPos selfPos, ServerLevel pLevel){
-
-        //expand the fungus-based search area, and find the nearest air-like positions. Filter through these later.
-
-        ArrayList<BlockPos> searchedPoses = new ArrayList<>();
-        ArrayList<BlockPos> currentPoses = new ArrayList<>();
-        ArrayList<BlockPos> nextPoses = new ArrayList<>();
-        ArrayList<BlockPos> airPoses = new ArrayList<>();
-        currentPoses.add(selfPos);
-
-        int searchSize = MAX_DISTANCE_FROM_CORE+3;
-
-        for(; searchSize >= 0; searchSize--) {
-            for (BlockPos tempPos : currentPoses) {
-                for (Direction dir : Direction.values()) {
-                    BlockPos tempPos1 = tempPos.relative(dir, 1);
-                    BlockState tempState1 = pLevel.getBlockState(tempPos1);
-                    if (isFungus(tempState1.getBlock())) {
-                        if(!searchedPoses.contains(tempPos1)) {
-                            nextPoses.add(tempPos1);
-                        }
-                    }
-                    else if(tempState1.canBeReplaced(Fluids.FLOWING_WATER)){
-                        airPoses.add(tempPos1);
-                    }
-
-                    if(!searchedPoses.contains(tempPos1)){
-                        searchedPoses.add(tempPos1);
-                    }
-                }
-            }
-            currentPoses.clear();
-            currentPoses.addAll(nextPoses);
-            nextPoses.clear();
+    private static boolean doesConformToShape(BlockPos questionPos, BlockPos centerPos){
+        if(questionPos == centerPos){
+            return false;
         }
 
-        //AntUtils.broadcastString(pLevel, "Searched size = " + searchedPoses.size() + ". Current size = " + currentPoses.size());
+        int tempX = Math.abs((questionPos.getX() - centerPos.getX()) % tileSizeXZ);
+        int tempY = (-1 + questionPos.getY() - centerPos.getY() + tileSizeY * 300) % tileSizeY;
+        int tempZ = Math.abs((questionPos.getZ() - centerPos.getZ()) % tileSizeXZ);
+
+        // creates the main passageways
+        if ((tempX % tileSizeXZ == 0 || tempZ % tileSizeXZ == 0)) {
+            if ((tempY % tileSizeY <= 1)) {
+                return false;
+            }
+        }
+
+        //creates the stairs
+        if ((
+                ((tempX - halfTileXZ) % tileSizeXZ == 0 && (tempZ - 1) % tileSizeXZ <= 3 && (tempY + 1 + (tempZ - 1) % tileSizeXZ) % tileSizeY <= 2) ||
+                        ((tempZ - halfTileXZ) % tileSizeXZ == 0 && (tempX - 1) % tileSizeXZ <= 3 && (tempY + 1 + (tempX - 1) % tileSizeXZ) % tileSizeY <= 2))) {
+            return false;
+        }
+
+        return true;
+    }
 
 
-        // Filter the air positions found to find ones which can be safely replaced.
+    private static ArrayList<BlockPos> blocksToSpreadTo(ServerLevel pLevel, BlockPos startPos, double radius){
+        Random rand = pLevel.getRandom();
+        int searchIterations = (int)MAX_SPREAD_DISTANCE;
+        int maxRandomsPerIteration = 16;
+        ArrayList<BlockPos> searchedPoses = new ArrayList<>();
+        ArrayList<BlockPos> currentPoses = new ArrayList<>(List.of(startPos));
+        ArrayList<BlockPos> nextPoses = new ArrayList<>();
+
         ArrayList<BlockPos> returnPoses = new ArrayList<>();
 
-        int baseX = nucleusPos.getX();
-        int baseY = nucleusPos.getY();
-        int baseZ = nucleusPos.getZ();
+        for(int i = searchIterations; i > 0; i--){
+            for(int j = 0; j < maxRandomsPerIteration && j < currentPoses.size(); j++){
+                BlockPos tempPos = currentPoses.get(rand.nextInt(currentPoses.size()));
+                searchedPoses.add(tempPos);
+                currentPoses.remove(tempPos);
 
-        int tileSizeXZ = 5;
-        int tileSizeY = 3;
-        int halfTileXZ = 2;
+                if(AntUtils.getDist(tempPos, startPos) > radius){
+                    continue;
+                }
 
-        int xOff = (baseX % tileSizeXZ);
-        int yOff = (baseY % tileSizeY);
-        int zOff = (baseZ % tileSizeXZ);
+                for(BlockPos tempPos1 : BlockPos.betweenClosed(tempPos.offset(1,1,1), tempPos.offset(-1,-1,-1))){
+                    if(tempPos1 != tempPos){
+                        if(pLevel.getBlockState(tempPos1).isAir() && doesConformToShape(tempPos1, startPos) && !returnPoses.contains(tempPos1)){
+                            returnPoses.add(tempPos1.immutable());
+                        }
+                        else if(isFungus(pLevel.getBlockState(tempPos1).getBlock()) && !nextPoses.contains(tempPos1) && !searchedPoses.contains(tempPos1)){
+                            nextPoses.add(tempPos1.immutable());
+                        }
+                    }
+                }
 
-        xOff = (xOff < 0)? xOff + 2 : xOff - 2;
-        zOff = (zOff < 0)? zOff + 2 : zOff - 2;
-
-        for(BlockPos tempPos : airPoses){
-            int x = tempPos.getX();
-            int y = tempPos.getY();
-            int z = tempPos.getZ();
-
-            int modX = ((x+tileSizeXZ*5)%tileSizeXZ)+xOff;
-            int modZ = ((z+tileSizeXZ*5)%tileSizeXZ)+zOff;
-            int modY = ((y+1+tileSizeY*400)%tileSizeY) + yOff;
-
-            boolean shouldPlace = true;
-
-            //creates the main "t" shaped hallways
-            if(((modX==xOff) || (modZ==zOff)) && (modY==yOff || modY==yOff+1)){
-                shouldPlace = false;
-
-                //
-                //pLevel.setBlock(tempPos, Blocks.GLASS.defaultBlockState(),2);
-                //
-            }
-            //creates the middle stairs
-            else if((modX == xOff+halfTileXZ || modX == xOff-halfTileXZ)
-                    && (modZ == zOff+halfTileXZ || modZ == zOff-halfTileXZ)
-                    && modY != yOff+1){
-                shouldPlace = false;
-
-                //
-                //pLevel.setBlock(tempPos, Blocks.YELLOW_STAINED_GLASS.defaultBlockState(),2);
-                //
-            }
-            //creates the bottom stairs
-            else if((modX == xOff+halfTileXZ || modX == xOff-halfTileXZ)
-                    && (modZ == zOff+halfTileXZ-1 || modZ == zOff-halfTileXZ+1)
-                    && modY != yOff){
-                shouldPlace = false;
-                //
-                //pLevel.setBlock(tempPos, Blocks.LIME_STAINED_GLASS.defaultBlockState(),2);
-                //
-            }
-            //creates the top stairs
-            else if((modX == xOff+halfTileXZ-1 || modX == xOff-halfTileXZ+1)
-                    && (modZ == zOff+halfTileXZ || modZ == zOff-halfTileXZ)
-                    && modY != yOff+2){
-                shouldPlace = false;
-                //
-                //pLevel.setBlock(tempPos, Blocks.ORANGE_STAINED_GLASS.defaultBlockState(),2);
-                //
+                currentPoses.addAll(nextPoses);
             }
 
-            if(shouldPlace && AntUtils.getDist(tempPos,nucleusPos) <= MAX_DISTANCE_FROM_CORE){
-                returnPoses.add(tempPos);
+            if(returnPoses.size() > 32){
+                break;
+            }
+
+            if(currentPoses.size() <= 10) {
+                searchedPoses.addAll(currentPoses);
+                currentPoses.addAll(nextPoses);
+                nextPoses.clear();
             }
         }
+
+        //AntUtils.broadcastString(pLevel, "searched " + searchedPoses.size() + " poses.");
+        //AntUtils.broadcastString(pLevel, "next_poses include " + nextPoses.size() + " poses.");
+        //AntUtils.broadcastString(pLevel, "returned " + returnPoses.size() + " poses.");
         return returnPoses;
     }
 
 
     public static void grow(ServerLevel pLevel, BlockPos pPos, int amount) {
-        ArrayList<BlockPos> growthPoses = blocksToSpreadTo(pPos, pPos, pLevel);
-        int fungusPlaced = 0;
+        Random rand = pLevel.getRandom();
+        ArrayList<BlockPos> spreadList = blocksToSpreadTo(pLevel, pPos, MAX_SPREAD_DISTANCE);
 
-        //grows!
-        //Grows fungus first
-        if(!growthPoses.isEmpty() && amount > 0) {
-            for(; amount > 0 && !growthPoses.isEmpty(); amount--) {
-                BlockPos growthPos = AntUtils.findNearestBlockPos(pPos, growthPoses);
-                if(growthPos != BlockPos.ZERO && pLevel.getBlockState(growthPos).getBlock() != ModBlocks.FUNGUS.get()) {
-                    pLevel.setBlock(growthPos, ModBlocks.FUNGUS.get().defaultBlockState(), 2);
-                    growthPoses.remove(growthPos);
-                    fungusPlaced ++;
-                }
-                else{
-                    growthPoses.remove(growthPos);
-                    amount ++;
-                    //AntUtils.broadcastString(pLevel, "BlockPos Zero or repeat pos used in fungus logic");
-                }
+        if(spreadList.isEmpty()){
+            BlockPos nodulePos = BlockPos.findClosestMatch(pPos, MAX_DISTANCE_FROM_CORE, MAX_DISTANCE_FROM_CORE, p -> pLevel.getBlockState(p).getBlock() == ModBlocks.FUNGUS.get()).orElse(BlockPos.ZERO);
+            if(nodulePos != BlockPos.ZERO) {
+                pLevel.setBlock(nodulePos, ModBlocks.FUNGAL_NODULE.get().defaultBlockState(), 2);
             }
         }
-        //If it runs out of poses, checks if it can grow recursively, and if it can't, grows nodules
-        if(growthPoses.isEmpty() && amount > 0){
-            growthPoses = blocksToSpreadTo(pPos, pPos, pLevel);
+        else {
 
-            if(growthPoses.isEmpty()){
-                for(; amount > 0; amount --){
-                    BlockPos nodulePos = BlockPos.findClosestMatch(pPos,5,5, p -> pLevel.getBlockState(p).getBlock() == ModBlocks.FUNGUS.get()).orElse(BlockPos.ZERO);
-                    if(nodulePos != BlockPos.ZERO){
-                        pLevel.setBlock(nodulePos,ModBlocks.FUNGAL_NODULE.get().defaultBlockState(), 2);
-                        fungusPlaced ++;
+            for (int i = 0; i < amount; i++) {
+                if (spreadList.isEmpty()) {
+                    spreadList = blocksToSpreadTo(pLevel, pPos, MAX_SPREAD_DISTANCE);
+                    if (spreadList.isEmpty()) {
+                        break;
                     }
                 }
-            }
-            else{
-                grow(pLevel,pPos,amount);
+                spreadList.remove(pPos);
+
+                int percentOverrideChance = 0;
+                BlockPos nearestPos = spreadList.get(rand.nextInt(spreadList.size()));
+
+                for (BlockPos tempPos : spreadList) {
+                    percentOverrideChance += 5;
+                    if (rand.nextInt(100) < percentOverrideChance) {
+                        break;
+                    } else if (AntUtils.getDist(tempPos, pPos) < AntUtils.getDist(nearestPos, pPos)) {
+                        nearestPos = tempPos;
+                    }
+                }
+
+                pLevel.setBlock(nearestPos, ModBlocks.FUNGUS.get().defaultBlockState(), 2);
+                spreadList.remove(nearestPos);
             }
         }
-        //AntUtils.broadcastString(pLevel,"Fungus placed: " + fungusPlaced);
+    }
+
+    public static void growWorldgen(ChunkAccess chunkAccess, BlockPos nucleusPos, double radius) {
+        if(AntUtils.getHorizontalDist(chunkAccess.getPos().getMiddleBlockPosition(0), nucleusPos) - 16 > radius){
+            return;
+        }
+
+        if(AntUtils.isPosInChunk(nucleusPos,chunkAccess.getPos())){
+            chunkAccess.setBlockState(nucleusPos, ModBlocks.FUNGAL_CORE.get().defaultBlockState(), false);
+        }
+
+        for(BlockPos tempPos : BlockPos.betweenClosed(nucleusPos.offset(radius, radius, radius), nucleusPos.offset(-radius, -radius/2, -radius))){
+            if(AntUtils.isPosInChunk(tempPos, chunkAccess.getPos()) && AntUtils.getDist(tempPos, nucleusPos) <= radius) {
+                if(doesConformToShape(tempPos, nucleusPos) && chunkAccess.getBlockState(tempPos).isAir()){
+                    chunkAccess.setBlockState(tempPos, ModBlocks.FUNGUS.get().defaultBlockState(), false);
+                }
+            }
+        }
     }
 }

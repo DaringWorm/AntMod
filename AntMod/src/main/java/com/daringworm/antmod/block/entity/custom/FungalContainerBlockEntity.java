@@ -303,14 +303,14 @@ public class FungalContainerBlockEntity extends BlockEntity implements MenuProvi
         if(!pLevel.isClientSide() && !pLevel.getBlockState(pPos).getValue(LeafyContainer.FULL)){
             for(Ant pAnt : pLevel.getEntitiesOfClass(Ant.class, new AABB(pPos.getX()-5, pPos.getY()-3, pPos.getZ()-5,pPos.getX()+5, pPos.getY()+3, pPos.getZ()+5))){
                 BlockState antHomeState = pLevel.getBlockState(pAnt.getHomeContainerPos());
-                if(antHomeState.getBlock() != ModBlocks.LEAFY_CONTAINER_BLOCK.get() /*|| !antHomeState.getValue(FungalContainer.FULL)*/){
-                    pAnt.setHomeContainerPos(pPos);
+                /*if(antHomeState.getBlock() != ModBlocks.LEAFY_CONTAINER_BLOCK.get() /*|| !antHomeState.getValue(FungalContainer.FULL)*///){
+                   /* pAnt.setHomeContainerPos(pPos);
                     pAnt.addEffect(new MobEffectInstance(MobEffects.GLOWING, 100));
                     AntColony colony = pAnt.getColony();
                     if(colony != null && colony.tunnels != null) {
-                        pAnt.setRoomID(colony.tunnels.getNearestBranchID(pPos));
+                        pAnt.setHom(colony.tunnels.getNearestBranchID(pPos));
                     }
-                }
+                }*/
             }
         }
     }

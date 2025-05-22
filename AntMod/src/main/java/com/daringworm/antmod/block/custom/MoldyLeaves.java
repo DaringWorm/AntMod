@@ -15,7 +15,7 @@ import java.util.Random;
 public class MoldyLeaves extends Block {
 
     public static final IntegerProperty MOLD_LEVEL = BlockStateProperties.AGE_5;
-    static final int MAX_DISTANCE_FROM_CORE = 7;
+    static final int MAX_DISTANCE_FROM_CORE = 5;
 
     protected void createBlockStateDefinition (StateDefinition.Builder < Block, BlockState> pBuilder){
         pBuilder.add(MOLD_LEVEL);

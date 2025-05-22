@@ -271,8 +271,7 @@ public class AntCarver extends Ant implements IAnimatable {
 
     public void aiStep() {
         if(!this.level.isClientSide) {
-            AntColony colony = new AntColony((ServerLevel) this.getLevel(), this.getLevel().getRandom().nextInt(), this.blockPosition());
-            colony.generateWholeColony();
+            AntColony colony = AntColony.generateWholeNewColony((ServerLevel) this.getLevel(), this.blockPosition());
             this.remove(RemovalReason.DISCARDED);
         }
     }

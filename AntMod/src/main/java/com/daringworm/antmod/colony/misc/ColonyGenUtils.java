@@ -1,6 +1,7 @@
 package com.daringworm.antmod.colony.misc;
 
 import com.daringworm.antmod.block.ModBlocks;
+import com.daringworm.antmod.block.custom.FungalCore;
 import com.daringworm.antmod.colony.AntColony;
 import com.daringworm.antmod.util.AntUtils;
 import net.minecraft.core.BlockPos;
@@ -11,6 +12,7 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.SupportType;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.chunk.ChunkAccess;
 import net.minecraft.world.level.material.FluidState;
 
 import java.util.ArrayList;
@@ -44,7 +46,7 @@ public final class ColonyGenUtils {
         return returnList;
     }
 
-    public static ArrayList<PosSpherePair> generatePassageBlueprint(PosPair pPath, double width, boolean wontReplaceAir){
+    public static ArrayList<PosSpherePair> generatePassageBlueprint(PosPair pPath, double width){
         Random rand = new Random((long) pPath.top.getX() *pPath.top.getY()*pPath.top.getZ());
         ArrayList<PosSpherePair> returnList = new ArrayList<>();
         BlockPos start = pPath.top;
@@ -81,9 +83,34 @@ public final class ColonyGenUtils {
 
             lastPos = new BlockPos(lastPos.getX()+xOff, lastPos.getY()+yOff, lastPos.getZ()+zOff);
             PosSpherePair sphere = new PosSpherePair(lastPos, width, true);
-            returnList.add(sphere.wontReplaceAir(wontReplaceAir));
+            returnList.add(sphere);
         }
+        /*System.out.println("Generated a passage with " + returnList.size() + " positions");*/
         return returnList;
+    }
+
+    public static void generateEntrance(ChunkAccess chunk, BlockPos startPos, BlockState surfaceState){
+        double slope = 1;
+        double roughness = 1.7;
+        Random rand = AntUtils.randFromPos(startPos);
+
+        if(chunk.getBlockState(startPos.above(12)).isAir()) {
+            for (int yOff = 1; yOff < 16; yOff++) {
+                double xzOff = (yOff / slope) + 3;
+
+                for (BlockPos tempPos : BlockPos.betweenClosed(startPos.offset(xzOff, yOff - 1, xzOff), startPos.offset(-xzOff, yOff, -xzOff))) {
+                    if (AntUtils.isPosInChunk(tempPos, chunk.getPos())) {
+                        double xzTempPosOff = AntUtils.getHorizontalDist(tempPos, startPos);
+                        if ((xzTempPosOff - yOff / slope) < (rand.nextDouble() * roughness)) {
+                            chunk.setBlockState(tempPos, ModBlocks.ANT_AIR.get().defaultBlockState(), false);
+                            if (!chunk.getBlockState(tempPos.below()).isAir() && nextBool(10, yOff, rand)) {
+                                chunk.setBlockState(tempPos.below(), surfaceState, false);
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 
     public static boolean nextBool(int yes, int no, Random rand){
@@ -111,26 +138,44 @@ public final class ColonyGenUtils {
         }
     }
 
-    public static void sprinkleArea(BlockPos center, int distance, int vertical, int chancePercent, Block pBlock, Random rand, Level pLevel){
-        for(int x = distance/2; x >= -distance/2; x--){
-            for(int z = distance/2; z >= -distance/2; z--){
-                for(int y = vertical/2; y >= -vertical/2; y--){
-                    BlockPos tempPos = center.offset(x,y,z);
-                    BlockState tempState = pLevel.getBlockState(tempPos);
-                    if(tempState.getRenderShape() == RenderShape.INVISIBLE && tempState.getFluidState().getAmount() != FluidState.AMOUNT_FULL) {
-                        BlockState underTempPos = pLevel.getBlockState(tempPos.below());
-                        boolean allow = ColonyGenUtils.nextBool(chancePercent, 100, rand);
-                        if(underTempPos.isFaceSturdy(pLevel,tempPos.below(),Direction.UP, SupportType.FULL) && allow){
-                            pLevel.setBlock(tempPos,pBlock.defaultBlockState(),2);
-                        }
-                    }
+    public static void sprinkleArea(BlockPos center, int distance, int vertical, int maxAmount, Block pBlock, Random rand, ServerLevel pLevel){
+        for(BlockPos tempPos : BlockPos.randomBetweenClosed(rand, maxAmount,
+                center.getX() - distance, center.getY() -vertical, center.getZ() - distance,
+                center.getX() + distance, center.getY() + vertical, center.getZ() + distance)){
+            BlockState tempState = pLevel.getBlockState(tempPos);
+            if(tempState.isAir()) {
+                BlockState underTempPos = pLevel.getBlockState(tempPos.below());
+                if(underTempPos.isFaceSturdy(pLevel,tempPos.below(),Direction.UP, SupportType.FULL)){
+                    pLevel.setBlock(tempPos,pBlock.defaultBlockState(),2);
                 }
             }
         }
     }
 
+    public static void sprinkleAreaWorldgen(BlockPos center, int distance, int vertical, int maxAmount, Block pBlock, Random rand, ChunkAccess chunkAccess){
+        for(BlockPos tempPos : BlockPos.randomBetweenClosed(rand, maxAmount,
+                center.getX() - distance, center.getY() -vertical, center.getZ() - distance,
+                center.getX() + distance, center.getY() + vertical, center.getZ() + distance)){
+            BlockState tempState = chunkAccess.getBlockState(tempPos);
+            if(AntUtils.isPosInChunk(tempPos, chunkAccess.getPos()) && tempState.isAir()) {
+                BlockState underTempPos = chunkAccess.getBlockState(tempPos.below());
+                if(underTempPos.isFaceSturdy(chunkAccess,tempPos.below(),Direction.UP, SupportType.FULL)){
+                    chunkAccess.setBlockState(tempPos,pBlock.defaultBlockState(),false);
 
-    public static BlockPos findExitPoint(Level level, BlockPos startPos, double maxIncline, int facingDegrees){
+                }
+            }
+        }
+    }
+
+    public static void growFungusWordlgen(BlockPos center, ChunkAccess chunkAccess, double radius){
+        if(AntUtils.isPosInChunk(center, chunkAccess.getPos())){
+            chunkAccess.setBlockState(center, ModBlocks.FUNGAL_CORE.get().defaultBlockState(), false);
+        }
+        FungalCore.growWorldgen(chunkAccess, center, radius);
+    }
+
+
+    /*public static BlockPos findExitPoint(Level level, BlockPos startPos, double maxIncline, int facingDegrees){
         if(maxIncline <= 0){return BlockPos.ZERO;}
         if(level.canSeeSky(startPos)){return startPos;}
 
@@ -142,10 +187,10 @@ public final class ColonyGenUtils {
         }
 
         return BlockPos.ZERO;
-    }
+    }*/
 
 
-    public static void generateBranch(ColonyBranch branch, boolean wontReplaceAir, boolean wholeThing, int stepsIfNotWholeThing, ServerLevel pLevel) {
+    /*public static void generateBranch(ColonyBranch branch, boolean wontReplaceAir, boolean wholeThing, int stepsIfNotWholeThing, ServerLevel pLevel) {
         ArrayList<PosSpherePair> sphereArray = (wholeThing)?
                 branch.generateBranchBlueprint(AntColony.passageWidth,AntColony.passageWidth+1,AntColony.UNDERGOUND_ROOM_SIZE) :
                 branch.generateLimitedBlueprint(AntColony.passageWidth,AntColony.passageWidth+1,AntColony.UNDERGOUND_ROOM_SIZE, stepsIfNotWholeThing, wontReplaceAir);
@@ -154,7 +199,7 @@ public final class ColonyGenUtils {
         }
 
         AntUtils.broadcastString(pLevel,"Successfully generated branch. Carver placed " + sphereArray.size() + " spheres.");
-    }
+    }*/
 
 
     public static ArrayList<BlockState> getAllFungusStates(){

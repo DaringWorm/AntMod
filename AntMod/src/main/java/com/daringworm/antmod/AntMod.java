@@ -2,31 +2,27 @@ package com.daringworm.antmod;
 
 import com.daringworm.antmod.block.ModBlocks;
 import com.daringworm.antmod.block.entity.ModBlockEntities;
-import com.daringworm.antmod.command.ModCommands;
-import com.daringworm.antmod.command.custom.AntModCommand;
 import com.daringworm.antmod.effect.ModEffects;
 import com.daringworm.antmod.entity.ModEntityTypes;
 import com.daringworm.antmod.entity.client.*;
 import com.daringworm.antmod.item.ModItems;
+import com.daringworm.antmod.network.NetworkHandler;
 import com.daringworm.antmod.screen.FungalContainerScreen;
 import com.daringworm.antmod.screen.ModMenuTypes;
 import com.daringworm.antmod.worldgen.feature.registries.AntCarversReg;
 import com.daringworm.antmod.worldgen.feature.registries.AntFeaturesReg;
-import com.daringworm.antmod.worldgen.feature.registries.ConfiguredAntFeaturesReg;
-import com.daringworm.antmod.worldgen.feature.registries.PlacedAntFeaturesReg;
-import com.mojang.brigadier.CommandDispatcher;
 import net.minecraft.client.gui.screens.MenuScreens;
 import net.minecraft.client.renderer.ItemBlockRenderTypes;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.entity.EntityRenderers;
-import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.core.Registry;
+import net.minecraft.data.BuiltinRegistries;
 import net.minecraft.world.entity.SpawnPlacements;
 import net.minecraft.world.entity.animal.Animal;
 import net.minecraft.world.level.levelgen.Heightmap;
+import net.minecraft.world.level.levelgen.feature.ConfiguredStructureFeature;
 import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.event.RegisterCommandsEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
@@ -57,21 +53,20 @@ public class AntMod
 
         ModMenuTypes.register(eventBus);
 
-        ConfiguredAntFeaturesReg.register(eventBus);
-
         AntFeaturesReg.register(eventBus);
-
-        PlacedAntFeaturesReg.register(eventBus);
 
         AntCarversReg.register(eventBus);
 
         ModEffects.register(eventBus);
 
+        NetworkHandler.initialize();
 
         eventBus.addListener(this::setup);
         eventBus.addListener(this::clientSetup);
 
         GeckoLib.initialize();
+
+        Registry<ConfiguredStructureFeature<?, ?>> configuredStructureRegistry = BuiltinRegistries.CONFIGURED_STRUCTURE_FEATURE;
 
         // Register ourselves for server and other game events we are interested in
         MinecraftForge.EVENT_BUS.register(this);

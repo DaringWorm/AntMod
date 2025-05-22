@@ -52,6 +52,11 @@ public class PosSpherePair {
         return this;
     }
 
+    public PosSpherePair willCheckSky(boolean bool){
+        this.checkSky = bool;
+        return this;
+    }
+
     public ArrayList<BlockPos> getBlockPoses(Level pLevel){
         ArrayList<BlockPos> returnList = new ArrayList<>();
         for(int x = (int)(radius+2); x >= -radius; x--){
@@ -91,40 +96,16 @@ public class PosSpherePair {
         }
     }
 
-    public void setSphereWorldgen(WorldGenLevel worldGenLevel, Block innerBlock, Block outerBlock, double wallThickness, Predicate<BlockState> replaceabilityPredicate){
-        PosSpherePair outerShell = new PosSpherePair(this.centerPos,this.radius+wallThickness);
-        ArrayList<BlockPos> totalList = outerShell.getBlockPoses();
-        ArrayList<BlockPos> innerList = this.getBlockPoses();
-        totalList.removeAll(innerList);
-        for(BlockPos pos : totalList){
-            BlockState pState = worldGenLevel.getBlockState(pos);
-            if (pState.getBlock() != innerBlock && pState.getBlock() != outerBlock && replaceabilityPredicate.test(pState)) {
-                worldGenLevel.setBlock(pos,outerBlock.defaultBlockState(),2);
-            }
-        }
-
-        for(BlockPos pos : innerList){
-            if(replaceabilityPredicate.test(worldGenLevel.getBlockState(pos))) {
-                worldGenLevel.setBlock(pos, innerBlock.defaultBlockState(), 2);
-            }
-        }
-    }
-
-    public void setSphereCarver(ChunkAccess chunkAccess, BlockState innerState, BlockState outerState, double wallThickness, boolean shouldCheckSky){
-        for(int x = (int)(radius+wallThickness); x >= -radius-wallThickness; x--){
-            for(int y = (int)(radius+wallThickness); y >= -radius-wallThickness; y--){
-                for(int z = (int)(radius+wallThickness); z >= -radius-wallThickness; z--){
-                    BlockPos tempPos = centerPos.offset(x,y,z);
-                    if((AntUtils.isPosInChunk(tempPos,chunkAccess.getPos())) && (AntUtils.getDist(tempPos, centerPos) <= radius+wallThickness)){
-                        if(chunkAccess.getBlockState(tempPos) != innerState){
-                            if(AntUtils.getDist(tempPos, this.centerPos) <= this.radius) {
-                                chunkAccess.setBlockState(tempPos, innerState, false);
-                            }
-                            else if(chunkAccess.getBlockState(tempPos) != outerState &&
-                                    (chunkAccess.getBlockState(tempPos).getBlock() != Blocks.AIR || !canSeeSky(chunkAccess,tempPos))){
-                                chunkAccess.setBlockState(tempPos,outerState,false);
-                            }
-                        }
+    public void setSphereCarver(ChunkAccess chunkAccess, BlockState innerState, BlockState outerState, double wallThickness){
+        double offset = radius+wallThickness;
+        for(BlockPos tempPos : BlockPos.betweenClosed(this.centerPos.offset(offset, offset, offset), this.centerPos.offset(-offset,-offset,-offset))) {
+            if ((AntUtils.isPosInChunk(tempPos, chunkAccess.getPos())) && (AntUtils.getDist(tempPos, centerPos) <= radius + wallThickness)) {
+                if (chunkAccess.getBlockState(tempPos) != innerState /*&& (!checkSky || canSeeSky(chunkAccess, tempPos))*/) {
+                    if (AntUtils.getDist(tempPos, this.centerPos) <= this.radius) {
+                        chunkAccess.setBlockState(tempPos, innerState, false);
+                    } else if (chunkAccess.getBlockState(tempPos) != outerState &&
+                            (!chunkAccess.getBlockState(tempPos).isAir() || !canSeeSky(chunkAccess, tempPos))) {
+                        chunkAccess.setBlockState(tempPos, outerState, false);
                     }
                 }
             }

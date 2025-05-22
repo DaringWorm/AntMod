@@ -38,11 +38,11 @@ public final class WorkerBrainCells {
     private static final Braincell HAS_LEAVES = new Braincell("Has leaves", AntPredicates.HAS_CONTAINER_AS_INTEREST.opposite().and(AntPredicates.IS_HOLDING_LEAVES), new Braincell[]{PLACE_LEAVES}, new Action[]{Actions.WALK_TO_BLOCK});
     private static final Braincell EAT_FUNGUS = new Braincell("Eat fungus", AntPredicates.IN_RANGE_OF_FUNGUS_POS, new Action[]{Actions.EAT_FUNGUS});
     private static final Braincell HUNGRY_FOR_FUNGUS = new Braincell("Walk to fungus", AntPredicates.IS_HUNGRY.and(AntPredicates.HAS_FUNGUS_POS), new Braincell[]{EAT_FUNGUS}, new Action[]{Actions.SET_INTEREST_TO_FUNGUS_POS ,Actions.WALK_TO_BLOCK});
-
+    
                                          //ATTACK\\
 
     private static final Braincell DAMAGE_TARGET = new Braincell("Damage target", AntPredicates.CAN_REACH_TARGET, new Action[]{Actions.DROP_ITEM, Actions.ATTACK_HOSTILE_TARGET});
-    private static final Braincell WALK_TO_TARGET = new Braincell("Walk to target", AntPredicates.TARGET_EXISTS, new Braincell[]{DAMAGE_TARGET}, new Action[]{Actions.DROP_ITEM, Actions.WALK_TO_HOSTILE_TARGET});
+    private static final Braincell WALK_TO_TARGET = new Braincell("Walk to target", AntPredicates.TARGET_EXISTS, new Braincell[]{/*DAMAGE_TARGET*/}, new Action[]{Actions.DROP_ITEM, Actions.LATCH_ON});
 
 
 
@@ -66,5 +66,5 @@ public final class WorkerBrainCells {
     public static final Braincell LATCHING_FORK = new Braincell("Latching", AntPredicates.IS_LATCHING);
 
 
-    public static final Braincell MAIN_FORK = new Braincell("Mainfork", AntPredicates.TRUE).setSubCells(new Braincell[]{WANDERING_FORK, SCOUTING_FORK, FORAGING_FORK, FARMING_FORK, NURSING_FORK, TIDYING_FORK, EXCAVATING_FORK, ATTACKING_FORK, LATCHING_FORK});
+    public static final Braincell MAIN_FORK = new Braincell("Mainfork", AntPredicates.TRUE).setActions(new Action[]{Actions.TEST_PATHFINDING});//.setSubCells(new Braincell[]{WANDERING_FORK, SCOUTING_FORK, FORAGING_FORK, FARMING_FORK, NURSING_FORK, TIDYING_FORK, EXCAVATING_FORK, ATTACKING_FORK, LATCHING_FORK});
 }

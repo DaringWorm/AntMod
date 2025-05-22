@@ -5,6 +5,7 @@ import com.daringworm.antmod.DebugHelper;
 import com.daringworm.antmod.block.ModBlocks;
 import com.daringworm.antmod.colony.AntColony;
 import com.daringworm.antmod.colony.misc.BlockPosStringifier;
+import com.daringworm.antmod.colony.misc.ColonyBranch;
 import com.daringworm.antmod.colony.misc.PosSpherePair;
 import com.daringworm.antmod.effect.ModEffects;
 import com.daringworm.antmod.colony.misc.PosPair;
@@ -56,6 +57,8 @@ public abstract class Ant extends PathfinderMob implements MenuProvider {
 
     @Nullable
     private Entity passiveTarget;
+
+    public boolean goingRedstoneToLapis;
 
     private final ArrayList<BlockPos> cookedExcavationPosList;
     private final ArrayList<PosSpherePair> rawExcavationList;
@@ -163,14 +166,8 @@ public abstract class Ant extends PathfinderMob implements MenuProvider {
 
     public ArrayList<BlockPos> getGoUndergroundList(){
         AntColony pColony = ((ServerLevelUtil) (this.getLevel())).getColonyWithID(this.getColonyID());
-        /*
-        if(pColony.hasBeenUpdated){
-            this.goUndergroundList.clear();
-            this.goUndergroundList.addAll(pColony.tunnels.getPosesToBranch(this.getRoomID()));
-        }
-        */
 
-        return pColony.tunnels.getPosesToBranch(this.getRoomID());//this.goUndergroundList;
+        return pColony.tunnels.getPosesToNearestBranchTo(this.getHomeContainerPos());
     }
 
     public void setThisMisc(int pValue, int digit) {
@@ -195,16 +192,6 @@ public abstract class Ant extends PathfinderMob implements MenuProvider {
 
     public double getDistTo(BlockPos pPos){return getDist(this.blockPosition(),pPos);}
 
-    public BlockPos getColonyPos(){
-        if(((ServerLevelUtil) this.getLevel()).getColonyWithID(this.getColonyID()) != null){
-            AntColony colony = getColony();
-            if(colony != null) {
-                return colony.getEntranceBottom();
-            }
-            else return BlockPos.ZERO;
-        }
-        else return BlockPos.ZERO;
-    }
 
     public AntColony getColony(){
         return ((ServerLevelUtil) this.getLevel()).getColonyWithID(this.getColonyID());
@@ -261,7 +248,7 @@ public abstract class Ant extends PathfinderMob implements MenuProvider {
         DebugHelper.numberOfPathsRequested = DebugHelper.numberOfPathsRequested + 1;
     }
 
-    public void walkAlongList(ArrayList<BlockPos> posList, int speedModifier, double farthestAllowed){
+    public void walkAlongList(ArrayList<BlockPos> posList, double speedModifier, double farthestAllowed){
         if(this.getWalkingCooldown() < 20){return;}
         if(posList.isEmpty()) return;
 
@@ -282,17 +269,42 @@ public abstract class Ant extends PathfinderMob implements MenuProvider {
                 int verticalDistanceToFirst = Math.abs(antPos.getY()-posList.get(0).getY());
 
                 if(verticalDistanceToFirst < verticalDistanceToNearest){
-                    this.walkTo(posList.get(0), 1, Math.min(MAX_ALLOWED_PATH_NODES,distanceToNext));
+                    this.walkTo(posList.get(0), speedModifier, Math.min(MAX_ALLOWED_PATH_NODES,distanceToNext));
                 }
                 else if (distanceToNext < distanceFromNearestToNext || distanceToNearest < farthestAllowed) {
-                    this.walkTo(nextPos, 1, Math.min(MAX_ALLOWED_PATH_NODES,distanceToNext));
+                    this.walkTo(nextPos, speedModifier, Math.min(MAX_ALLOWED_PATH_NODES,distanceToNext));
                 } else {
-                    this.walkTo(nearestPos, 1, Math.min(MAX_ALLOWED_PATH_NODES,distanceToNearest));
+                    this.walkTo(nearestPos, speedModifier, Math.min(MAX_ALLOWED_PATH_NODES,distanceToNearest));
                 }
             }
         }
         this.setWalkingCooldown(0);
         DebugHelper.numberOfPathsRequested = DebugHelper.numberOfPathsRequested + 1;
+    }
+
+    /**
+     * Walks along the ant's colony's tunnels to the nearest tunnel position to the provided BlockPos
+     * **/
+    public void walkToColonyPos(BlockPos blockPos, double speedModifier){
+        AntColony colony = this.getColony();
+
+        if(colony == null || colony.tunnels == null){
+            this.walkTo(blockPos, speedModifier, 3d);
+            return;
+        }
+
+        ColonyBranch tunnels = colony.tunnels;
+        ColonyBranch nearestRoom = tunnels.getNearestBranch(this.blockPosition());
+
+        this.walkAlongList(nearestRoom.getPosesToNearestBranchTo(blockPos), speedModifier, 3d);
+    }
+
+    public void testWalkTo(BlockPos pos){
+        this.getNavigation().moveTo(pos.getX(), pos.getY(), pos.getZ(), 1f);
+
+        if(AntUtils.getDist(this.blockPosition(), pos) < 3d){
+            this.goingRedstoneToLapis = !this.goingRedstoneToLapis;
+        }
     }
     
     public boolean shouldRunBrain() {
@@ -388,6 +400,7 @@ public abstract class Ant extends PathfinderMob implements MenuProvider {
         this.setPathfindingMalus(BlockPathTypes.DAMAGE_FIRE, -1.0F);
         this.cookedExcavationPosList = new ArrayList<>();
         this.rawExcavationList = new ArrayList<>();
+        this.goingRedstoneToLapis = true;
     }
 
     protected void customServerAiStep() {
@@ -402,6 +415,9 @@ public abstract class Ant extends PathfinderMob implements MenuProvider {
         //ticks down hunger if players are nearby
         if(this.level.getNearestPlayer(this,100)!=null){
             this.setHunger(this.getHunger()-1);
+            if(this.getHomeContainerPos() == BlockPos.ZERO){
+                this.setHomeContainerPos(BlockPos.findClosestMatch(this.blockPosition(), 6, 2, p -> this.getLevel().getBlockState(p).getBlock() == ModBlocks.LEAFY_CONTAINER_BLOCK.get()).orElse(this.blockPosition()));
+            }
         }
         this.setWalkingCooldown(this.getWalkingCooldown()+1);
         this.getLevel().getProfiler().pop();

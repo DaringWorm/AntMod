@@ -108,7 +108,7 @@ public class AntEgg extends Ant implements IAnimatable {
                 AntColony colony = new AntColony((ServerLevel) this.level, this.getColonyID(), BlockPos.ZERO);
                 ServerLevel level = (ServerLevel) this.getLevel();
                 ((ServerLevelUtil) (level)).addColonyToList(colony);
-                colony.save();
+                //colony.save();
                 this.remove(RemovalReason.DISCARDED);
             }
         }

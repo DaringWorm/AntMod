@@ -60,7 +60,6 @@ public class WorkerAntRenderer extends ExtendedGeoEntityRenderer<WorkerAnt> {
         }
         // set to "handblock" to offset it forwards, not good because floaty seeds and flowers but works for blocks, prevents clipping with head
         else if ((currentEntity.getMainHandItem().getItem() instanceof BlockItem) && Objects.equals(boneName, "handitem")){
-
             return currentEntity.getMainHandItem();
         }
         else return null;

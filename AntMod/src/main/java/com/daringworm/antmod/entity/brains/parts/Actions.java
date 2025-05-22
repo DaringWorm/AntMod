@@ -33,13 +33,47 @@ import net.minecraft.world.level.block.CropBlock;
 import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.pathfinder.Node;
+import net.minecraft.world.level.pathfinder.Path;
 import net.minecraft.world.phys.Vec3;
+import org.checkerframework.checker.units.qual.A;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Predicate;
 
 public class Actions {
+
+    public static final Action TEST_PATHFINDING = new Action() {
+        @Override
+        public void run(Ant pAnt) {
+
+            ServerLevel pLevel = (ServerLevel) pAnt.getLevel();
+
+            BlockPos pos = BlockPos.findClosestMatch(pAnt.blockPosition(),
+                    32,
+                    32,
+                    p -> pLevel.getBlockState(p).getBlock() == ((pAnt.goingRedstoneToLapis)? Blocks.LAPIS_BLOCK : Blocks.REDSTONE_BLOCK))
+                    .orElse(BlockPos.ZERO);
+
+            if(pos != BlockPos.ZERO){
+                pAnt.testWalkTo(pos);
+                //////////////////////////////////////////////////////
+                Path path = pAnt.getNavigation().getPath();
+                /*if(path != null) {
+                    for(int i = 0; i < path.getNodeCount(); i ++){
+                        pLevel.setBlock(path.getNode(i).asBlockPos(), Blocks.ACACIA_BUTTON.defaultBlockState(), 2);
+                        AntUtils.broadcastString(pLevel, path.getNode(i).asBlockPos().toString());
+                    }
+                }*/
+
+                //////////////////////////////////////////////////////
+            }
+
+        }
+    };
+
+
     public static final Action ATTACK_HOSTILE_TARGET = new Action(){
         @Override
         public void run(Ant pAnt) {
@@ -86,7 +120,15 @@ public class Actions {
         @Override
         public void run(Ant pAnt) {
             if(!pAnt.getNavigation().isInProgress()) {
-                AntUtils.wanderRandomly(pAnt);
+                if(AntUtils.getHorizontalDist(pAnt.blockPosition(), pAnt.getSurfacePos()) < 128d) {
+                    AntUtils.wanderRandomly(pAnt);
+                }
+                else {
+                    pAnt.walkTo(pAnt.getSurfacePos(), 1d, 2d);
+                    if(!AntPredicates.HAS_COLONY.test(pAnt)){
+                        AntUtils.broadcastString(pAnt.getLevel(), "No colony, ant at " + BlockPosStringifier.jsonFromPos(pAnt.blockPosition()));
+                    }
+                }
             }
         }
     };
@@ -132,13 +174,9 @@ public class Actions {
             BlockPos pPos = pAnt.getInterestPos();
             AntColony pColony = pAnt.getColony();
 
-            if(pPos != BlockPos.ZERO/* && (pAnt.getNavigation().isDone() || pAnt.getNavigation().isStuck())*/) {
+            if(pPos != BlockPos.ZERO) {
                 if(pAnt.getWorkingStage() == WorkingStages.FARMING && !AntPredicates.IN_RANGE_OF_INTEREST_BLOCK.test(pAnt) && pColony != null){
-                    ColonyBranch tunnels = pColony.tunnels;
-                    ArrayList<BlockPos> walkList = tunnels.getPosesFromBranchToBranch(tunnels.getNearestBranchID(pAnt.blockPosition()), tunnels.getNearestBranchID(pPos));
-                    walkList.add(pPos);
-
-                    pAnt.walkAlongList(walkList, 1, 5d);
+                    pAnt.walkToColonyPos(pPos, 1d);
                 }
                 else {
                     pAnt.walkTo(pPos, 1, 2d);
@@ -351,7 +389,7 @@ public class Actions {
                 if(containerEntity != null){
                     containerEntity.takeInHandItem(pAnt);
                     pAnt.setInterestPos(BlockPos.ZERO);
-                    pAnt.setWorkingStage(WorkingStages.SCOUTING);
+                    pAnt.setWorkingStage(WorkingStages.FARMING);
                 }
             }
         }
@@ -454,40 +492,47 @@ public class Actions {
     };
     public static final Action LATCH_ON = new Action(){
         @Override
-        public void run(Ant pAnt) {
-
-            if(!(pAnt instanceof WorkerAnt)){}
-
-            LivingEntity target = pAnt.getTarget();
-            if(target != null && target.isAlive()){
-                boolean loopTest = true;
-                if(pAnt.getTarget() instanceof WorkerAnt){
-                    List<WorkerAnt> tempList = pAnt.level.getEntitiesOfClass(WorkerAnt.class, pAnt.getBoundingBox().inflate(8d));
-                    for(WorkerAnt tempAnt : tempList){
-                        if(tempAnt.getTarget() == pAnt && tempAnt.getWorkingStage() == 3){
-                            loopTest = false;
+        public void run(Ant ant) {
+            if(ant instanceof WorkerAnt pAnt) {
+                if (pAnt.getTarget() == null && pAnt.hasLatchTarget()) {
+                    for (Entity entity : pAnt.getLevel().getEntities(pAnt, pAnt.getBoundingBox().inflate(2d))) {
+                        if (entity.getUUID().equals(pAnt.getLatchTarget())) {
+                            pAnt.setTarget((LivingEntity) entity);
+                            break;
                         }
                     }
                 }
 
-                if(loopTest){
-                    Vec3 changevec = ((WorkerAnt) pAnt).getLatchOffset();
+                double LATCH_DISTANCE_MULTIPLIER = 1.2d;
 
-                    pAnt.startRiding(pAnt.getTarget());
-                    pAnt.moveTo(target.position().add(target.getDeltaMovement().add(new Vec3(0,target.getBbHeight()/2,0)).add(changevec)));
-                    pAnt.setDeltaMovement(target.getDeltaMovement());
-                    pAnt.getLookControl().setLookAt(target);
-                    pAnt.resetFallDistance();
-                    //target.hurt(DamageSource.GENERIC,4);
-                    target.setLastHurtByMob(pAnt);
-                    //target.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 60, 5), ant);
-                    //target.addEffect(new MobEffectInstance(MobEffects.BLINDNESS, 40, 0), ant);
-                    target.addEffect(new MobEffectInstance(MobEffects.DIG_SLOWDOWN, 40, 0), pAnt);
-                    //target.addEffect(new MobEffectInstance(MobEffects.JUMP, 40, -5), ant);
-                    pAnt.setWorkingStage(5);
+                LivingEntity target = pAnt.getTarget();
+                if (target != null && target.isAlive()) {
+                    boolean loopTest = true;
+                    if (target instanceof WorkerAnt) {
+                        List<WorkerAnt> tempList = pAnt.level.getEntitiesOfClass(WorkerAnt.class, pAnt.getBoundingBox().inflate(8d));
+                        for (WorkerAnt tempAnt : tempList) {
+                            if (tempAnt.getTarget() == pAnt && tempAnt.getWorkingStage() == 3) {
+                                loopTest = false;
+                            }
+                        }
+                    }
+
+                    if (loopTest) {
+                        ((WorkerAnt) pAnt).setLatchTarget(pAnt.getTarget().getUUID());
+
+                        Vec3 changevec = ((WorkerAnt) pAnt).getLatchPos(target);
+                        pAnt.moveTo(changevec);
+                        pAnt.lookAt(target, 100, 0);
+                        pAnt.resetFallDistance();
+                        target.setLastHurtByMob(pAnt);
+                        pAnt.setWorkingStage(WorkingStages.ATTACKING);
+                        pAnt.getLookControl().setLookAt(target);
+                    }
+                } else {
+                    ((WorkerAnt) pAnt).setLatchTargetNull();
+                    pAnt.setWorkingStage(WorkingStages.SCOUTING);
                 }
             }
-            
         }
     };
     public static final Action SCOUT = new Action(){
@@ -537,8 +582,10 @@ public class Actions {
         @Override
         public void run(Ant pAnt) {
             if(pAnt.getNavigation().isStuck() || pAnt.getNavigation().isDone()){
+                ArrayList<BlockPos> goUndergroundList = pAnt.getGoUndergroundList();
                 if(pAnt.getGoUndergroundList().size() > 0) {
-                    pAnt.walkAlongList(pAnt.getGoUndergroundList(), 1, 6d);
+                    goUndergroundList.add(pAnt.getHomeContainerPos());
+                    pAnt.walkAlongList(goUndergroundList, 1, 4d);
                 }
                 else{
                     pAnt.setErrorMessage("Ant cannot identify a list of positions to follow to enter its colony");
@@ -555,7 +602,7 @@ public class Actions {
                 if(pAnt.getLevel().canSeeSky(pAnt.blockPosition()) || AntUtils.getHorizontalDist(pAnt.blockPosition(), pAnt.getSurfacePos()) < 12){
                     int stg = pAnt.getWorkingStage();
                     BlockPos fPos = pAnt.getFoodLocation();
-                    if(fPos != null && fPos != BlockPos.ZERO && (stg == WorkingStages.SCOUTING || stg == WorkingStages.FORAGING)){
+                    if(fPos != null && fPos != BlockPos.ZERO){
                         pAnt.walkTo(fPos, 1, 3d);
                         if(AntUtils.getHorizontalDist(pAnt.blockPosition(),fPos) < 5f){
                             pAnt.setFoodLocation(BlockPos.ZERO);
@@ -570,12 +617,10 @@ public class Actions {
                     if(colony != null) {
                         ColonyBranch tunnels = colony.tunnels;
                         if(tunnels != null) {
-                            ArrayList<BlockPos> posesToBottom = tunnels.getPosesToBranch(tunnels.getNearestBranchID(pAnt.blockPosition()));
-                            ArrayList<BlockPos> posesToTop = new ArrayList<>();
-                            for(int i = posesToBottom.size()-1; i >= 0; i --){
-                                posesToTop.add(posesToBottom.get(i));
-                            }
+                            ArrayList<BlockPos> posesToTop = tunnels.getNearestBranch(pAnt.blockPosition()).getPosesToAbsParent();
                             pAnt.walkAlongList(posesToTop, 1, 4d);
+
+                            //AntUtils.broadcastString(pAnt.getLevel(), posesToTop.toString());
                         }
                     }
                 }

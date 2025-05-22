@@ -190,7 +190,9 @@ public class AntUtils {
     public static void broadcastString(Level pLevel, String string){
         if(!pLevel.isClientSide()) {
             for (ServerPlayer player : pLevel.getServer().getPlayerList().getPlayers()) {
-                player.sendMessage(new TextComponent(string), player.getUUID());
+                if(/*player.getMainHandItem().isEmpty()*/true) {
+                    player.sendMessage(new TextComponent(string), player.getUUID());
+                }
             }
         }
     }
