@@ -4,13 +4,11 @@ import com.daringworm.antmod.util.AntUtils;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.level.block.SupportType;
-import org.jetbrains.annotations.NotNull;
+import net.minecraft.world.level.material.FluidState;
+import net.minecraft.world.level.pathfinder.BlockPathTypes;
 
 import java.util.*;
-import java.util.stream.Stream;
 
 public class PathFinder {
     private final BlockPos startPos;
@@ -32,7 +30,7 @@ public class PathFinder {
 
         for(Direction dir : Direction.values()){
             BlockPos relativePos = pos.relative(dir);
-            if(pLevel.getBlockState(relativePos).isFaceSturdy(pLevel, pos, dir.getOpposite(), SupportType.CENTER)){
+            if(pLevel.getBlockState(relativePos).isFaceSturdy(pLevel, pos, dir.getOpposite())){
                 dirList.add(dir);
             }
         }
@@ -50,7 +48,8 @@ public class PathFinder {
         if(node.isDiagonal()){
             returnList.addAll(List.of(Direction.values()));
             returnList.remove(node.facing);
-            returnList.removeIf(tempDir -> Stream.of(findWalls(node.pos.relative(tempDir))).noneMatch(d -> d == node.facing.getOpposite()));
+            returnList.remove(node.facing.getOpposite());
+            //returnList.removeIf(tempDir -> Stream.of(node.walls).noneMatch(d -> d == node.facing.getOpposite()));
 
             Direction[] returnDirs = new Direction[returnList.size()];
             return returnList.toArray(returnDirs);
@@ -70,129 +69,159 @@ public class PathFinder {
 
     }
 
+    /**
+     * Calculates the weight of the given node based on things like liquids or fire, for later comparisons in heaps.
+     * **/
+    public void calculateNodeWeight(PathNode node){
+        int i = 0;
+        FluidState fluidState = pLevel.getFluidState(node.pos);
+        BlockPathTypes type = pLevel.getBlockState(node.pos).getBlockPathType(pLevel, node.pos);
 
+        if(!fluidState.isEmpty()){
+            i += 32;
+            AntUtils.broadcastString(pLevel, "Found a fluid");
+            if(!pLevel.getFluidState(node.pos.above()).isEmpty()){
+                i += 69420;
+            }
+        }
+        if(type != null && type.getDanger() != null){
+            AntUtils.broadcastString(pLevel, "Found a danger");
+            i += 128;
+        }
+        node.weight = i;
+    }
+
+
+    private boolean extendPath(DynamicNodeHeap primaryHeap, DynamicNodeHeap targetHeap, PathNode activeNode, HashMap<BlockPos, PathNode> posMap){
+        for (Direction tempDir : this.nextSearchDirs(activeNode)) {
+            BlockPos newPos = activeNode.pos.relative(tempDir);
+            /*if (!posMap.containsKey(newPos)) {*/
+            PathNode newNode = new PathNode(newPos, activeNode.isStartToEnd, this.findWalls(newPos), tempDir, activeNode);
+            calculateNodeWeight(newNode);
+
+            if (newNode.isDiagonal() && activeNode.isDiagonal()) {
+                continue;
+            }
+            PathNode previousNode = posMap.put(newPos, newNode);
+            if(previousNode == null) {
+                primaryHeap.add(newNode, targetHeap.peek());
+            }
+            else if (previousNode.isStartToEnd != activeNode.isStartToEnd) {
+                for (BlockPos pos : posMap.keySet()) {
+                    pLevel.setBlock(pos, Blocks.GLASS.defaultBlockState(), 2);
+                }
+                return true;
+            }
+            if (activeNode.isDiagonal()) {
+                posMap.remove(activeNode.pos);
+            }
+        }
+        return false;
+    }
 
     /**
-     * Mutates the given startNode to a path. Returns true if it found a complete one, false otherwise.
+     * Finds a path, alternating between the start and end and guiding each side toward the other.
      * **/
-    public PathNode calculatePath(int allowedSteps){
-        PathNode startNode = new PathNode(startPos, true, findWalls(startPos), Direction.UP);;
-        PathNode endNode = new PathNode(endPos, false, findWalls(endPos), Direction.UP);
+    public PathNode calculatePath(int allowedSteps) {
+        PathNode startToEndActive = new PathNode(startPos, true, findWalls(startPos), Direction.UP);
+        PathNode endToStartActive = new PathNode(endPos, false, findWalls(endPos), Direction.UP);
 
-        LinkedList<PathNode> startToEndActive = new LinkedList<>();
-        LinkedList<PathNode> endToStartActive = new LinkedList<>();
-        startToEndActive.add(startNode);
-        endToStartActive.add(endNode);
+        int estimatedSpace = (int) startPos.distSqr(endPos);
 
-        HashMap<BlockPos, PathNode> posMap = new HashMap<>((int) Math.pow(startPos.distManhattan(endPos), 1));
-        posMap.put(startPos, startNode);
-        posMap.put(endPos, endNode);
+        HashMap<BlockPos, PathNode> posMap = new HashMap<>(estimatedSpace);
+        posMap.put(startPos, startToEndActive);
+        posMap.put(endPos, endToStartActive);
 
-        Comparator<PathNode> posComparer = getPathNodeComparator();
+        DynamicNodeHeap startHeap = new DynamicNodeHeap(endToStartActive, estimatedSpace);
+        DynamicNodeHeap endHeap = new DynamicNodeHeap(startToEndActive, estimatedSpace);
 
-        PriorityQueue<PathNode> startQueue = new PriorityQueue<>(posComparer);
-        PriorityQueue<PathNode> endQueue = new PriorityQueue<>(posComparer);
-        //TODO: Worry about path types, like water and fire
+        startHeap.add(startToEndActive);
+        endHeap.add(endToStartActive);
 
         int i = 0;
-        while(!startToEndActive.isEmpty() && !endToStartActive.isEmpty() && i < allowedSteps){
-            int j = 0;
+        long timeStartNanos = System.nanoTime();
 
-            while(!startToEndActive.isEmpty() && j < 10) {
-                j++;
-                startNode = startToEndActive.poll();
+        while (startToEndActive != null && endToStartActive != null && i < allowedSteps) {
 
-                for (Direction tempDir : this.nextSearchDirs(startNode)) {
-                    BlockPos newPos = startNode.pos.relative(tempDir);
-                    PathNode newNode = new PathNode(newPos, startNode.isStartToEnd, this.findWalls(newPos), tempDir, startNode);
-                    if (!posMap.containsKey(newPos)) {
-                        if (newNode.isDiagonal() && startNode.isDiagonal()) {
-                            continue;
-                        }
-                        posMap.put(newPos, newNode);
-                        startQueue.add(newNode);
-                    } else if (!posMap.get(newPos).isStartToEnd) {
-                        AntUtils.broadcastString(pLevel, "For searched " + posMap.size());
+            if (extendPath(startHeap, endHeap, startToEndActive, posMap) || extendPath(endHeap, startHeap, endToStartActive, posMap)) {
+                /*startToEndActive = startHeap.remove();
+                endToStartActive = endHeap.remove();*/
 
-                        for(BlockPos pos : posMap.keySet()){
-                            pLevel.setBlock(pos, Blocks.GLASS.defaultBlockState(), 2);
-                        }
-                        return resolvePath(posMap.get(newPos), newNode);
-                    }
-                }
-                if(startNode.isDiagonal()){
-                    posMap.remove(startNode.pos);
-                }
+                resolvePath(startToEndActive, endToStartActive);
+                AntUtils.broadcastString(pLevel, "By searching " + posMap.size() + " poses in " + ((double)(System.nanoTime() - timeStartNanos)/1000000d) + " millis");
+                return null;
             }
+            /*for (Direction tempDir : this.nextSearchDirs(startToEndActive)) {
+                   BlockPos newPos = startToEndActive.pos.relative(tempDir);
+                   if (!posMap.containsKey(newPos)) {
+                       PathNode newNode = new PathNode(newPos, startToEndActive.isStartToEnd, this.findWalls(newPos), tempDir, startToEndActive);
 
-            j = 0;
+                       if (newNode.isDiagonal() && startToEndActive.isDiagonal()) {
+                           continue;
+                       }
+                       posMap.put(newPos, newNode);
+                       startHeap.add(newNode, endHeap.peek());
+                   } else if (!posMap.get(newPos).isStartToEnd) {
+                       PathNode newNode = new PathNode(newPos, startToEndActive.isStartToEnd, this.findWalls(newPos), tempDir, startToEndActive);
 
-            while(!endToStartActive.isEmpty() && j < 10) {
-                j++;
-                endNode = endToStartActive.poll();
+                       AntUtils.broadcastString(pLevel, "For searched " + posMap.size() + " in " + ((System.nanoTime() - timeStartNanos)/1000000) + " millis");
 
-                for (Direction tempDir : this.nextSearchDirs(endNode)) {
-                    BlockPos newPos = endNode.pos.relative(tempDir);
-                    PathNode newNode = new PathNode(newPos, endNode.isStartToEnd, this.findWalls(newPos), tempDir, endNode);
+                       for (BlockPos pos : posMap.keySet()) {
+                           pLevel.setBlock(pos, Blocks.GLASS.defaultBlockState(), 2);
+                       }
+                       return resolvePath(posMap.get(newPos), newNode);
+                   } //else if (posMap.get(newPos).distance > newNode.distance) {
+                    //   posMap.put(newPos, newNode);
+                   //}
+                   if (startToEndActive.isDiagonal()) {
+                       posMap.remove(startToEndActive.pos);
+                   }
+               }
+
+
+                for (Direction tempDir : this.nextSearchDirs(endToStartActive)) {
+                    BlockPos newPos = endToStartActive.pos.relative(tempDir);
+
                     if (!posMap.containsKey(newPos)) {
-                        if (newNode.isDiagonal() && endNode.isDiagonal()) {
+                        PathNode newNode = new PathNode(newPos, endToStartActive.isStartToEnd, this.findWalls(newPos), tempDir, endToStartActive);
+
+                        if (newNode.isDiagonal() && endToStartActive.isDiagonal()) {
                             continue;
                         }
                         posMap.put(newPos, newNode);
-                        endQueue.add(newNode);
+                        endHeap.add(newNode, startHeap.peek());
                     } else if (posMap.get(newPos).isStartToEnd) {
-                        AntUtils.broadcastString(pLevel, "For searched " + posMap.size());
+                        PathNode newNode = new PathNode(newPos, endToStartActive.isStartToEnd, this.findWalls(newPos), tempDir, endToStartActive);
+
+                        AntUtils.broadcastString(pLevel, "For searched " + posMap.size() + " in " + ((System.nanoTime() - timeStartNanos)/1000000) + " millis");
 
                         for(BlockPos pos : posMap.keySet()){
                             pLevel.setBlock(pos, Blocks.GLASS.defaultBlockState(), 2);
                         }
                         return resolvePath(newNode, posMap.get(newPos));
                     }
-                }
-                if(endNode.isDiagonal()){
-                    posMap.remove(endNode.pos);
-                }
-            }
+                    //else if(posMap.get(newPos).distance > newNode.distance){
+                      //  posMap.put(newPos, newNode);
+                    //}
+                    if(endToStartActive.isDiagonal()){
+                        posMap.remove(endToStartActive.pos);
+                    }
+                }*/
 
-            j = 0;
-
-            while(j < 1 && !startQueue.isEmpty() && !endQueue.isEmpty()){
-                j++;
-                i++;
-                startToEndActive.add(startQueue.poll());
-                endToStartActive.add(endQueue.poll());
-            }
+            startToEndActive = startHeap.remove();
+            endToStartActive = endHeap.remove();
+            i++;
         }
-        AntUtils.broadcastString(pLevel, "Failed Iterations: " + i + ", For Map size: " + posMap.size());
+        AntUtils.broadcastString(pLevel, "Failed Iterations: " + i + ", For Map size: " + posMap.size() + " and heap sizes (s/e): " + startHeap.size() + ", " + endHeap.size());
+        for (BlockPos pos : posMap.keySet()) {
+            pLevel.setBlock(pos, Blocks.RED_STAINED_GLASS.defaultBlockState(), 2);
+        }
 
         return null;
     }
 
-    private @NotNull Comparator<PathNode> getPathNodeComparator() {
-        BlockPos middlePos = new BlockPos((startPos.getX() + endPos.getX())/2, (startPos.getY() + endPos.getY())/2, (startPos.getZ() + endPos.getZ())/2);
-        Comparator<PathNode> posComparer = new Comparator() {
-            @Override
-            public int compare(Object o1, Object o2) {
-                if(o1 instanceof PathNode node1 && o2 instanceof PathNode node2){
-
-                    return (node1.pos.distSqr(middlePos) < node2.pos.distSqr(middlePos))? -1 : 1;
-
-                    /*int x1 = node1.pos.getX();
-                    int y1 = node1.pos.getY();
-                    int z1 = node1.pos.getZ();
-
-                    int x2 = node2.pos.getX();
-                    int y2 = node2.pos.getY();
-                    int z2 = node2.pos.getZ();*/
-                }
-                return 0;
-            }
-        };
-        return posComparer;
-    }
-
-
     private PathNode resolvePath(PathNode startNode, PathNode endNode){
+        int i = 0;
 
         while(startNode != null){
             if(startNode.isDiagonal()){
@@ -200,13 +229,17 @@ public class PathFinder {
             }
             pLevel.setBlock(startNode.pos, Blocks.SEA_LANTERN.defaultBlockState(), 2);
             startNode = startNode.previous;
+            i++;
         }
         while(endNode != null){
             pLevel.setBlock(endNode.pos, Blocks.GLOWSTONE.defaultBlockState(), 2);
             endNode = endNode.previous;
+            i++;
         }
         pLevel.setBlock(startPos, Blocks.LAPIS_BLOCK.defaultBlockState(), 2);
         pLevel.setBlock(endPos, Blocks.REDSTONE_BLOCK.defaultBlockState(), 2);
+
+        AntUtils.broadcastString(pLevel, "Found a path of length " + i);
 
         return null;
     }

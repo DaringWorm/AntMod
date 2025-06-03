@@ -89,16 +89,16 @@ public class AntModCommand {
         ServerPlayer player = (ServerPlayer) context.getSource().getEntity();
         BlockPos pPos = player.blockPosition();
         PathFinder finder = new PathFinder(CmdStatic.BP0, CmdStatic.BP1, pLevel);
-        PathNode node = new PathNode(CmdStatic.BP0, true, finder.findWalls(CmdStatic.BP0), Direction.UP, 0);
+        //PathNode node = new PathNode(CmdStatic.BP0, true, finder.findWalls(pPos), Direction.UP, 0);
 
         finder.calculatePath(30000);
         //AntUtils.broadcastString(pLevel, "Path finding returned: " + );
 
-        /*
-        Direction[] walls = finder.findWalls(pPos);
-        AntUtils.broadcastString(pLevel, Arrays.toString(walls));
 
-        PathNode node1 = new PathNode(pPos, true, walls);
+        //node.walls = finder.findWalls(pPos);
+        //AntUtils.broadcastString(pLevel, Arrays.toString(finder.nextSearchDirs(node)));
+
+        /*PathNode node1 = new PathNode(pPos, true, walls, Direction.UP);
 
         HashMap<BlockPos, PathNode> nodeSet = new HashMap<>();
         ArrayList<PathNode> activeList = new ArrayList<>(List.of(node1));
@@ -109,7 +109,7 @@ public class AntModCommand {
                 PathNode tempNode = activeList.get(0);
                 for(Direction dir : finder.nextSearchDirs(tempNode)){
                     BlockPos newPos = tempNode.pos.relative(dir);
-                    PathNode newNode = new PathNode(newPos, tempNode.isStartToEnd, finder.findWalls(newPos), tempNode);
+                    PathNode newNode = new PathNode(newPos, tempNode.isStartToEnd, finder.findWalls(newPos), Direction.UP, tempNode);
                     if(tempNode.isDiagonal() && newNode.isDiagonal()){
                         continue;
                     }
@@ -131,10 +131,10 @@ public class AntModCommand {
         AntUtils.broadcastString(pLevel, "Size = " + nodeSet.size());
         for(BlockPos tempKey : nodeSet.keySet()){
             pLevel.setBlock(tempKey, Blocks.BIRCH_SLAB.defaultBlockState(), 2);
-        }
+        }*/
 
         //AntUtils.broadcastString(pLevel, Arrays.toString(finder.nextSearchDirs(node)));
-*/
+
         return 0;
     }
 

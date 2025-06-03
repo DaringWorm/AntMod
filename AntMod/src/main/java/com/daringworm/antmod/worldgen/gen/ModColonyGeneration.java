@@ -25,7 +25,7 @@ public class ModColonyGeneration {
 
         }*/
 
-        if((types.contains(BiomeDictionary.Type.FOREST)
+        /**if((types.contains(BiomeDictionary.Type.FOREST)
                 || types.contains(BiomeDictionary.Type.JUNGLE)
                 || types.contains(BiomeDictionary.Type.SAVANNA)) &&
                 !types.contains(BiomeDictionary.Type.HILLS) &&
@@ -39,7 +39,7 @@ public class ModColonyGeneration {
                 !types.contains(BiomeDictionary.Type.DENSE)
         ) {
             event.getGeneration().addCarver(GenerationStep.Carving.AIR, AntCarversReg.CONFIGURED_COLONY_REGISTER.getHolder().get());
-        }
+        }*/
     }
 
 }

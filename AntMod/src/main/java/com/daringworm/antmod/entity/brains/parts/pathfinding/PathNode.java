@@ -12,6 +12,7 @@ public class PathNode implements Comparable<PathNode>{
     public final boolean isStartToEnd;
     public final Direction[] walls;
     public final Direction facing;
+    public int weight = 0;
 
     @Override
     public int compareTo(@NotNull PathNode o) {
