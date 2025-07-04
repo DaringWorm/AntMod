@@ -9,6 +9,9 @@ import com.daringworm.antmod.colony.misc.ColonyBranch;
 import com.daringworm.antmod.colony.misc.PosSpherePair;
 import com.daringworm.antmod.effect.ModEffects;
 import com.daringworm.antmod.colony.misc.PosPair;
+import com.daringworm.antmod.entity.brains.parts.pathfinding.Path;
+import com.daringworm.antmod.entity.brains.parts.pathfinding.PathFinder;
+import com.daringworm.antmod.entity.brains.parts.pathfinding.PathNode;
 import com.daringworm.antmod.util.AntUtils;
 import com.daringworm.antmod.item.ModItems;
 import com.daringworm.antmod.mixin.tomixin.ServerLevelUtil;
@@ -37,16 +40,18 @@ import net.minecraft.world.level.BlockAndTintGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.LevelReader;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.NetherPortalBlock;
 import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.pathfinder.BlockPathTypes;
-import net.minecraft.world.level.pathfinder.Path;
 import net.minecraft.world.level.pathfinder.PathComputationType;
 import net.minecraft.world.phys.Vec3;
+import net.minecraftforge.common.Tags;
 import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nullable;
+import java.text.DecimalFormat;
 import java.util.*;
 import java.util.function.Predicate;
 
@@ -225,7 +230,7 @@ public abstract class Ant extends PathfinderMob implements MenuProvider {
         if(!this.isOnGround() && !this.isInWater()){return;}
         assert blockPos != null && this.getLevel().isLoaded(blockPos) && blockPos != this.getNavigation().getPath().getEndNode().asBlockPos();
         this.setWalkingCooldown(0);
-        Path path = this.getNavigation().getPath();
+        net.minecraft.world.level.pathfinder.Path path = this.getNavigation().getPath();
         Level pLevel = this.getLevel();
         BlockPos targetPos = blockPos;
 
@@ -299,11 +304,39 @@ public abstract class Ant extends PathfinderMob implements MenuProvider {
         this.walkAlongList(nearestRoom.getPosesToNearestBranchTo(blockPos), speedModifier, 3d);
     }
 
-    public void testWalkTo(BlockPos pos){
-        this.getNavigation().moveTo(pos.getX(), pos.getY(), pos.getZ(), 1f);
 
-        if(AntUtils.getDist(this.blockPosition(), pos) < 3d){
-            this.goingRedstoneToLapis = !this.goingRedstoneToLapis;
+    private PathFinder pathFinder = null;
+    private Path path = null;
+    float f = 1f;
+
+    public void testWalkTo(BlockPos pos){
+        if(this.getLevel().getGameTime()% 20 == 0) {
+
+            BlockPos antPos = this.blockPosition();
+            while (this.getLevel().getBlockState(antPos).isAir() && antPos.getY() > -64) {
+                antPos = antPos.below();
+            }
+
+            if(path == null || path.endPos != pos) {
+                path = new Path(antPos, pos, (ServerLevel) this.getLevel());
+                path.calculatePath(10000);
+            }
+            if(!path.hasPath){return;}
+            this.setNoGravity(true);
+            this.setDeltaMovement(new Vec3(0,0,0));
+            PathNode nextNode = path.getNextNode(this);
+            AntUtils.broadcastString(level, nextNode.toString());
+            //level.setBlock(nextNode.pos, Blocks.GLASS.defaultBlockState(), 2);
+
+            this.absMoveTo(nextNode.pos.getX()+ 0.5, nextNode.pos.getY() + 0.5, nextNode.pos.getZ() + 0.5);
+
+            //long nanosMine = System.nanoTime() - nanos;
+            //DecimalFormat df = new DecimalFormat("#.#");
+            //AntUtils.broadcastString(this.getLevel(), "Mine is " + df.format(((double) nanosMine) / ((double) nanosVanilla) * 100) + "% vanilla time");
+
+            if (AntUtils.getDist(this.blockPosition(), pos) < 3d) {
+                this.goingRedstoneToLapis = !this.goingRedstoneToLapis;
+            }
         }
     }
     
@@ -531,7 +564,8 @@ public abstract class Ant extends PathfinderMob implements MenuProvider {
 
     @Override
     public void push(@NotNull Entity pEntity){
-        boolean shouldCancel = false;
+        //TODO: set this false when ready
+        boolean shouldCancel = true;
         if(pEntity instanceof Ant){
             boolean heldItem = !((Ant) pEntity).getMainHandItem().isEmpty();
             if (((Ant) pEntity).getColonyID() == this.getColonyID() && (!((Ant) pEntity).getMainHandItem().isEmpty()) || !this.getMainHandItem().isEmpty()){
@@ -568,7 +602,7 @@ public abstract class Ant extends PathfinderMob implements MenuProvider {
     public boolean canReach(BlockPos targetPos) {
         Ant pAnt = this;
         if(AntUtils.getDist(this.blockPosition(), targetPos) < 20) {
-            Path tempPath = this.getNavigation().createPath(targetPos, 1);
+            net.minecraft.world.level.pathfinder.Path tempPath = this.getNavigation().createPath(targetPos, 1);
             if (tempPath != null) {
                 net.minecraft.world.level.pathfinder.Node finalPathPoint = tempPath.getEndNode();
                 if (finalPathPoint != null) {

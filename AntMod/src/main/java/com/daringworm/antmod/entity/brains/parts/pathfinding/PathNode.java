@@ -5,6 +5,8 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.Arrays;
+
 public class PathNode implements Comparable<PathNode>{
     public int distance;
     public final BlockPos pos;
@@ -50,6 +52,10 @@ public class PathNode implements Comparable<PathNode>{
 
     @Override
     public String toString(){
-        return "[pos = " + BlockPosStringifier.getTagForPos(pos) + ", dist = " + distance + ']';
+        return "[pos = " + BlockPosStringifier.getTagForPos(pos) +
+                ",\n dist = " + distance +
+                ",\n facing = " + facing +
+                ",\n walls = " + Arrays.toString(walls) +
+                ']';
     }
 }

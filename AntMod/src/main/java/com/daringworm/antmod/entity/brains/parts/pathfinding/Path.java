@@ -1,11 +1,13 @@
 package com.daringworm.antmod.entity.brains.parts.pathfinding;
 
+import com.daringworm.antmod.entity.Ant;
+import com.daringworm.antmod.util.AntUtils;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
 
 public class Path {
-    public PathNode nodeRoot;
+    private PathNode nodeRoot;
     public final BlockPos startPos;
     public final BlockPos endPos;
     public boolean hasPath;
@@ -22,9 +24,31 @@ public class Path {
         this.hasPath = false;
     }
 
-    public boolean calculatePath(ServerLevel level, int allowedSteps){
+    public boolean calculatePath(int allowedSteps){
         this.checkedForPath = true;
-        this.hasPath = pathFinder.calculatePath(allowedSteps) != null;
+        this.nodeRoot = pathFinder.calculatePath(allowedSteps);
+        this.hasPath = this.nodeRoot != null;
         return this.hasPath;
+    }
+
+    public PathNode getNextNode(Ant pAnt){
+        PathNode tempNode = nodeRoot;
+        PathNode returnNode = tempNode;
+        BlockPos antPos = pAnt.blockPosition();
+
+        while(tempNode.previous != null){
+
+            if(AntUtils.getDist(antPos, tempNode.pos) <= AntUtils.getDist(antPos, returnNode.pos)){
+                returnNode = tempNode;
+            }
+
+            tempNode = tempNode.previous;
+        }
+
+        if(returnNode.previous != null){
+            returnNode = returnNode.previous;
+        }
+
+        return returnNode;
     }
 }

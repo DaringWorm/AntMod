@@ -12,14 +12,18 @@ import com.daringworm.antmod.entity.custom.*;
 import com.daringworm.antmod.mixin.tomixin.ServerLevelUtil;
 import com.daringworm.antmod.util.AntUtils;
 import com.mojang.brigadier.CommandDispatcher;
+import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
+import net.minecraft.commands.arguments.coordinates.Vec3Argument;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.phys.Vec3;
 
 import java.util.*;
 
@@ -56,8 +60,13 @@ public class AntModCommand {
                 then(Commands.literal("testing_dummies").
                         then(Commands.literal("1").executes(AntModCommand::dummy1)).
                         then(Commands.literal("2").executes(AntModCommand::dummy2)).
-                        then(Commands.literal("3").executes(AntModCommand::dummy3)))
-        );
+                        then(Commands.literal("3").executes(AntModCommand::dummy3)).
+                        then(Commands.literal("4").then(Commands.argument( "vec3", Vec3Argument.vec3()).executes((context)-> {
+                            return dummy4(context,
+                                    Vec3Argument.getVec3(context, "vec3"));
+                        })))
+
+                ));
     }
 
     private static int dummy1(CommandContext<CommandSourceStack> context){
@@ -91,50 +100,27 @@ public class AntModCommand {
         PathFinder finder = new PathFinder(CmdStatic.BP0, CmdStatic.BP1, pLevel);
         //PathNode node = new PathNode(CmdStatic.BP0, true, finder.findWalls(pPos), Direction.UP, 0);
 
-        finder.calculatePath(30000);
-        //AntUtils.broadcastString(pLevel, "Path finding returned: " + );
+        PathNode result = finder.calculatePath(30000);
 
-
-        //node.walls = finder.findWalls(pPos);
-        //AntUtils.broadcastString(pLevel, Arrays.toString(finder.nextSearchDirs(node)));
-
-        /*PathNode node1 = new PathNode(pPos, true, walls, Direction.UP);
-
-        HashMap<BlockPos, PathNode> nodeSet = new HashMap<>();
-        ArrayList<PathNode> activeList = new ArrayList<>(List.of(node1));
-
-        for(int i = 0; i < 32; i++){
-            int j = activeList.size();
-            while(!activeList.isEmpty() && j > 0){
-                PathNode tempNode = activeList.get(0);
-                for(Direction dir : finder.nextSearchDirs(tempNode)){
-                    BlockPos newPos = tempNode.pos.relative(dir);
-                    PathNode newNode = new PathNode(newPos, tempNode.isStartToEnd, finder.findWalls(newPos), Direction.UP, tempNode);
-                    if(tempNode.isDiagonal() && newNode.isDiagonal()){
-                        continue;
-                    }
-                    else{
-                        if(!nodeSet.containsKey(newPos)){
-                            nodeSet.put(newPos, newNode);
-                            activeList.add(newNode);
-                        }
-                    }
-                }
-                activeList.remove(0);
-                if(tempNode.isDiagonal()){
-                    nodeSet.remove(tempNode.pos);
-                }
-                j--;
+        while(result != null){
+            if(!pLevel.getBlockState(result.pos).isAir()){
+                pLevel.setBlock(result.pos, Blocks.GLOWSTONE.defaultBlockState(), 2);
             }
+            else{
+                pLevel.setBlock(result.pos, Blocks.GLASS.defaultBlockState(), 2);
+            }
+            result = result.previous;
         }
 
-        AntUtils.broadcastString(pLevel, "Size = " + nodeSet.size());
-        for(BlockPos tempKey : nodeSet.keySet()){
-            pLevel.setBlock(tempKey, Blocks.BIRCH_SLAB.defaultBlockState(), 2);
-        }*/
+        return 0;
+    }
 
-        //AntUtils.broadcastString(pLevel, Arrays.toString(finder.nextSearchDirs(node)));
-
+    private static int dummy4(CommandContext<CommandSourceStack> context, Vec3 vec){
+        ServerLevel pLevel = context.getSource().getLevel();
+        CmdStatic.int0 = (int) vec.x;
+        CmdStatic.int1 = (int) vec.y;
+        CmdStatic.int2 = (int) vec.z;
+        AntUtils.broadcastString(pLevel, "Rotation vector set to [" + CmdStatic.int0 + ", " + CmdStatic.int1 + ", " + CmdStatic.int2 + "]");
         return 0;
     }
 

@@ -13,6 +13,7 @@ import com.daringworm.antmod.util.AntUtils;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
@@ -49,25 +50,34 @@ public class Actions {
         public void run(Ant pAnt) {
 
             ServerLevel pLevel = (ServerLevel) pAnt.getLevel();
+            ServerPlayer player = pLevel.getServer().getPlayerList().getPlayers().get(0);
+            if(player != null) {
+                BlockPos pos = player.blockPosition();
 
-            BlockPos pos = BlockPos.findClosestMatch(pAnt.blockPosition(),
+
+                while (!pLevel.getBlockState(pos.below()).canOcclude() && pos.getY() > -64){
+                    pos = pos.below();
+                }
+
+            /*BlockPos pos1 = BlockPos.findClosestMatch(pAnt.blockPosition(),
                     32,
                     32,
                     p -> pLevel.getBlockState(p).getBlock() == ((pAnt.goingRedstoneToLapis)? Blocks.LAPIS_BLOCK : Blocks.REDSTONE_BLOCK))
-                    .orElse(BlockPos.ZERO);
+                    .orElse(BlockPos.ZERO);*/
 
-            if(pos != BlockPos.ZERO){
-                pAnt.testWalkTo(pos);
-                //////////////////////////////////////////////////////
-                Path path = pAnt.getNavigation().getPath();
-                /*if(path != null) {
-                    for(int i = 0; i < path.getNodeCount(); i ++){
-                        pLevel.setBlock(path.getNode(i).asBlockPos(), Blocks.ACACIA_BUTTON.defaultBlockState(), 2);
-                        AntUtils.broadcastString(pLevel, path.getNode(i).asBlockPos().toString());
-                    }
-                }*/
+                if (pos != BlockPos.ZERO) {
+                    pAnt.testWalkTo(pos);
+                    //////////////////////////////////////////////////////
+                    /*Path path = pAnt.getNavigation().getPath();
+                    if(path != null) {
+                        for(int i = 0; i < path.getNodeCount(); i ++){
+                            pLevel.setBlock(path.getNode(i).asBlockPos(), Blocks.ACACIA_BUTTON.defaultBlockState(), 2);
+                            AntUtils.broadcastString(pLevel, path.getNode(i).asBlockPos().toString());
+                        }
+                    }*/
 
-                //////////////////////////////////////////////////////
+                        //////////////////////////////////////////////////////
+                }
             }
 
         }

@@ -1,10 +1,12 @@
 package com.daringworm.antmod.entity.client;
 
 import com.daringworm.antmod.AntMod;
+import com.daringworm.antmod.command.custom.CmdStatic;
 import com.daringworm.antmod.entity.brains.parts.WorkingStages;
 import com.daringworm.antmod.entity.custom.WorkerAnt;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
+import com.mojang.math.Quaternion;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.block.model.ItemTransforms;
@@ -27,6 +29,8 @@ import software.bernie.geckolib3.renderers.geo.ExtendedGeoEntityRenderer;
 import software.bernie.geckolib3.renderers.geo.GeoEntityRenderer;
 
 import java.util.Objects;
+
+import static java.lang.Math.*;
 
 public class WorkerAntRenderer extends ExtendedGeoEntityRenderer<WorkerAnt> {
     public WorkerAntRenderer(EntityRendererProvider.Context renderManager) {
@@ -90,8 +94,25 @@ public class WorkerAntRenderer extends ExtendedGeoEntityRenderer<WorkerAnt> {
     public RenderType getRenderType(WorkerAnt ant, float partialTicks, PoseStack stack,
              MultiBufferSource renderTypeBuffer, VertexConsumer vertexBuilder, int packedLightIn, ResourceLocation textureLocation) {
 
-        float v = (ant.getSubClass()+20)/30f;
+        float v = 1;//(ant.getSubClass()+20)/30f;
         stack.scale(v*0.8f, v*0.8f, v*0.8f);
+
+        double xRad = (Math.PI * CmdStatic.int0)/360d;
+        double yRad = (Math.PI * CmdStatic.int1)/360d;
+        double zRad = (Math.PI * (CmdStatic.int2))/360d;
+
+        double upsideDown = Math.PI * 0.5d;
+
+        Quaternion x = new Quaternion((float) cos(xRad), (float) sin(xRad), 0f, 0f);
+        Quaternion y = new Quaternion((float) cos(yRad), 0f, (float) sin(yRad), 0f);
+        Quaternion z = new Quaternion((float) cos(zRad + upsideDown), 0f, 0f, (float) sin(zRad + upsideDown));
+
+        x.mul(y);
+        x.mul(z);
+
+        stack.mulPose(x);
+
+        stack.translate(0, -max(abs(xRad), abs(zRad)), 0);
 
         return super.getRenderType(ant, partialTicks, stack, renderTypeBuffer, vertexBuilder, packedLightIn, textureLocation);
     }
