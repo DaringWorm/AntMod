@@ -15,6 +15,8 @@ public class PathFinder {
     public final BlockPos endPos;
     private final ServerLevel pLevel;
 
+    private static final Direction[] preferredWalkingWalls = new Direction[]{Direction.DOWN, Direction.NORTH, Direction.SOUTH, Direction.EAST, Direction.WEST, Direction.UP};
+
 
     public PathFinder(BlockPos start, BlockPos end, ServerLevel pLevel){
         this.startPos = start;
@@ -25,7 +27,7 @@ public class PathFinder {
     /**
      * Finds the walkable walls surrounding the given pos.
      * **/
-    public Direction[] findWalls(BlockPos pos){
+    public ArrayList<Direction> findWalls(BlockPos pos){
         ArrayList<Direction> dirList = new ArrayList<>(6);
 
         for(Direction dir : Direction.values()){
@@ -35,8 +37,9 @@ public class PathFinder {
             }
         }
 
-        Direction[] directions = new Direction[dirList.size()];
-        return dirList.toArray(directions);
+        return dirList;
+        //Direction[] directions = new Direction[dirList.size()];
+        //return dirList.toArray(directions);
     }
 
     /**
@@ -55,7 +58,7 @@ public class PathFinder {
             return returnList.toArray(returnDirs);
         }
         else{
-            ArrayList<Direction> wallList = new ArrayList<>(List.of(node.walls));
+            ArrayList<Direction> wallList = node.walls;
 
             for(Direction tempDir : Direction.values()) {
                 if(wallList.contains(tempDir) || tempDir == node.facing.getOpposite()){
@@ -168,13 +171,47 @@ public class PathFinder {
      * Returns the head of a linked list comprised of PathNodes.
      * **/
     private PathNode resolvePath(PathNode startNode, PathNode endNode){
-        PathNode holder;
+        PathNode holder = endNode;
 
+        //Ensures that the nodes originally facing backwards are facing correctly for reasons of consistency.
+        while(holder != null){
+            holder.facing = holder.facing.getOpposite();
+
+            holder = holder.previous;
+        }
+
+        //Stitches the two original linked lists together into one.
         while(startNode != null) {
             holder = startNode;
             startNode = startNode.previous;
             holder.previous = endNode;
             endNode = holder;
+        }
+
+        holder = endNode;
+
+
+        //Re-orients all the nodes to face at the block the ant should be climbing on instead of toward the next node.
+        while (holder != null){
+            PathNode previous = holder.previous;
+
+            if(previous != null && previous.isDiagonal()){
+                /*if(previous.previous != null){
+                    // Depends on the fact that the next node will always be facing toward itself from the perspective of its owner, before the below changes.
+                    previous.facing = previous.previous.facing;
+                }*/
+                previous = previous.previous;
+            }
+
+            boolean noPrevious = previous == null;
+
+            for(Direction tempDir : preferredWalkingWalls){
+                if(holder.walls.contains(tempDir) && (noPrevious || previous.walls.stream().anyMatch(d -> d == tempDir || d != tempDir.getOpposite()))){
+                    holder.facing = tempDir;
+                }
+            }
+
+            holder = previous;
         }
 
         return endNode;

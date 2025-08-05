@@ -23,6 +23,8 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.LightningRodBlock;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 
 import java.util.*;
@@ -103,12 +105,10 @@ public class AntModCommand {
         PathNode result = finder.calculatePath(30000);
 
         while(result != null){
-            if(!pLevel.getBlockState(result.pos).isAir()){
-                pLevel.setBlock(result.pos, Blocks.GLOWSTONE.defaultBlockState(), 2);
-            }
-            else{
-                pLevel.setBlock(result.pos, Blocks.GLASS.defaultBlockState(), 2);
-            }
+            BlockState tempState = Blocks.LIGHTNING_ROD.defaultBlockState().setValue(LightningRodBlock.FACING, result.facing);
+
+            pLevel.setBlock(result.pos, tempState, 2);
+
             result = result.previous;
         }
 

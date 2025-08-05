@@ -5,6 +5,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 
 public class PathNode implements Comparable<PathNode>{
@@ -12,9 +13,12 @@ public class PathNode implements Comparable<PathNode>{
     public final BlockPos pos;
     public PathNode previous;
     public final boolean isStartToEnd;
-    public final Direction[] walls;
-    public final Direction facing;
+    public final ArrayList<Direction> walls;
     public int weight = 0;
+
+    // During pathfinding, it is used to determine the direction of searching.
+    // During path following, it is used to determine the wall to walk on.
+    public Direction facing;
 
     @Override
     public int compareTo(@NotNull PathNode o) {
@@ -22,10 +26,10 @@ public class PathNode implements Comparable<PathNode>{
     }
 
     public boolean isDiagonal(){
-        return this.walls.length == 0;
+        return this.walls.isEmpty();
     }
 
-    public PathNode(BlockPos pos, boolean isStartToEnd, Direction[] walls, Direction facing){
+    public PathNode(BlockPos pos, boolean isStartToEnd, ArrayList<Direction> walls, Direction facing){
         this.pos = pos;
         this.distance = 0;
         this.isStartToEnd = isStartToEnd;
@@ -33,7 +37,7 @@ public class PathNode implements Comparable<PathNode>{
         this.facing = facing;
     }
 
-    public PathNode(BlockPos pos, boolean isStartToEnd, Direction[] walls, Direction facing, int distance){
+    public PathNode(BlockPos pos, boolean isStartToEnd, ArrayList<Direction> walls, Direction facing, int distance){
         this.pos = pos;
         this.distance = distance;
         this.isStartToEnd = isStartToEnd;
@@ -41,7 +45,7 @@ public class PathNode implements Comparable<PathNode>{
         this.facing = facing;
     }
 
-    public PathNode(BlockPos pos, boolean isStartToEnd, Direction[] walls, Direction facing, PathNode parent){
+    public PathNode(BlockPos pos, boolean isStartToEnd, ArrayList<Direction> walls, Direction facing, PathNode parent){
         this.pos = pos;
         this.previous = parent;
         this.isStartToEnd = isStartToEnd;
@@ -55,7 +59,7 @@ public class PathNode implements Comparable<PathNode>{
         return "[pos = " + BlockPosStringifier.getTagForPos(pos) +
                 ",\n dist = " + distance +
                 ",\n facing = " + facing +
-                ",\n walls = " + Arrays.toString(walls) +
+                ",\n walls = " + walls.stream().toString() +
                 ']';
     }
 }

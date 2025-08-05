@@ -40,18 +40,15 @@ import net.minecraft.world.level.BlockAndTintGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.LevelReader;
-import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.NetherPortalBlock;
 import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.pathfinder.BlockPathTypes;
 import net.minecraft.world.level.pathfinder.PathComputationType;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.common.Tags;
 import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nullable;
-import java.text.DecimalFormat;
 import java.util.*;
 import java.util.function.Predicate;
 
@@ -201,6 +198,7 @@ public abstract class Ant extends PathfinderMob implements MenuProvider {
     public AntColony getColony(){
         return ((ServerLevelUtil) this.getLevel()).getColonyWithID(this.getColonyID());
     }
+
 
 
 
@@ -472,6 +470,16 @@ public abstract class Ant extends PathfinderMob implements MenuProvider {
             }
             return super.hurt(pSource, pAmount);
         }
+    }
+
+    @Override
+    public boolean isFallFlying(){
+
+    }
+
+    @Override
+    public boolean isOnGround(){
+
     }
 
     public float getWalkTargetValue(BlockPos pPos, LevelReader pLevel) {
