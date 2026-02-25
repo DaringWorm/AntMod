@@ -1,32 +1,18 @@
 package com.daringworm.antmod.worldgen.feature.custom;
 
-import com.daringworm.antmod.block.ModBlocks;
-import com.daringworm.antmod.block.custom.FungalCore;
-import com.daringworm.antmod.colony.AntColony;
-import com.daringworm.antmod.colony.misc.ColonyBranch;
-import com.daringworm.antmod.colony.misc.ColonyGenUtils;
-import com.daringworm.antmod.colony.misc.PosSpherePair;
-import com.daringworm.antmod.mixin.tomixin.ServerLevelUtil;
-import com.daringworm.antmod.util.AntUtils;
 import com.mojang.serialization.Codec;
-import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
-import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.ChunkPos;
-import net.minecraft.world.level.Level;
 import net.minecraft.world.level.biome.Biome;
-import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.chunk.CarvingMask;
 import net.minecraft.world.level.chunk.ChunkAccess;
 import net.minecraft.world.level.levelgen.Aquifer;
 import net.minecraft.world.level.levelgen.carver.CarverConfiguration;
 import net.minecraft.world.level.levelgen.carver.CarvingContext;
 import net.minecraft.world.level.levelgen.carver.WorldCarver;
-import org.checkerframework.checker.units.qual.A;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.ArrayList;
 import java.util.Random;
 import java.util.function.Function;
 
@@ -60,7 +46,7 @@ public class AntColonyCarver<C extends CarverConfiguration> extends WorldCarver<
             //TODO: figure out how to make a multiplayer server work.
             ServerLevel pLevel = Minecraft.getInstance().getSingleplayerServer().getLevel(Level.OVERWORLD);
             ColonyBranch newBranch = AntColony.generateNewTunnels(startPos);
-            //ArrayList<PosSpherePair> spheres = newBranch.getExcavationSpheres();
+            //ArrayList<AntSphere> spheres = newBranch.getExcavationSpheres();
             int colonyID = Integer.parseInt(("" + startPos.getX() + "" + startPos.getY() + "" + startPos.getZ()).substring(0, 8));
             AntColony colony = new AntColony(pLevel,colonyID,newBranch);
             colony.hasSpawnedAnts = true;
@@ -85,7 +71,7 @@ public class AntColonyCarver<C extends CarverConfiguration> extends WorldCarver<
             }
         }
 
-        for(PosSpherePair tempSphere : spheres){
+        for(AntSphere tempSphere : spheres){
             if(AntUtils.getDist(tempSphere.centerPos, pChunk.getPos().getMiddleBlockPosition(tempSphere.centerPos.getY())) < (16 + tempSphere.radius)) {
                 tempSphere.setSphereCarver(pChunk, ModBlocks.ANT_AIR.get().defaultBlockState(), ModBlocks.ANT_DIRT.get().defaultBlockState(), 1.8);
             }

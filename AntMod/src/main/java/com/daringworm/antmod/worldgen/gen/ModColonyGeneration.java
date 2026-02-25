@@ -1,22 +1,19 @@
 package com.daringworm.antmod.worldgen.gen;
 
 import com.daringworm.antmod.util.AntUtils;
+import com.daringworm.antmod.worldgen.feature.PlaceAntFeaturesHolders;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.chunk.ChunkAccess;
 import net.minecraft.world.level.chunk.ChunkStatus;
 import net.minecraft.world.level.levelgen.Heightmap;
+import net.minecraftforge.event.world.BiomeLoadingEvent;
 import net.minecraftforge.event.world.ChunkEvent;
 
 public class ModColonyGeneration {
-    public static void generateColonies(final ChunkEvent event) {
-        ChunkAccess chunk = event.getChunk();
+    public static void generateColonies(final BiomeLoadingEvent event) {
 
-        if(true) {
-            int height = chunk.getHeight(Heightmap.Types.WORLD_SURFACE_WG, 4, 4) + 5;
-            BlockPos pos = chunk.getPos().getBlockAt(4, height, 4);
-        }
-
+        event.getGeneration().addFeature( 12, PlaceAntFeaturesHolders.GEODE_PLACED);
 
 
         /*

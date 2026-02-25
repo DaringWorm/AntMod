@@ -11,6 +11,7 @@ import com.daringworm.antmod.screen.FungalContainerScreen;
 import com.daringworm.antmod.screen.ModMenuTypes;
 import com.daringworm.antmod.worldgen.feature.registries.AntCarversReg;
 import com.daringworm.antmod.worldgen.feature.registries.AntFeaturesReg;
+import com.daringworm.antmod.worldgen.feature.registries.AntStructuresReg;
 import net.minecraft.client.gui.screens.MenuScreens;
 import net.minecraft.client.renderer.ItemBlockRenderTypes;
 import net.minecraft.client.renderer.RenderType;
@@ -57,6 +58,8 @@ public class AntMod
 
         AntCarversReg.register(eventBus);
 
+        AntStructuresReg.register(eventBus);
+
         ModEffects.register(eventBus);
 
         NetworkHandler.initialize();
@@ -90,10 +93,11 @@ public class AntMod
         ItemBlockRenderTypes.setRenderLayer(ModBlocks.FUNGUS_FUZZ.get(), RenderType.cutout());
 
         MenuScreens.register(ModMenuTypes.LEAFY_CONTAINER_MENU.get(), FungalContainerScreen::new);
+
+        AntStructuresReg.registerPieces();
     }
 
     private void setup(final FMLCommonSetupEvent event){
-        SpawnPlacements.register(ModEntityTypes.ANTCARVER.get(), SpawnPlacements.Type.ON_GROUND, Heightmap.Types.WORLD_SURFACE, Animal::checkMobSpawnRules);
-
+        //SpawnPlacements.register(ModEntityTypes.ANTCARVER.get(), SpawnPlacements.Type.ON_GROUND, Heightmap.Types.WORLD_SURFACE, Animal::checkMobSpawnRules);
     }
 }

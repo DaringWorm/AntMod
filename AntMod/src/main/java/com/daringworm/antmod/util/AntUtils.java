@@ -5,9 +5,11 @@ import com.daringworm.antmod.block.entity.custom.FungalContainerBlockEntity;
 import com.daringworm.antmod.entity.Ant;
 import com.daringworm.antmod.entity.custom.WorkerAnt;
 import com.daringworm.antmod.colony.misc.PosPair;
+import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.TextComponent;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.ai.targeting.TargetingConditions;
@@ -193,6 +195,16 @@ public class AntUtils {
                 if(/*player.getMainHandItem().isEmpty()*/true) {
                     player.sendMessage(new TextComponent(string), player.getUUID());
                 }
+            }
+        }
+    }
+
+    public static void broadcastString(String string){
+        MinecraftServer server = Minecraft.getInstance().getSingleplayerServer();
+
+        if(server != null){
+            for(ServerPlayer player : server.getPlayerList().getPlayers()){
+                player.sendMessage(new TextComponent(string), player.getUUID());
             }
         }
     }
@@ -730,7 +742,7 @@ public class AntUtils {
     }
 
     public static Random randFromPos(BlockPos pos){
-        return new Random(Math.abs(pos.getX()*pos.getY()*pos.getZ()));
+        return new Random(Math.abs(pos.asLong()));
     }
 
     public static boolean isPosInChunk(BlockPos pos, ChunkPos chunk){

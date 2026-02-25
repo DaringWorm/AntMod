@@ -1,6 +1,5 @@
 package com.daringworm.antmod.colony;
 
-import com.daringworm.antmod.block.ModBlocks;
 import com.daringworm.antmod.colony.misc.*;
 import com.daringworm.antmod.entity.ModEntityTypes;
 import com.daringworm.antmod.entity.brains.parts.WorkingStages;
@@ -11,7 +10,9 @@ import com.google.gson.*;
 import com.mojang.logging.LogUtils;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.WorldGenLevel;
+import net.minecraft.world.level.levelgen.structure.BoundingBox;
 import net.minecraft.world.phys.Vec3;
 import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
@@ -37,28 +38,27 @@ public class AntColony{
     public ServerLevel level;
     private static final Logger LOGGER = LogUtils.getLogger();
     public File saveFolder;
-    private ArrayList<PosSpherePair> excavationSpheres = new ArrayList<>();
+    private ArrayList<AntSphere> excavationSpheres = new ArrayList<>();
     public boolean hasSpawnedAnts;
     public boolean hasSpawnedDecoration;
 
 
-    public static Block BLOCK1 = ModBlocks.ANT_AIR.get();
-    public static Block BLOCK2 = ModBlocks.ANT_DIRT.get();
 
     public AntColony(ServerLevel pLevel, int pColonyID, BlockPos pStartPos){
+        this.startPos = pStartPos;
         this.level = pLevel;
         this.colonyID = pColonyID;
         this.saveFolder = getSaveFile(pLevel);
-        this.random = new Random(Math.abs(pStartPos.getX()*pStartPos.getY()*pStartPos.getZ()));
-        this.startPos = pStartPos;
+        this.random = AntUtils.randFromPos(pStartPos);
         this.generateNewColonyBlueprint();
     }
+
     public AntColony(ServerLevel pLevel, int pColonyID, ColonyBranch tunnels){
         this.startPos = tunnels.getPos();
         this.level = pLevel;
         this.colonyID = pColonyID;
-        this.saveFolder = getSaveFile(level);
-        this.random = AntUtils.randFromPos(startPos);
+        this.saveFolder = getSaveFile(pLevel);
+        this.random = AntUtils.randFromPos(this.startPos);
         this.tunnels = tunnels;
         this.generateNewColonyBlueprint();
     }
@@ -111,7 +111,7 @@ public class AntColony{
         }
     }
 
-    public ArrayList<PosSpherePair> getColonyBlueprint(){
+    public ArrayList<AntSphere> getColonyBlueprint(){
         if(this.excavationSpheres.isEmpty()){
             if(this.tunnels == null) {
                 this.generateNewColonyBlueprint();
@@ -137,6 +137,7 @@ public class AntColony{
     }
 
     public void save() {
+
         try {
             File saveFile = new File(saveFolder, this.colonyID + ".json");
             FileUtils.writeStringToFile(saveFile, this.toJson(), Charset.defaultCharset());
@@ -292,7 +293,7 @@ public class AntColony{
     }
 
 
-    public ArrayList<PosSpherePair> generateNewColonyBlueprint(){
+    public ArrayList<AntSphere> generateNewColonyBlueprint(){
         //makes the rest
         if(this.tunnels == null) {
             this.tunnels = generateNewTunnels(startPos);
@@ -301,10 +302,10 @@ public class AntColony{
         return this.excavationSpheres;
     }
 
-    public ArrayList<PosSpherePair> getNextExcavationSteps(int stepAt){
+    public ArrayList<AntSphere> getNextExcavationSteps(int stepAt){
         final int maxNumberOfSpheresToGive = 1;
 
-        ArrayList<PosSpherePair> returnList = new ArrayList<>();
+        ArrayList<AntSphere> returnList = new ArrayList<>();
 
         if(excavationSpheres.isEmpty()){excavationSpheres = generateNewColonyBlueprint();}
 
@@ -321,8 +322,12 @@ public class AntColony{
         return returnList;
     }
 
+    public void generateWG(WorldGenLevel levelWG, BoundingBox area, ChunkPos currentChunk){
+        this.tunnels.carveWG(levelWG, area, currentChunk);
+    }
+
     public static AntColony generateWholeNewColony(ServerLevel pLevel, BlockPos startPos){
-        AntColony returnColony = new AntColony(pLevel, AntUtils.randFromPos(startPos).nextInt(), startPos);
+        AntColony returnColony = ((ServerLevelUtil)pLevel).getOrCreateColonyForPos(startPos);
         returnColony.tunnels.carve(pLevel);
         returnColony.hasSpawnedAnts = false;
 

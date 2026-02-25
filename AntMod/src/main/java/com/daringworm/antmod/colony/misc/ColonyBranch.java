@@ -8,11 +8,11 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.WorldGenLevel;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.levelgen.structure.BoundingBox;
 import net.minecraft.world.phys.Vec3;
-import org.checkerframework.checker.units.qual.A;
 
 import java.util.*;
 import java.util.function.Predicate;
@@ -31,6 +31,10 @@ public class ColonyBranch implements Branch<ColonyBranch>{
     private ColonyBranch parent;
     private ArrayList<ColonyBranch> children;
     private HashMap<String, String> values;
+    
+    public static final Block WALL_BLOCK = ModBlocks.ANT_DIRT.get();
+    public static final Block AIR_BLOCK = ModBlocks.ANT_AIR.get();
+    private static final float WALL_THICKNESS = 1.8f;
 
     public static ArrayList<ColonyBranch> testing = new ArrayList<>();
 
@@ -110,8 +114,8 @@ public class ColonyBranch implements Branch<ColonyBranch>{
     }
 
 
-    public ArrayList<PosSpherePair> getExcavationSpheres(){
-        ArrayList<PosSpherePair> returnSpheres = (this.getParent() != null) ? ColonyGenUtils.generatePassageBlueprint(new PosPair(parent.getPos(), this.position), 1.7) : new ArrayList<>();
+    public ArrayList<AntSphere> getExcavationSpheres(){
+        ArrayList<AntSphere> returnSpheres = (this.getParent() != null) ? ColonyGenUtils.generatePassageBlueprint(new PosPair(parent.getPos(), this.position), 1.7) : new ArrayList<>();
 
         if(!(this.values.get("has_room") == null || this.values.get("has_room").equals("false"))) {
             float roomSize = (!this.values.containsKey("room_size")) ? 2.85f : Float.parseFloat(this.values.get("room_size"));
@@ -119,7 +123,7 @@ public class ColonyBranch implements Branch<ColonyBranch>{
             BlockPos tempPos = centerPos;
             Random rand = AntUtils.randFromPos(centerPos);
             for (int i = 0; i < roomSize; i++) {
-                returnSpheres.add(new PosSpherePair(tempPos, roomSize));
+                returnSpheres.add(new AntSphere(tempPos, roomSize));
                 tempPos = centerPos.offset(rand.nextInt((int) roomSize) * (rand.nextBoolean() ? 1 : -1), 0, rand.nextInt((int) roomSize) * (rand.nextBoolean() ? 1 : -1));
             }
         }
@@ -133,12 +137,12 @@ public class ColonyBranch implements Branch<ColonyBranch>{
 
 
     public void carve(ServerLevel pLevel){
-        ArrayList<PosSpherePair> tunnelPoses = getExcavationSpheres();
+        ArrayList<AntSphere> tunnelPoses = getExcavationSpheres();
 
         //this.newCarve(pLevel, pLevel.getRandom());
         //AntUtils.broadcastString(pLevel, "for " + this.getAllChildren().size());
-        for(PosSpherePair tempSphere : tunnelPoses){
-            tempSphere.setSphere(pLevel, ModBlocks.ANT_AIR.get(), ModBlocks.ANT_DIRT.get(), 1.8f);
+        for(AntSphere tempSphere : tunnelPoses){
+            tempSphere.setSphere(pLevel, AIR_BLOCK, WALL_BLOCK, WALL_THICKNESS);
         }
 
         for(ColonyBranch tempChild : this.children){
@@ -148,10 +152,33 @@ public class ColonyBranch implements Branch<ColonyBranch>{
         decorateRoom(pLevel);
     }
 
+    public void carveWG(WorldGenLevel levelWG, BoundingBox area, ChunkPos currentChunk){
+        ArrayList<AntSphere> spheres = this.getExcavationSpheres();
+        int assumedSphereWall = 5;
+
+        for(AntSphere sphere : spheres){
+            if(AntUtils.getHorizontalDist(sphere.centerPos, currentChunk.getMiddleBlockPosition(0)) <= 8 + sphere.radius + assumedSphereWall){ // 8 == (chunk width) / 2
+                for(BlockPos pos : sphere){
+                    if(area.isInside(pos)){
+                        levelWG.setBlock(pos, AIR_BLOCK.defaultBlockState(), 16);
+                    }
+                }
+
+                sphere.radius += WALL_THICKNESS;
+                for(BlockPos pos : sphere){
+                    if(area.isInside(pos) && levelWG.getBlockState(pos) != AIR_BLOCK.defaultBlockState()){
+                        levelWG.setBlock(pos, WALL_BLOCK.defaultBlockState(), 16);
+                    }
+                }
+
+            }
+        }
+    }
+
     public void newCarve(ServerLevel pLevel, Random rand){
         if(this.getParent() != null) {
-            Block innerBlock = ModBlocks.ANT_AIR.get();
-            Block outerBlock = ModBlocks.ANT_DIRT.get();
+            Block innerBlock = AIR_BLOCK;
+            Block outerBlock = WALL_BLOCK;
 
             BlockPos start = this.getPos();
             BlockPos end = this.getParent().getPos();
@@ -160,7 +187,7 @@ public class ColonyBranch implements Branch<ColonyBranch>{
             final int radiusInt = (int) Math.ceil(passageRadius + wallThickness);
             final Vec3 absVector = new Vec3(end.getX() - start.getX(), end.getY() - start.getY(), end.getZ() - start.getZ()).normalize();
 
-            PosSpherePair startSphere = new PosSpherePair(start, passageRadius);
+            AntSphere startSphere = new AntSphere(start, passageRadius);
             startSphere.setSphere(pLevel, innerBlock, outerBlock, wallThickness);
 
             ArrayList<BlockPos> innerList = new ArrayList<>();

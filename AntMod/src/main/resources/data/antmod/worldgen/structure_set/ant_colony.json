@@ -1,0 +1,14 @@
+{
+  "structures": [
+    {
+      "structure": "antmod:ant_colony",
+      "weight": 30
+    }
+  ],
+  "placement": {
+    "type": "minecraft:random_spread",
+    "spacing": 12,
+    "separation": 8,
+    "salt": 6666667
+  }
+}

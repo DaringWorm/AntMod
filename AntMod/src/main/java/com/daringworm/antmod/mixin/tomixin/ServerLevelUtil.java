@@ -13,6 +13,7 @@ public interface ServerLevelUtil {
     AntColony getColonyWithID(int pID);
     AntColony getFirstColony();
     AntColony getClosestColony(BlockPos position);
+    AntColony getOrCreateColonyForPos(BlockPos position);
     void addColonyList(Set<AntColony> pSet);
     void refreshColonyForID(AntColony pColony);
     void addColonyToList(AntColony pColony);

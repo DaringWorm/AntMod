@@ -3,6 +3,7 @@ package com.daringworm.antmod.command.custom;
 import com.daringworm.antmod.block.ModBlocks;
 import com.daringworm.antmod.block.custom.FungalCore;
 import com.daringworm.antmod.colony.AntColony;
+import com.daringworm.antmod.colony.misc.AntSphere;
 import com.daringworm.antmod.colony.misc.BlockPosStringifier;
 import com.daringworm.antmod.colony.misc.ColonyBranch;
 import com.daringworm.antmod.entity.Ant;
@@ -20,6 +21,7 @@ import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.level.block.Blocks;
 
 import java.util.*;
 
@@ -75,11 +77,15 @@ public class AntModCommand {
     private static int dummy2(CommandContext<CommandSourceStack> context){
         ServerLevel pLevel = context.getSource().getLevel();
         ServerPlayer player = (ServerPlayer) context.getSource().getEntity();
-        BlockPos pPos = player.blockPosition();
+        BlockPos pPos = player.blockPosition().below(15);
 
-        CmdStatic.BP1 = pPos;
+        AntSphere sphere = new AntSphere(pPos, 5d);
 
-        AntUtils.broadcastString(pLevel, "EndPos set to: " + pPos);
+        for(BlockPos pos : sphere){
+            pLevel.setBlock(pos, Blocks.GLOWSTONE.defaultBlockState(), 2);
+        }
+
+
 
         return 0;
     }

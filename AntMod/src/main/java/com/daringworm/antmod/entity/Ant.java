@@ -4,9 +4,9 @@ package com.daringworm.antmod.entity;
 import com.daringworm.antmod.DebugHelper;
 import com.daringworm.antmod.block.ModBlocks;
 import com.daringworm.antmod.colony.AntColony;
+import com.daringworm.antmod.colony.misc.AntSphere;
 import com.daringworm.antmod.colony.misc.BlockPosStringifier;
 import com.daringworm.antmod.colony.misc.ColonyBranch;
-import com.daringworm.antmod.colony.misc.PosSpherePair;
 import com.daringworm.antmod.effect.ModEffects;
 import com.daringworm.antmod.colony.misc.PosPair;
 import com.daringworm.antmod.util.AntUtils;
@@ -61,7 +61,7 @@ public abstract class Ant extends PathfinderMob implements MenuProvider {
     public boolean goingRedstoneToLapis;
 
     private final ArrayList<BlockPos> cookedExcavationPosList;
-    private final ArrayList<PosSpherePair> rawExcavationList;
+    private final ArrayList<AntSphere> rawExcavationList;
 
 
     private static final EntityDataAccessor<Boolean> IS_MINING_ANIMATION = SynchedEntityData.defineId(Ant.class, EntityDataSerializers.BOOLEAN);
@@ -150,7 +150,7 @@ public abstract class Ant extends PathfinderMob implements MenuProvider {
                 this.rawExcavationList.clear();
                 this.rawExcavationList.addAll(pColony.getNextExcavationSteps(this.getExcavationStage()));
 
-                for (PosSpherePair sphere : rawExcavationList) {
+                for (AntSphere sphere : rawExcavationList) {
                     cookedExcavationPosList.removeAll(sphere.getBlockPoses(this.getLevel()));
                     Collection<BlockPos> tempList = sphere.getBlockPoses(this.getLevel());
                     tempList.removeIf(pos -> this.getLevel().getBlockState(pos).isAir());

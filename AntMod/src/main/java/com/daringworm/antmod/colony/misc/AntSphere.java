@@ -5,27 +5,28 @@ import com.daringworm.antmod.util.AntUtils;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.WorldGenLevel;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.ChunkAccess;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
-import java.util.function.Predicate;
+import java.util.Iterator;
+import java.util.NoSuchElementException;
 
-public class PosSpherePair {
+public class AntSphere implements Iterable<BlockPos>{
     public BlockPos centerPos;
     public double radius;
     private boolean checkSky = false;
     private boolean checkAir = false;
 
-    public PosSpherePair(BlockPos center, double sphereRadius){
+    public AntSphere(BlockPos center, double sphereRadius){
         this.centerPos = center;
         this.radius = sphereRadius;
     }
 
-    public PosSpherePair(BlockPos center, double sphereRadius, boolean runSkyCheck){
+    public AntSphere(BlockPos center, double sphereRadius, boolean runSkyCheck){
         this.centerPos = center;
         this.radius = sphereRadius;
         this.checkSky = runSkyCheck;
@@ -33,44 +34,37 @@ public class PosSpherePair {
 
     public ArrayList<BlockPos> getBlockPoses(){
         ArrayList<BlockPos> returnList = new ArrayList<>();
-        for(int x = (int)(radius+2); x >= -radius; x--){
-            for(int y = (int)(radius+2); y >= -radius; y--){
-                for(int z = (int)(radius+2); z >= -radius; z--){
-                    BlockPos tempPos = centerPos.offset(x,y,z);
-                    if(AntUtils.getDist(tempPos, centerPos) <= radius){
-                        returnList.add(tempPos);
-                    }
-                }
+
+        int intR = (int)(this.radius + 2);
+
+        for(BlockPos tempPos : BlockPos.betweenClosed(this.centerPos.offset(intR, intR, intR), this.centerPos.offset(-intR, -intR, -intR))){
+            if(tempPos.closerThan(this.centerPos, this.radius)){
+                returnList.add(tempPos.offset(this.centerPos).immutable());
             }
         }
 
         return returnList;
     }
 
-    public PosSpherePair wontReplaceAir(boolean bool){
+    public AntSphere wontReplaceAir(boolean bool){
         this.checkAir = bool;
         return this;
     }
 
-    public PosSpherePair willCheckSky(boolean bool){
+    public AntSphere willCheckSky(boolean bool){
         this.checkSky = bool;
         return this;
     }
 
     public ArrayList<BlockPos> getBlockPoses(Level pLevel){
         ArrayList<BlockPos> returnList = new ArrayList<>();
-        for(int x = (int)(radius+2); x >= -radius; x--){
-            for(int y = (int)(radius+2); y >= -radius; y--){
-                for(int z = (int)(radius+2); z >= -radius; z--){
-                    BlockPos tempPos = centerPos.offset(x,y,z);
-                    if(AntUtils.getDist(tempPos, centerPos) <= radius && pLevel.getBlockState(tempPos).getBlock() != ModBlocks.ANT_AIR.get()){
-                        if(pLevel.getBlockState(tempPos).getBlock() == Blocks.AIR){
-                            pLevel.setBlock(tempPos,ModBlocks.ANT_AIR.get().defaultBlockState(),2);
-                        }
-                        else {
-                            returnList.add(tempPos);
-                        }
-                    }
+        for(BlockPos tempPos : this.getBlockPoses()){
+            if(AntUtils.getDist(tempPos, centerPos) <= radius && pLevel.getBlockState(tempPos).getBlock() != ModBlocks.ANT_AIR.get()){
+                if(pLevel.getBlockState(tempPos).getBlock() == Blocks.AIR){
+                    pLevel.setBlock(tempPos,ModBlocks.ANT_AIR.get().defaultBlockState(),2);
+                }
+                else {
+                    returnList.add(tempPos);
                 }
             }
         }
@@ -79,7 +73,7 @@ public class PosSpherePair {
     }
 
     public void setSphere(ServerLevel pLevel, Block innerBlock, Block outerBlock, double wallThickness){
-        PosSpherePair outerShell = new PosSpherePair(this.centerPos,this.radius+wallThickness);
+        AntSphere outerShell = new AntSphere(this.centerPos,this.radius+wallThickness);
         ArrayList<BlockPos> totalList = outerShell.getBlockPoses();
         ArrayList<BlockPos> innerList = this.getBlockPoses();
         totalList.removeAll(innerList);
@@ -120,6 +114,58 @@ public class PosSpherePair {
         return true;
     }
 
+
+    private static class SphereIterator implements Iterator<BlockPos>{
+        private final AntSphere sphere;
+        private final int intR;
+        private Iterator<BlockPos> rawIterator;
+        private BlockPos next;
+
+        SphereIterator(AntSphere sphere){
+            this.sphere = sphere;
+            this.intR = (int)(sphere.radius + 2);
+
+            BlockPos positiveOffset = sphere.centerPos.offset(intR, intR, intR);
+            BlockPos negativeOffset = sphere.centerPos.offset(-intR, -intR, -intR);
+
+            this.rawIterator = BlockPos.betweenClosed(negativeOffset, positiveOffset).iterator();
+
+            this.next = getNext();
+        }
+
+        private BlockPos getNext(){
+            while(this.rawIterator.hasNext()){
+                BlockPos tempNext = this.rawIterator.next();
+                if(tempNext.closerThan(this.sphere.centerPos, this.sphere.radius)){
+                    return tempNext.immutable();
+                }
+            }
+            return null;
+        }
+
+        @Override
+        public boolean hasNext() {
+            return next != null;
+        }
+
+        @Override
+        public BlockPos next() {
+            if(this.rawIterator.hasNext()){
+                BlockPos oldNext = this.next;
+                this.next = getNext();
+                return oldNext;
+            }
+            else{
+                throw new NoSuchElementException("Attempted to access a nonexistent index in an iterator originating in AntSphere");
+            }
+        }
+    }
+
+    @NotNull
+    @Override
+    public Iterator<BlockPos> iterator() {
+        return new SphereIterator(this);
+    }
 }
 
 

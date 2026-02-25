@@ -15,8 +15,6 @@ public class AntFeaturesReg {
     public static final DeferredRegister<Feature<?>> FEATURES =
             DeferredRegister.create(ForgeRegistries.FEATURES, AntMod.MOD_ID);
 
-    public static final DeferredRegister<StructureFeature<?>> STRUCTURE_FEATURES =
-            DeferredRegister.create(ForgeRegistries.STRUCTURE_FEATURES, AntMod.MOD_ID);
 
     public static final RegistryObject<AntColonyEntranceFeature> GEODE_BASE_REGISTER = FEATURES.register("ant_geode",
             () -> new AntColonyEntranceFeature(NoneFeatureConfiguration.CODEC));
@@ -24,5 +22,7 @@ public class AntFeaturesReg {
     public static final RegistryObject<TestAntColony> TEST_ANT_COLONY = FEATURES.register("test_ant_colony",
             () -> new TestAntColony(NoneFeatureConfiguration.CODEC));
 
-    public static void register(IEventBus eventBus) {FEATURES.register(eventBus);}
+    public static void register(IEventBus eventBus) {
+        FEATURES.register(eventBus);
+    }
 }

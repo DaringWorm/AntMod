@@ -19,7 +19,7 @@ public class AntColonyEntranceFeature extends Feature<NoneFeatureConfiguration> 
 
     public boolean place(@NotNull FeaturePlaceContext<NoneFeatureConfiguration> featurePlaceContext) {
 
-        AntUtils.broadcastString(featurePlaceContext.level().getLevel(), "Placed a entrance at " + featurePlaceContext.origin());
+        //AntUtils.broadcastString(featurePlaceContext.level().getLevel(), "Placed a entrance at " + featurePlaceContext.origin());
 
         return true;
     }

@@ -1,0 +1,6 @@
+{
+  "type": "antmod:ant_colony",
+  "config": {},
+  "biomes": "#antmod:ant_colony_biomes",
+  "spawn_overrides": {}
+}

@@ -33,18 +33,32 @@ public abstract class ServerClassMixins implements ServerLevelUtil {
     @Shadow
     final List<ServerPlayer> players = Lists.newArrayList();
 
+    @Shadow public abstract ServerLevel getLevel();
+
     public LevelColonies<AntColony> levelColonies = new LevelColonies<>(new HashSet<>());
 
     private File lastSaveFile;
 
     @Override
     public ArrayList<AntColony> getColonies(){
-        return new ArrayList<AntColony>(levelColonies.getColonies().toList());
+        return new ArrayList<>(levelColonies.getColonies().toList());
     }
     @Override
     public AntColony getColonyWithID(int pID){return levelColonies.getColonyForID(pID);}
     @Override
     public AntColony getFirstColony(){return levelColonies.getColonies().toList().get(0);}
+    @Override
+    public AntColony getOrCreateColonyForPos(BlockPos pos){
+        for(AntColony tempColony : getColonies()){
+            if(tempColony.startPos.equals(pos)){
+                return tempColony;
+            }
+        }
+        AntColony newColony = new AntColony(getLevel(), AntUtils.randFromPos(pos).nextInt(), pos);
+        newColony.save();
+
+        return newColony;
+    }
     @Override
     public void addColonyList(Set<AntColony> pSet){levelColonies = new LevelColonies<>(pSet);}
     @Override

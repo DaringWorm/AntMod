@@ -2,7 +2,6 @@ package com.daringworm.antmod.colony.misc;
 
 import com.daringworm.antmod.block.ModBlocks;
 import com.daringworm.antmod.block.custom.FungalCore;
-import com.daringworm.antmod.colony.AntColony;
 import com.daringworm.antmod.util.AntUtils;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -18,18 +17,15 @@ import net.minecraft.world.level.material.FluidState;
 import java.util.ArrayList;
 import java.util.Random;
 
-import static com.daringworm.antmod.colony.AntColony.BLOCK1;
-import static com.daringworm.antmod.colony.AntColony.BLOCK2;
-
 public final class ColonyGenUtils {
 
-    public static ArrayList<PosSpherePair> generateRoomBlueprint(double height, int size, BlockPos center, Random rand){
+    public static ArrayList<AntSphere> generateRoomBlueprint(double height, int size, BlockPos center, Random rand){
         rand = new Random(Math.abs(center.getX()*center.getY()));
         int cx = center.getX();
         int cy = center.getY();
         int cz = center.getZ();
         ArrayList<BlockPos> posList = new ArrayList<>();
-        ArrayList<PosSpherePair> returnList = new ArrayList<>();
+        ArrayList<AntSphere> returnList = new ArrayList<>();
         posList.add(center);
 
         for(int i = size; i>0; i--){
@@ -41,14 +37,14 @@ public final class ColonyGenUtils {
             posList.add(new BlockPos(cx+xOff,cy,cz+zOff));
         }
         for(BlockPos tempPos : posList){
-            returnList.add(new PosSpherePair(tempPos,height));
+            returnList.add(new AntSphere(tempPos,height));
         }
         return returnList;
     }
 
-    public static ArrayList<PosSpherePair> generatePassageBlueprint(PosPair pPath, double width){
+    public static ArrayList<AntSphere> generatePassageBlueprint(PosPair pPath, double width){
         Random rand = new Random((long) pPath.top.getX() *pPath.top.getY()*pPath.top.getZ());
-        ArrayList<PosSpherePair> returnList = new ArrayList<>();
+        ArrayList<AntSphere> returnList = new ArrayList<>();
         BlockPos start = pPath.top;
         BlockPos end = pPath.bottom;
 
@@ -82,7 +78,7 @@ public final class ColonyGenUtils {
             else{zOff = (howLongZ > 0) ? 1: -1;}
 
             lastPos = new BlockPos(lastPos.getX()+xOff, lastPos.getY()+yOff, lastPos.getZ()+zOff);
-            PosSpherePair sphere = new PosSpherePair(lastPos, width, true);
+            AntSphere sphere = new AntSphere(lastPos, width, true);
             returnList.add(sphere);
         }
         /*System.out.println("Generated a passage with " + returnList.size() + " positions");*/
@@ -191,10 +187,10 @@ public final class ColonyGenUtils {
 
 
     /*public static void generateBranch(ColonyBranch branch, boolean wontReplaceAir, boolean wholeThing, int stepsIfNotWholeThing, ServerLevel pLevel) {
-        ArrayList<PosSpherePair> sphereArray = (wholeThing)?
+        ArrayList<AntSphere> sphereArray = (wholeThing)?
                 branch.generateBranchBlueprint(AntColony.passageWidth,AntColony.passageWidth+1,AntColony.UNDERGOUND_ROOM_SIZE) :
                 branch.generateLimitedBlueprint(AntColony.passageWidth,AntColony.passageWidth+1,AntColony.UNDERGOUND_ROOM_SIZE, stepsIfNotWholeThing, wontReplaceAir);
-        for(PosSpherePair sphere : sphereArray){
+        for(AntSphere sphere : sphereArray){
             sphere.setSphere((ServerLevel) pLevel,BLOCK1,BLOCK2, 2);
         }
 

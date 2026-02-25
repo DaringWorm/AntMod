@@ -1,11 +1,7 @@
 package com.daringworm.antmod.colony;
 
-import com.daringworm.antmod.colony.AntColony;
-import com.daringworm.antmod.colony.misc.PosSpherePair;
 import net.minecraft.server.level.ServerLevel;
-import org.jetbrains.annotations.NotNull;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
