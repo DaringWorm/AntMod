@@ -1,29 +1,28 @@
 package com.daringworm.antmod.worldgen.gen;
 
-import com.daringworm.antmod.worldgen.feature.SpawnAntFeaturesHolders;
-import com.daringworm.antmod.worldgen.feature.registries.AntCarversReg;
-import com.daringworm.antmod.worldgen.feature.registries.AntFeaturesReg;
-import net.minecraft.core.Registry;
-import net.minecraft.resources.ResourceKey;
-import net.minecraft.world.level.biome.Biome;
-import net.minecraft.world.level.biome.BiomeGenerationSettings;
-import net.minecraft.world.level.levelgen.GenerationStep;
-import net.minecraftforge.common.BiomeDictionary;
-import net.minecraftforge.event.world.BiomeLoadingEvent;
-
-import java.util.Objects;
-import java.util.Set;
+import com.daringworm.antmod.util.AntUtils;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.chunk.ChunkAccess;
+import net.minecraft.world.level.chunk.ChunkStatus;
+import net.minecraft.world.level.levelgen.Heightmap;
+import net.minecraftforge.event.world.ChunkEvent;
 
 public class ModColonyGeneration {
-    public static void generateColonies(final BiomeLoadingEvent event) {
+    public static void generateColonies(final ChunkEvent event) {
+        ChunkAccess chunk = event.getChunk();
+
+        if(true) {
+            int height = chunk.getHeight(Heightmap.Types.WORLD_SURFACE_WG, 4, 4) + 5;
+            BlockPos pos = chunk.getPos().getBlockAt(4, height, 4);
+        }
+
+
+
+        /*
         ResourceKey<Biome> key = ResourceKey.create(Registry.BIOME_REGISTRY, Objects.requireNonNull(event.getName()));
         Set<BiomeDictionary.Type> types = BiomeDictionary.getTypes(key);
 
-        /*if(types.contains(BiomeDictionary.Type.SAVANNA)) {
-            List<Holder<PlacedFeature>> base = event.getGeneration().getFeatures(GenerationStep.Decoration.VEGETAL_DECORATION);
-            base.add(PlaceAntFeaturesHolders.GEODE_PLACED);
-
-        }*/
 
         if((types.contains(BiomeDictionary.Type.FOREST)
                 || types.contains(BiomeDictionary.Type.JUNGLE)
@@ -40,6 +39,12 @@ public class ModColonyGeneration {
         ) {
             event.getGeneration().addCarver(GenerationStep.Carving.AIR, AntCarversReg.CONFIGURED_COLONY_REGISTER.getHolder().get());
         }
+
+
+
+         */
     }
+
+
 
 }
